@@ -7,7 +7,7 @@
 [link-tests]: https://github.com/sebastianbirk/celldino/actions/workflows/test.yml
 [badge-docs]: https://img.shields.io/readthedocs/celldino
 
-Cellular decomposition of intrinsic and niche-induced omic variation
+Cellular decomposition of intrinsic and niche-induced omic effects
 
 ## Getting started
 
