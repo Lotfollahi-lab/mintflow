@@ -5,7 +5,7 @@ requires = ["hatchling"]
 [project]
 name = "celldino"
 version = "0.0.1"
-description = "Cellular decomposition of intrinsic and niche-induced omic variation"
+description = "Cellular decomposition of intrinsic and neighborhood-induced omic variation"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {file = "LICENSE"}
