@@ -6,6 +6,9 @@ from .generativemodel import InFlowGenerativeModel
 from .modules.impanddisentgl import  ImputerAndDisentangler
 from .modules.cond4flow import Cond4FlowVarphi0
 from . import probutils
+from tqdm.auto import tqdm
+from torch.utils.tensorboard import SummaryWriter
+
 
 class InFlowVarDist(nn.Module):
     '''
@@ -197,7 +200,11 @@ class InFlowVarDist(nn.Module):
             prob_maskknowngenes:float,
             t_num_steps:int,
             ten_xy_absolute:torch.Tensor,
-            optim_training:torch.optim.Optimizer
+            optim_training:torch.optim.Optimizer,
+            tensorboard_stepsize_save:int,
+            log_dir_tensorboard=None,
+            sum_writer_input:SummaryWriter|None=None,
+            itrcount_tensorboard_input:int=0
     ):
         '''
         One epoch of the training.
@@ -209,7 +216,24 @@ class InFlowVarDist(nn.Module):
         :param optim_training: the optimizer.
         :return:
         '''
-        for batch in dl:
+
+        if log_dir_tensorboard is not None:
+            if sum_writer_input is None:
+                sum_writer = SummaryWriter(log_dir_tensorboard)
+                itrcount_tensorboard = 0
+            else:
+                sum_writer = sum_writer_input
+                itrcount_tensorboard = itrcount_tensorboard_input + 0
+        else:
+            sum_writer = None
+            itrcount_tensorboard = 0
+
+
+        for batch in tqdm(dl):
+            optim_training.zero_grad()
+            flag_tensorboardsave = (itrcount_tensorboard%tensorboard_stepsize_save == 0)\
+                                    and (log_dir_tensorboard is not None)
+
             dict_q_sample = self.rsample(
                 batch=batch,
                 prob_maskknowngenes=prob_maskknowngenes,
@@ -226,10 +250,47 @@ class InFlowVarDist(nn.Module):
             loss = 0.0
             for k in dict_logp.keys():
                 loss = loss - dict_logp[k].sum(1).mean()
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        sum_writer.add_scalar(
+                            "Loss/logprob_P/{}".format(k),
+                            torch.mean(- dict_logp[k].sum(1).mean()),
+                            itrcount_tensorboard
+                        )
+
             for k in dict_logq.keys():
                 loss = loss + dict_logq[k].sum(1).mean()
-            print("Reached here.")
-            assert False
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        sum_writer.add_scalar(
+                            "Loss/logprob_Q/{}".format(k),
+                            torch.mean(+ dict_logq[k].sum(1).mean()),
+                            itrcount_tensorboard
+                        )
+
+            # add the imputation loss
+            loss = loss + dict_q_sample['loss_imputex'].mean()
+            if flag_tensorboardsave:
+                with torch.no_grad():
+                    sum_writer.add_scalar(
+                        "Loss/loss_imputex",
+                        dict_q_sample['loss_imputex'].mean(),
+                        itrcount_tensorboard
+                    )
+
+
+            if flag_tensorboardsave:
+                sum_writer.flush()
+
+            # update params
+            loss.backward()
+            optim_training.step()
+            itrcount_tensorboard += 1
+
+        return sum_writer, itrcount_tensorboard
+
+
+
 
 
 
