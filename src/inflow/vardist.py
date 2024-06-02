@@ -269,14 +269,23 @@ class InFlowVarDist(nn.Module):
                         )
 
             # add the imputation loss
-            loss = loss + dict_q_sample['loss_imputex'].mean()
+            if dict_q_sample['loss_imputex'] is not None:
+                loss = loss + dict_q_sample['loss_imputex'].mean()
+
             if flag_tensorboardsave:
                 with torch.no_grad():
-                    sum_writer.add_scalar(
-                        "Loss/loss_imputex",
-                        dict_q_sample['loss_imputex'].mean(),
-                        itrcount_tensorboard
-                    )
+                    if dict_q_sample['loss_imputex'] is not None:
+                        sum_writer.add_scalar(
+                            "Loss/loss_imputex",
+                            dict_q_sample['loss_imputex'].mean(),
+                            itrcount_tensorboard
+                        )
+                    else:
+                        sum_writer.add_scalar(
+                            "Loss/loss_imputex",
+                            torch.nan,
+                            itrcount_tensorboard
+                        )
 
 
             if flag_tensorboardsave:

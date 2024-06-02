@@ -199,10 +199,23 @@ class ImputerAndDisentangler(nn.Module):
             ten_xy_absolute=ten_xy_absolute
         )  # [N, dim_tf1], [N]
         ten_out_tf1 = self.module_tf1(ten_in_tf1.unsqueeze(0))[0,:,:]  # [N, dim_tf1] in [-inf, inf]
-        loss_imputex = F.mse_loss(
-            self.module_imputer(ten_out_tf1[ten_manually_masked, :]),
-            x_log1p[ten_manually_masked, :]
-        )  # TODO: probably change the loss ???
+
+        if torch.any(ten_manually_masked):  # some available expvect are manually masked
+            loss_imputex = F.mse_loss(
+                self.module_imputer(ten_out_tf1[ten_manually_masked, :]),
+                x_log1p[ten_manually_masked, :],
+                reduction='none'
+            )  # TODO: probably change the loss ???
+            with torch.no_grad():
+                assert(
+                    not torch.any(torch.isnan(loss_imputex))
+                )
+        else:
+            loss_imputex = None
+
+
+
+
         ten_in_tf2_part1, _ = self.module_em2(
             batch=batch,
             prob_maskknowngenes=0.0,  # no manual masking for tf2, because the selfsup training has happened in tf1.
