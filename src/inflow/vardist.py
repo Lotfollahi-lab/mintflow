@@ -313,7 +313,8 @@ class InFlowVarDist(nn.Module):
         '''
         self.eval()
         dict_var_to_dict_nglobal_to_value = {
-            'output_imputer':{}
+            'output_imputer':{},
+            # TODO: HERE, add other variables 
         }  # TODO: add other variables.
         for batch in tqdm(dl):
             curr_dict_qsample = self.rsample(
