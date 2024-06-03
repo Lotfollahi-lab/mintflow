@@ -345,7 +345,7 @@ class InFlowVarDist(nn.Module):
                 dict_var_to_dict_nglobal_to_value['mu_sin'][n_global] = np_mu_sin[n_local, :]
                 dict_var_to_dict_nglobal_to_value['mu_sout'][n_global] = np_mu_sout[n_local, :]
                 dict_var_to_dict_nglobal_to_value['mu_z'][n_global] = np_mu_z[n_local, :]
-        
+
         self.train()
 
         # create dict_varname_to_output
