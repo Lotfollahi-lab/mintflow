@@ -314,7 +314,13 @@ class InFlowVarDist(nn.Module):
         self.eval()
         dict_var_to_dict_nglobal_to_value = {
             'output_imputer':{},
-            # TODO: HERE, add other variables 
+            'muxint':{},
+            'muxspl':{},
+            'muxbar_int':{},
+            'muxbar_spl':{},
+            'mu_sin':{},
+            'mu_sout':{},
+            'mu_z':{}
         }  # TODO: add other variables.
         for batch in tqdm(dl):
             curr_dict_qsample = self.rsample(
@@ -323,8 +329,23 @@ class InFlowVarDist(nn.Module):
                 ten_xy_absolute=ten_xy_absolute
             )
             np_out_imputer = curr_dict_qsample['ten_out_imputer'].detach().cpu().numpy()
+            np_muxint = curr_dict_qsample['params_q_impanddisentgl']['muxint'].detach().cpu().numpy()
+            np_muxspl = curr_dict_qsample['params_q_impanddisentgl']['muxspl'].detach().cpu().numpy()
+            np_muxbar_int = curr_dict_qsample['param_q_xbarint'].detach().cpu().numpy()
+            np_muxbar_spl = curr_dict_qsample['param_q_xbarspl'].detach().cpu().numpy()
+            np_mu_sin = curr_dict_qsample['param_q_cond4flow']['mu_sin'].detach().cpu().numpy()
+            np_mu_sout = curr_dict_qsample['param_q_cond4flow']['mu_sout'].detach().cpu().numpy()
+            np_mu_z = curr_dict_qsample['param_q_cond4flow']['mu_z'].detach().cpu().numpy()
             for n_local, n_global in enumerate(batch.input_id.tolist()):
                 dict_var_to_dict_nglobal_to_value['output_imputer'][n_global] = np_out_imputer[n_local, :]
+                dict_var_to_dict_nglobal_to_value['muxint'][n_global] = np_muxint[n_local, :]
+                dict_var_to_dict_nglobal_to_value['muxspl'][n_global] = np_muxspl[n_local, :]
+                dict_var_to_dict_nglobal_to_value['muxbar_int'][n_global] = np_muxbar_int[n_local, :]
+                dict_var_to_dict_nglobal_to_value['muxbar_spl'][n_global] = np_muxbar_spl[n_local, :]
+                dict_var_to_dict_nglobal_to_value['mu_sin'][n_global] = np_mu_sin[n_local, :]
+                dict_var_to_dict_nglobal_to_value['mu_sout'][n_global] = np_mu_sout[n_local, :]
+                dict_var_to_dict_nglobal_to_value['mu_z'][n_global] = np_mu_z[n_local, :]
+        
         self.train()
 
         # create dict_varname_to_output
