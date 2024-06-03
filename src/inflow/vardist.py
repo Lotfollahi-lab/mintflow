@@ -1,4 +1,5 @@
 
+import numpy as np
 import torch
 import torch.nn as nn
 from torch_geometric.loader import NeighborLoader
@@ -133,7 +134,8 @@ class InFlowVarDist(nn.Module):
             z=z,
             s_in=s_in,
             s_out=s_out,
-            loss_imputex=params_q_impanddisentgl['loss_imputex']
+            loss_imputex=params_q_impanddisentgl['loss_imputex'],
+            ten_out_imputer=params_q_impanddisentgl['ten_out_imputer']
         )
 
     def log_prob(self, dict_retvalrsample):
@@ -297,6 +299,47 @@ class InFlowVarDist(nn.Module):
             itrcount_tensorboard += 1
 
         return sum_writer, itrcount_tensorboard
+
+
+
+    @torch.no_grad()
+    def eval_on_pygneighloader_dense(self, dl:NeighborLoader, ten_xy_absolute:torch.Tensor):
+        '''
+        Evaluates the model on a pyg.NeighborLoader.
+        All results are obtained in dense arrays and returned.
+        :param dl:
+        :param ten_xy_absolute:
+        :return:
+        '''
+        self.eval()
+        dict_var_to_dict_nglobal_to_value = {
+            'output_imputer':{}
+        }  # TODO: add other variables.
+        for batch in tqdm(dl):
+            curr_dict_qsample = self.rsample(
+                batch=batch,
+                prob_maskknowngenes=0.0,
+                ten_xy_absolute=ten_xy_absolute
+            )
+            np_out_imputer = curr_dict_qsample['ten_out_imputer'].detach().cpu().numpy()
+            for n_local, n_global in enumerate(batch.input_id.tolist()):
+                dict_var_to_dict_nglobal_to_value['output_imputer'][n_global] = np_out_imputer[n_local, :]
+        self.train()
+
+        # create dict_varname_to_output
+        dict_varname_to_output = {}
+        for k in dict_var_to_dict_nglobal_to_value.keys():
+            assert(
+                set(dict_var_to_dict_nglobal_to_value[k].keys()) == set(range(ten_xy_absolute.size()[0]))
+            )
+            dict_varname_to_output[k] = np.stack(
+                [dict_var_to_dict_nglobal_to_value[k][n] for n in range(ten_xy_absolute.size()[0])],
+                0
+            )
+
+        return dict_varname_to_output
+
+
 
 
 

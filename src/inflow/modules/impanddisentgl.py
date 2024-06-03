@@ -199,10 +199,12 @@ class ImputerAndDisentangler(nn.Module):
             ten_xy_absolute=ten_xy_absolute
         )  # [N, dim_tf1], [N]
         ten_out_tf1 = self.module_tf1(ten_in_tf1.unsqueeze(0))[0,:,:]  # [N, dim_tf1] in [-inf, inf]
+        ten_out_imputer = self.module_imputer(ten_out_tf1)  # [N, num_genes]
+
 
         if torch.any(ten_manually_masked):  # some available expvect are manually masked
             loss_imputex = F.mse_loss(
-                self.module_imputer(ten_out_tf1[ten_manually_masked, :]),
+                ten_out_imputer[ten_manually_masked, :],
                 x_log1p[ten_manually_masked, :],
                 reduction='none'
             )  # TODO: probably change the loss ???
@@ -249,6 +251,7 @@ class ImputerAndDisentangler(nn.Module):
             muxspl=muxspl,
             sigmaxint=sigmaxint,
             sigmaxspl=sigmaxspl,
+            ten_out_imputer=ten_out_imputer+0.0,
             loss_imputex=loss_imputex
         )
 
