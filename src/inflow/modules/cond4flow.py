@@ -91,7 +91,7 @@ class SubgraphEmbeddingCond4Flow(nn.Module):
             em_iscentralnode = self.embedding_iscentralnode(
                 torch.tensor(
                     batch.batch_size * [1] + (x.size()[0] - batch.batch_size) * [0]
-                )
+                ).to(ten_xy_absolute.device)
             ).detach()  # [N, 10]
 
             # define the masking token
