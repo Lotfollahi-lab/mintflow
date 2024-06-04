@@ -363,12 +363,6 @@ class InFlowVarDist(nn.Module):
 
 
 
-
-
-
-
-
-
     def _check_args(self):
         # check dict_qname_to_scaleandunweighted
         assert(
