@@ -98,7 +98,7 @@ class SubgraphEmbeddingCond4Flow(nn.Module):
             '''
             Here only UNKNOWN_TEST is masked.
             '''
-            ten_masked_c1 = (batch.y == impanddisentgl.MaskLabel.UNKNOWN_TEST.value)
+            ten_masked_c1 = (batch.y == impanddisentgl.MaskLabel.UNKNOWN_TEST.value).to(ten_xy_absolute.device)
             a = ~ten_masked_c1  # a; available expression vectors.
             em_blankorobserved = self.embedding_blankorobserved(
                 a + 0
