@@ -60,7 +60,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
         dby4 = self.dim_embedding//4
         denum = torch.exp(
             (torch.tensor(range(dby4)) / dby4) * np.log(10000.0)
-        ).unsqueeze(0) # [1, dby4]
+        ).unsqueeze(0).to(ten_xy_absolute.device) # [1, dby4]
         x_sin = torch.sin(ten_xy[:, 0].unsqueeze(1) / denum)  # [N, bdy4]
         x_cos = torch.cos(ten_xy[:, 0].unsqueeze(1) / denum)  # [N, bdy4]
         y_sin = torch.sin(ten_xy[:, 1].unsqueeze(1) / denum)  # [N, bdy4]
