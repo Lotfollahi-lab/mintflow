@@ -119,7 +119,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             if torch.any(a==True) and (prob_maskknowngenes > 0.0):
                 a[a == True] = a[a == True] & torch.tensor(
                     [np.random.rand() > prob_maskknowngenes for _ in range(torch.sum(a == True).tolist())]
-                )
+                ).to(ten_xy_absolute.device)
             em_blankorobserved = self.embedding_blankorobserved(
                 a+0
             )  # [N, 10]
