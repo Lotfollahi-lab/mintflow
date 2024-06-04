@@ -248,7 +248,7 @@ class InFlowGenerativeModel(nn.Module):
         logp_s_in = probutils.ExtenededNormal(
             loc=self.module_theta_aggr(
                 x=dict_qsamples['s_out'],
-                edge_index=batch.edge_index
+                edge_index=batch.edge_index.to(device)
             )[:batch.batch_size],
             scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_aggr'])).to(device),
             flag_unweighted=True
