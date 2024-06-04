@@ -113,7 +113,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             In both cases the imputer must not be able to distinguish between the two.
             But the imputation loss is only defined on case 2.
             '''
-            ten_masked_c1 = (batch.y == MaskLabel.UNKNOWN_TEST.value)
+            ten_masked_c1 = (batch.y == MaskLabel.UNKNOWN_TEST.value).to(ten_xy_absolute.device)
             a = ~ten_masked_c1  # a; available expression vectors.
             a : torch.Tensor
             if torch.any(a==True) and (prob_maskknowngenes > 0.0):
