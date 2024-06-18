@@ -8,7 +8,8 @@ from .modules.impanddisentgl import  ImputerAndDisentangler
 from .modules.cond4flow import Cond4FlowVarphi0
 from . import probutils
 from tqdm.auto import tqdm
-from torch.utils.tensorboard import SummaryWriter
+import wandb
+
 
 
 class InFlowVarDist(nn.Module):
@@ -204,9 +205,7 @@ class InFlowVarDist(nn.Module):
             ten_xy_absolute:torch.Tensor,
             optim_training:torch.optim.Optimizer,
             tensorboard_stepsize_save:int,
-            log_dir_tensorboard=None,
-            sum_writer_input:SummaryWriter|None=None,
-            itrcount_tensorboard_input:int=0
+            itrcount_wandbstep_input:int|None=None
     ):
         '''
         One epoch of the training.
@@ -219,22 +218,15 @@ class InFlowVarDist(nn.Module):
         :return:
         '''
 
-        if log_dir_tensorboard is not None:
-            if sum_writer_input is None:
-                sum_writer = SummaryWriter(log_dir_tensorboard)
-                itrcount_tensorboard = 0
-            else:
-                sum_writer = sum_writer_input
-                itrcount_tensorboard = itrcount_tensorboard_input + 0
+        if itrcount_wandbstep_input is not None:
+            itrcount_wandb = itrcount_wandbstep_input + 0
         else:
-            sum_writer = None
-            itrcount_tensorboard = 0
+            itrcount_wandb = 0
 
 
         for batch in tqdm(dl):
             optim_training.zero_grad()
-            flag_tensorboardsave = (itrcount_tensorboard%tensorboard_stepsize_save == 0)\
-                                    and (log_dir_tensorboard is not None)
+            flag_tensorboardsave = (itrcount_wandb%tensorboard_stepsize_save == 0)
 
             dict_q_sample = self.rsample(
                 batch=batch,
@@ -254,20 +246,18 @@ class InFlowVarDist(nn.Module):
                 loss = loss - dict_logp[k].sum(1).mean()
                 if flag_tensorboardsave:
                     with torch.no_grad():
-                        sum_writer.add_scalar(
-                            "Loss/logprob_P/{}".format(k),
-                            torch.mean(- dict_logp[k].sum(1).mean()),
-                            itrcount_tensorboard
+                        wandb.log(
+                            {"Loss/logprob_P/{}".format(k): torch.mean(- dict_logp[k].sum(1).mean())},
+                            step=itrcount_wandb
                         )
 
             for k in dict_logq.keys():
                 loss = loss + dict_logq[k].sum(1).mean()
                 if flag_tensorboardsave:
                     with torch.no_grad():
-                        sum_writer.add_scalar(
-                            "Loss/logprob_Q/{}".format(k),
-                            torch.mean(+ dict_logq[k].sum(1).mean()),
-                            itrcount_tensorboard
+                        wandb.log(
+                            {"Loss/logprob_Q/{}".format(k): torch.mean(+ dict_logq[k].sum(1).mean())},
+                            step=itrcount_wandb
                         )
 
             # add the imputation loss
@@ -277,28 +267,24 @@ class InFlowVarDist(nn.Module):
             if flag_tensorboardsave:
                 with torch.no_grad():
                     if dict_q_sample['loss_imputex'] is not None:
-                        sum_writer.add_scalar(
-                            "Loss/loss_imputex",
-                            dict_q_sample['loss_imputex'].mean(),
-                            itrcount_tensorboard
+                        wandb.log(
+                            {"Loss/loss_imputex": dict_q_sample['loss_imputex'].mean()},
+                            step=itrcount_wandb
                         )
                     else:
-                        sum_writer.add_scalar(
-                            "Loss/loss_imputex",
-                            torch.nan,
-                            itrcount_tensorboard
+                        wandb.log(
+                            {"Loss/loss_imputex": torch.nan},
+                            step=itrcount_wandb
                         )
 
 
-            if flag_tensorboardsave:
-                sum_writer.flush()
 
             # update params
             loss.backward()
             optim_training.step()
-            itrcount_tensorboard += 1
+            itrcount_wandb += 1
 
-        return sum_writer, itrcount_tensorboard
+        return itrcount_wandb
 
 
 
