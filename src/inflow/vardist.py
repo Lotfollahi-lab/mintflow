@@ -7,6 +7,7 @@ from .generativemodel import InFlowGenerativeModel
 from .modules.impanddisentgl import  ImputerAndDisentangler
 from .modules.cond4flow import Cond4FlowVarphi0
 from . import probutils
+from . import utils_imputer
 from tqdm.auto import tqdm
 import wandb
 
@@ -303,7 +304,8 @@ class InFlowVarDist(nn.Module):
         optim_training: torch.optim.Optimizer,
         tensorboard_stepsize_save: int,
         itrcount_wandbstep_input: int | None = None,
-        numsteps_accumgrad:int=10
+        numsteps_accumgrad:int=10,
+        prob_applytfm_affinexy:float=0.5
     ):
         '''
         One epoch of the training.
@@ -316,9 +318,18 @@ class InFlowVarDist(nn.Module):
         :param tensorboard_stepsize_save
         :param itrcount_wandbstep_input
         :param numsteps_accumgrad
+        :param prob_applytfm_affinexy: the probability that the xy positions go through an affine augmentation.
         :return:
         '''
-        pass
+        # make the affine xy augmenter
+        tfm_affinexy = utils_imputer.RandomGeometricTfm(
+            prob_applytfm=prob_applytfm_affinexy,
+            rng_00=[0.1, 2.0],
+            rng_01=[0.1, 2.0],
+            rng_10=[0.1, 2.0],
+            rng_11=[0.1, 2.0]
+        )
+
         if itrcount_wandbstep_input is not None:
             itrcount_wandb = itrcount_wandbstep_input + 0
         else:
@@ -328,12 +339,15 @@ class InFlowVarDist(nn.Module):
         cnt_backward = 0
         optim_training.zero_grad()
         for batch in tqdm(dl):
+
+            ten_xy_touse = tfm_affinexy.forward(ten_xy=ten_xy_absolute)
+
             flag_tensorboardsave = (itrcount_wandb % tensorboard_stepsize_save == 0)
             loss = 0.0
             dict_q_sample = self.rsample(
                 batch=batch,
                 prob_maskknowngenes=prob_maskknowngenes,
-                ten_xy_absolute=ten_xy_absolute
+                ten_xy_absolute=ten_xy_touse
             )
             if dict_q_sample['loss_imputex'] is not None:
                 loss = loss + (dict_q_sample['loss_imputex'].mean())/(numsteps_accumgrad+0.0)
