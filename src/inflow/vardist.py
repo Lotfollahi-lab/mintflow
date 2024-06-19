@@ -271,18 +271,18 @@ class InFlowVarDist(nn.Module):
                 if dict_q_sample['loss_imputex'] is not None:
                     loss = loss + dict_q_sample['loss_imputex'].mean()
 
-            if flag_tensorboardsave:
-                with torch.no_grad():
-                    if dict_q_sample['loss_imputex'] is not None:
-                        wandb.log(
-                            {"Loss/loss_imputex": dict_q_sample['loss_imputex'].mean()},
-                            step=itrcount_wandb
-                        )
-                    else:
-                        wandb.log(
-                            {"Loss/loss_imputex": torch.nan},
-                            step=itrcount_wandb
-                        )
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        if dict_q_sample['loss_imputex'] is not None:
+                            wandb.log(
+                                {"Loss/loss_imputex": dict_q_sample['loss_imputex'].mean()},
+                                step=itrcount_wandb
+                            )
+                        else:
+                            wandb.log(
+                                {"Loss/loss_imputex": torch.nan},
+                                step=itrcount_wandb
+                            )
 
 
 
