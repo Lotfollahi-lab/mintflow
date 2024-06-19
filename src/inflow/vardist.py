@@ -287,8 +287,9 @@ class InFlowVarDist(nn.Module):
 
 
             # update params
-            loss.backward()
-            optim_training.step()
+            if isinstance(loss, torch.Tensor):  # to handle 1. only imputed loss is active and 2. there is no masking
+                loss.backward()
+                optim_training.step()
             itrcount_wandb += 1
 
         return itrcount_wandb
