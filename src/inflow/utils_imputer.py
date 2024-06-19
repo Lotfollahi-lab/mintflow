@@ -62,7 +62,7 @@ class RandomGeometricTfm:
             device=ten_xy.device,
             dtype=ten_xy.dtype
         ).to(ten_xy.device)  # [3,3]
-        
+
         ten_xy_extended = torch.cat(
             [ten_xy, torch.ones(size=[ten_xy.size()[0], 1], dtype=ten_xy.dtype, device=ten_xy.device)],
             1
@@ -71,7 +71,7 @@ class RandomGeometricTfm:
         output = torch.matmul(H, ten_xy_extended)  # [3, N]
         output = output[0:2, :] / output[2,:].unsqueeze(0)  # [2, N]
         output = output.T + 0.0  # [N, 2]
-        print("Random affine tfm was applied.")
+        
         return output
 
 
