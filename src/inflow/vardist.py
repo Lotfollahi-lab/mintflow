@@ -345,7 +345,7 @@ class InFlowVarDist(nn.Module):
             if (cnt_backward%numsteps_accumgrad == 0) and (cnt_backward>0):
                 optim_training.step()
                 optim_training.zero_grad()
-                
+
 
             if flag_tensorboardsave:
                 with torch.no_grad():
@@ -361,6 +361,8 @@ class InFlowVarDist(nn.Module):
                         )
 
             itrcount_wandb += 1
+
+        return itrcount_wandb
 
 
 
