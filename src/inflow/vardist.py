@@ -294,6 +294,75 @@ class InFlowVarDist(nn.Module):
 
         return itrcount_wandb
 
+    def train_imputer(
+        self,
+        dl: NeighborLoader,
+        prob_maskknowngenes: float,
+        t_num_steps: int,
+        ten_xy_absolute: torch.Tensor,
+        optim_training: torch.optim.Optimizer,
+        tensorboard_stepsize_save: int,
+        itrcount_wandbstep_input: int | None = None,
+        numsteps_accumgrad:int=10
+    ):
+        '''
+        One epoch of the training.
+        :param dl: pyg's neighborloader.
+        :param prob_maskknowngenes: probability of masking some known gene expressions (per-cell)
+            to define the self-supervised loss.
+        :param t_num_steps: the number of time-steps to be used by the NeuralODE module.
+        :param ten_xy_absolute: absoliute xy positions of all cells.
+        :param optim_training: the optimizer.
+        :param tensorboard_stepsize_save
+        :param itrcount_wandbstep_input
+        :param numsteps_accumgrad
+        :return:
+        '''
+        pass
+        if itrcount_wandbstep_input is not None:
+            itrcount_wandb = itrcount_wandbstep_input + 0
+        else:
+            itrcount_wandb = 0
+
+
+        cnt_backward = 0
+        optim_training.zero_grad()
+        for batch in tqdm(dl):
+            flag_tensorboardsave = (itrcount_wandb % tensorboard_stepsize_save == 0)
+            loss = 0.0
+            dict_q_sample = self.rsample(
+                batch=batch,
+                prob_maskknowngenes=prob_maskknowngenes,
+                ten_xy_absolute=ten_xy_absolute
+            )
+            if dict_q_sample['loss_imputex'] is not None:
+                loss = loss + (dict_q_sample['loss_imputex'].mean())/(numsteps_accumgrad+0.0)
+
+            if isinstance(loss, torch.Tensor):
+                loss.backward()
+                cnt_backward += 1
+
+            if (cnt_backward%numsteps_accumgrad == 0) and (cnt_backward>0):
+                optim_training.step()
+                optim_training.zero_grad()
+                print("optimstep was called.")
+
+            if flag_tensorboardsave:
+                with torch.no_grad():
+                    if dict_q_sample['loss_imputex'] is not None:
+                        wandb.log(
+                            {"Loss/loss_imputex": dict_q_sample['loss_imputex'].mean()},
+                            step=itrcount_wandb
+                        )
+                    else:
+                        wandb.log(
+                            {"Loss/loss_imputex": torch.nan},
+                            step=itrcount_wandb
+                        )
+
+            itrcount_wandb += 1
+
+
 
 
     @torch.no_grad()
