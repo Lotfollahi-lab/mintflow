@@ -345,7 +345,7 @@ class InFlowVarDist(nn.Module):
             if (cnt_backward%numsteps_accumgrad == 0) and (cnt_backward>0):
                 optim_training.step()
                 optim_training.zero_grad()
-                print("optimstep was called.")
+                
 
             if flag_tensorboardsave:
                 with torch.no_grad():
