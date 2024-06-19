@@ -157,7 +157,8 @@ class ImputerAndDisentangler(nn.Module):
         )
         self.module_imputer = nn.Sequential(
             nn.LeakyReLU(),
-            nn.Linear(dim_tf1, kwargs_em1['num_genes'])
+            nn.Linear(dim_tf1, kwargs_em1['num_genes']),
+            nn.ReLU()
         )
         dim_em2 = kwargs_em2['dim_embedding'] + kwargs_em2['dim_em_iscentralnode'] + kwargs_em2['dim_em_blankorobserved']
         dim_tf2 = dim_em2 + dim_tf1  # p.s. pg6
