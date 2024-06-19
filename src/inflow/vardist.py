@@ -205,7 +205,8 @@ class InFlowVarDist(nn.Module):
             ten_xy_absolute:torch.Tensor,
             optim_training:torch.optim.Optimizer,
             tensorboard_stepsize_save:int,
-            itrcount_wandbstep_input:int|None=None
+            itrcount_wandbstep_input:int|None=None,
+            list_flag_elboloss_imputationloss=[True, True]
     ):
         '''
         One epoch of the training.
@@ -215,6 +216,9 @@ class InFlowVarDist(nn.Module):
         :param t_num_steps: the number of time-steps to be used by the NeuralODE module.
         :param ten_xy_absolute: absoliute xy positions of all cells.
         :param optim_training: the optimizer.
+        :param tensorboard_stepsize_save
+        :param itrcount_wandbstep_input
+        :param list_flag_elboloss_imputationloss
         :return:
         '''
 
@@ -242,27 +246,30 @@ class InFlowVarDist(nn.Module):
 
             # make the loss
             loss = 0.0
-            for k in dict_logp.keys():
-                loss = loss - dict_logp[k].sum(1).mean()
-                if flag_tensorboardsave:
-                    with torch.no_grad():
-                        wandb.log(
-                            {"Loss/logprob_P/{}".format(k): torch.mean(- dict_logp[k].sum(1).mean())},
-                            step=itrcount_wandb
-                        )
+            if list_flag_elboloss_imputationloss[0]:
+                for k in dict_logp.keys():
+                    loss = loss - dict_logp[k].sum(1).mean()
+                    if flag_tensorboardsave:
+                        with torch.no_grad():
+                            wandb.log(
+                                {"Loss/logprob_P/{}".format(k): torch.mean(- dict_logp[k].sum(1).mean())},
+                                step=itrcount_wandb
+                            )
 
-            for k in dict_logq.keys():
-                loss = loss + dict_logq[k].sum(1).mean()
-                if flag_tensorboardsave:
-                    with torch.no_grad():
-                        wandb.log(
-                            {"Loss/logprob_Q/{}".format(k): torch.mean(+ dict_logq[k].sum(1).mean())},
-                            step=itrcount_wandb
-                        )
+            if list_flag_elboloss_imputationloss[0]:
+                for k in dict_logq.keys():
+                    loss = loss + dict_logq[k].sum(1).mean()
+                    if flag_tensorboardsave:
+                        with torch.no_grad():
+                            wandb.log(
+                                {"Loss/logprob_Q/{}".format(k): torch.mean(+ dict_logq[k].sum(1).mean())},
+                                step=itrcount_wandb
+                            )
 
             # add the imputation loss
-            if dict_q_sample['loss_imputex'] is not None:
-                loss = loss + dict_q_sample['loss_imputex'].mean()
+            if list_flag_elboloss_imputationloss[1]:
+                if dict_q_sample['loss_imputex'] is not None:
+                    loss = loss + dict_q_sample['loss_imputex'].mean()
 
             if flag_tensorboardsave:
                 with torch.no_grad():
