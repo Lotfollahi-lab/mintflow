@@ -58,9 +58,11 @@ class RandomGeometricTfm:
         H_10 = self.rng_10[0] + (self.rng_10[1] - self.rng_10[0]) * np.random.rand()
         H_11 = self.rng_11[0] + (self.rng_11[1] - self.rng_11[0]) * np.random.rand()
         H = torch.tensor(
-            [[H_00, H_01, 0.0], [H_10, H_11, 0.0], [0.0,  0.0, 1.0]]
+            [[H_00, H_01, 0.0], [H_10, H_11, 0.0], [0.0,  0.0, 1.0]],
+            device=ten_xy.device,
+            dtype=ten_xy.dtype
         ).to(ten_xy.device)  # [3,3]
-
+        
         ten_xy_extended = torch.cat(
             [ten_xy, torch.ones(size=[ten_xy.size()[0], 1], dtype=ten_xy.dtype, device=ten_xy.device)],
             1
