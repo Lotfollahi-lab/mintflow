@@ -53,6 +53,15 @@ class RandomGeometricTfm:
         if np.random.rand() > self.prob_applytfm:
             return ten_xy + 0.0  # no transformation
 
+        # H_rotation
+        theta_rot = np.random.rand() * 2.0 * np.pi
+        H_rotation = torch.tensor(
+            [[np.cos(theta_rot), -np.sin(theta_rot), 0.0], [np.sin(theta_rot), np.cos(theta_rot), 0.0], [0.0,  0.0, 1.0]],
+            device=ten_xy.device,
+            dtype=ten_xy.dtype
+        ).to(ten_xy.device)  # [3,3]
+
+
         H_00 = self.rng_00[0] + (self.rng_00[1] - self.rng_00[0]) * np.random.rand()
         H_01 = self.rng_01[0] + (self.rng_01[1] - self.rng_01[0]) * np.random.rand()
         H_10 = self.rng_10[0] + (self.rng_10[1] - self.rng_10[0]) * np.random.rand()
@@ -68,10 +77,13 @@ class RandomGeometricTfm:
             1
         ).T  # [3, N]
 
-        output = torch.matmul(H, ten_xy_extended)  # [3, N]
+        output = torch.matmul(
+            torch.matmul(H, H_rotation),
+            ten_xy_extended
+        )  # [3, N]
         output = output[0:2, :] / output[2,:].unsqueeze(0)  # [2, N]
         output = output.T + 0.0  # [N, 2]
-        
+
         return output
 
 

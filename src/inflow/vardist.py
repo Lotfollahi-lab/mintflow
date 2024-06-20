@@ -324,10 +324,10 @@ class InFlowVarDist(nn.Module):
         # make the affine xy augmenter
         tfm_affinexy = utils_imputer.RandomGeometricTfm(
             prob_applytfm=prob_applytfm_affinexy,
-            rng_00=[0.1, 2.0],
-            rng_01=[0.1, 2.0],
-            rng_10=[0.1, 2.0],
-            rng_11=[0.1, 2.0]
+            rng_00=[1.0, 2.0],
+            rng_01=[1.0, 2.0],
+            rng_10=[1.0, 2.0],
+            rng_11=[1.0, 2.0]
         )  # TODO: maybe tune the ranges?
 
         if itrcount_wandbstep_input is not None:
