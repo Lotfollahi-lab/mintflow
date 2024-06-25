@@ -150,7 +150,7 @@ class InFlowGenerativeModel(nn.Module):
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
             scale=torch.tensor([1.0])
         ).sample().to(device) #[num_cell, dim_s]
-        print("Reached here 4"); assert False
+        print("Reached here 4")#passed; assert False
         s_in = probutils.ExtenededNormal(
             loc=self.module_theta_aggr.evaluate_layered(
                 x=s_out,
