@@ -57,23 +57,21 @@ class GrModuleWithLayeredEval(nn.Module):
             - ...
         :return:
         '''
-        print("Reached here 0"); assert False
+        #passed print("Reached here 0"); assert False
         dl = pyg.loader.NeighborLoader(
             pyg.data.Data(x=(x+0.0).to('cpu'), edge_index=copy.copy(edge_index).to("cpu")),
             **{**{'shuffle':False}, **kwargs_dl}
         )
-        print("Reached here 1"); assert False
+        print("x.shape = {}".format(x.shape))
+        # ----> NOT PASSEdprint("Reached here xxx"); assert False
         output = x+0.0 #the final output (updated layer by layer)
         for mod in self.list_modules:
-            print("Reached here 2"); assert False
             tmp_dict_n_to_netout = {}
             for batch in dl:
-                print("Reached here 3"); assert False
                 netout = mod(
                     output[batch.n_id.tolist()].to(x.device),
                     batch.edge_index.to(x.device)
                 )[:batch.batch_size] #[batch_size, D]
-                print("Reached here 4"); assert False
                 for n_local, n_global in enumerate(batch.input_id.tolist()):
                     tmp_dict_n_to_netout[n_global] = netout[n_local]
             assert(
