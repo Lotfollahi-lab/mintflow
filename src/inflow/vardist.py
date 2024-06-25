@@ -9,7 +9,8 @@ from .modules.disentonly import Disentangler
 from .modules.cond4flow import Cond4FlowVarphi0
 from . import probutils
 from . import utils_imputer
-from tqdm.auto import tqdm
+#from tqdm.auto import tqdm
+from tqdm.notebook import tqdm, trange
 import wandb
 
 
