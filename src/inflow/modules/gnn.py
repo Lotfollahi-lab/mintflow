@@ -58,11 +58,12 @@ class GrModuleWithLayeredEval(nn.Module):
         :return:
         '''
         #passed print("Reached here 0"); assert False
+        print("x.shape = {}".format(x.shape))
         dl = pyg.loader.NeighborLoader(
             pyg.data.Data(x=(x+0.0).to('cpu'), edge_index=copy.copy(edge_index).to("cpu")),
             **{**{'shuffle':False}, **kwargs_dl}
         )
-        print("x.shape = {}".format(x.shape))
+
         # ----> NOT PASSEdprint("Reached here xxx"); assert False
         output = x+0.0 #the final output (updated layer by layer)
         for mod in self.list_modules:
