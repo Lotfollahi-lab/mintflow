@@ -405,7 +405,9 @@ class InFlowVarDist(nn.Module):
             'mu_sout':{},
             'mu_z':{}
         }  # TODO: add other variables.
-        for batch in tqdm(dl):
+        cnt_tqdm = 1
+        for batch in tqdm(dl, desc='Epoch {}'.format(cnt_tqdm), position=0, leave=False):
+            cnt_tqdm += 1
             curr_dict_qsample = self.rsample(
                 batch=batch,
                 prob_maskknowngenes=0.0,
