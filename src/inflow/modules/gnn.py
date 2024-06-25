@@ -57,6 +57,7 @@ class GrModuleWithLayeredEval(nn.Module):
             - ...
         :return:
         '''
+        print("Reached here 0"); assert False
         dl = pyg.loader.NeighborLoader(
             pyg.data.Data(x=(x+0.0).to('cpu'), edge_index=copy.copy(edge_index).to("cpu")),
             **{**{'shuffle':False}, **kwargs_dl}
