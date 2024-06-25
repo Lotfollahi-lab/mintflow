@@ -210,6 +210,12 @@ class InFlowGenerativeModel(nn.Module):
         ).sample()  # [num_cells, num_genes] #TODO: make the theta parameter learnable.
 
         #generate x ===
+        if self.dict_sigma2s['sigma2_sum'] != 0.0:
+            raise Exception(
+                "Please set dict_sigma2s['sigma2_sum'] to 0"+
+                "otherwise the final generated x will have continuous values unless x_int and x_spl are continuous."
+            )
+
         x = probutils.ExtenededNormal(
             loc=x_int+x_spl,
             scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_sum'])),

@@ -411,7 +411,10 @@ class InFlowVarDist(nn.Module):
                 prob_maskknowngenes=0.0,
                 ten_xy_absolute=ten_xy_absolute
             )
-            np_out_imputer = curr_dict_qsample['ten_out_imputer'].detach().cpu().numpy()
+            if isinstance(curr_dict_qsample['ten_out_imputer'], torch.Tensor):
+                np_out_imputer = curr_dict_qsample['ten_out_imputer'].detach().cpu().numpy()
+            else:
+                np_out_imputer = None
             np_muxint = curr_dict_qsample['params_q_impanddisentgl']['muxint'].detach().cpu().numpy()
             np_muxspl = curr_dict_qsample['params_q_impanddisentgl']['muxspl'].detach().cpu().numpy()
             np_muxbar_int = curr_dict_qsample['param_q_xbarint'].detach().cpu().numpy()
@@ -420,7 +423,8 @@ class InFlowVarDist(nn.Module):
             np_mu_sout = curr_dict_qsample['param_q_cond4flow']['mu_sout'].detach().cpu().numpy()
             np_mu_z = curr_dict_qsample['param_q_cond4flow']['mu_z'].detach().cpu().numpy()
             for n_local, n_global in enumerate(batch.input_id.tolist()):
-                dict_var_to_dict_nglobal_to_value['output_imputer'][n_global] = np_out_imputer[n_local, :]
+                if np_out_imputer is not None:
+                    dict_var_to_dict_nglobal_to_value['output_imputer'][n_global] = np_out_imputer[n_local, :]
                 dict_var_to_dict_nglobal_to_value['muxint'][n_global] = np_muxint[n_local, :]
                 dict_var_to_dict_nglobal_to_value['muxspl'][n_global] = np_muxspl[n_local, :]
                 dict_var_to_dict_nglobal_to_value['muxbar_int'][n_global] = np_muxbar_int[n_local, :]
