@@ -132,11 +132,11 @@ class InFlowGenerativeModel(nn.Module):
             batch by batch, where each batch is determined by this argument.
         :return:
         '''
-        print("Reached here 1")
+        print("Reached here 1"); assert False
         assert(
             not pyg.utils.contains_self_loops(edge_index)
         )
-        print("Reached here 2")
+        print("Reached here 2"); assert False
         assert (
             torch.all(
                 torch.eq(
@@ -145,12 +145,12 @@ class InFlowGenerativeModel(nn.Module):
                 )
             )
         )
-        print("Reached here 3")
+        print("Reached here 3"); assert False
         s_out = Normal(
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
             scale=torch.tensor([1.0])
         ).sample().to(device) #[num_cell, dim_s]
-        print("Reached here 4")
+        print("Reached here 4"); assert False
         s_in = probutils.ExtenededNormal(
             loc=self.module_theta_aggr.evaluate_layered(
                 x=s_out,
@@ -160,7 +160,7 @@ class InFlowGenerativeModel(nn.Module):
             scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_aggr'])),
             flag_unweighted=True
         ).sample().to(device) #[num_cell, dim_s]
-        print("Reached here 5")
+        print("Reached here 5"); assert False
         # #TODO: add description of `evaluate_layered` with x and edge_index signatures.
         #TODO: assert the evalu_layered function and args.
         z = Normal(
