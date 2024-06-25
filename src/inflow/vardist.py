@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 from torch_geometric.loader import NeighborLoader
 from .generativemodel import InFlowGenerativeModel
-from .modules.impanddisentgl import  ImputerAndDisentangler
+from .modules.impanddisentgl import ImputerAndDisentangler
+from .modules.disentonly import Disentangler
 from .modules.cond4flow import Cond4FlowVarphi0
 from . import probutils
 from . import utils_imputer
@@ -20,6 +21,7 @@ class InFlowVarDist(nn.Module):
     def __init__(
             self,
             module_genmodel:InFlowGenerativeModel,
+            type_impanddisentgl,
             kwargs_impanddisentgl:dict,
             module_varphi_enc_int:nn.Module,
             module_varphi_enc_spl:nn.Module,
@@ -32,6 +34,7 @@ class InFlowVarDist(nn.Module):
             TODO: double-check: Important note: in synthetic setting two instances of the generative model are used
                 - the one used to generate the observations (not passed here).
                 - the one passed here, which has the same architecture to the prev but is has different params.
+        :param type_impanddisentgl: either 'disentonly.Disentangler' or `impanddisent.ImputerAndDisentangler`
         :param kwargs_impanddisentgl:
             To be used to instantiate `ImputerAndDisentangler`.
         :module_varphi_enc_int, module_varphi_enc_int: the encoder modules to map gene expression vectors to a
@@ -57,6 +60,7 @@ class InFlowVarDist(nn.Module):
         super(InFlowVarDist, self).__init__()
         # grab args ===
         self.module_genmodel = module_genmodel
+        self.type_impanddisentgl = type_impanddisentgl
         self.kwargs_impanddisentgl = kwargs_impanddisentgl
         self.module_varphi_enc_int = module_varphi_enc_int
         self.module_varphi_enc_spl = module_varphi_enc_spl
@@ -65,7 +69,7 @@ class InFlowVarDist(nn.Module):
         self._check_args()
 
         # make internals
-        self.module_impanddisentgl = ImputerAndDisentangler(**kwargs_impanddisentgl)
+        self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
         self.module_cond4flowvarphi0 = Cond4FlowVarphi0(**kwargs_cond4flowvarphi0)
 
     def rsample(self, batch, prob_maskknowngenes:float, ten_xy_absolute:torch.Tensor):
@@ -456,6 +460,9 @@ class InFlowVarDist(nn.Module):
                 set(self.dict_qname_to_scaleandunweighted[k].keys()) ==
                 {'scale', 'flag_unweighted'}
             )
+        assert(
+            self.type_impanddisentgl in [ImputerAndDisentangler, Disentangler]
+        )
 
 
 
