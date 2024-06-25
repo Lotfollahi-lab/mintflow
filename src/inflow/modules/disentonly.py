@@ -164,12 +164,14 @@ class Disentangler(nn.Module):
 
 
 
-    def forward(self, batch, ten_xy_absolute:torch.Tensor):
+    def forward(self, batch, prob_maskknowngenes:float, ten_xy_absolute:torch.Tensor):
         '''
         :param batch:
+        :param prob_maskknowngenes: must be zero for `Disentangler`, this arg is kept for consistency.
         :param ten_xy_absolute:
         :return:
         '''
+        assert(prob_maskknowngenes == 0.0)
         x_log1p = torch.log(
             1.0 + batch.x.to_dense()  # TODO: how to make sure that batch.x contains the count data ???
         ).to(ten_xy_absolute.device)
