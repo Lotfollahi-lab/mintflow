@@ -145,7 +145,7 @@ class InFlowGenerativeModel(nn.Module):
                 )
             )
         )
-        print("Reached here 3"); assert False
+        print("Reached here 3")#passed ; assert False
         s_out = Normal(
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
             scale=torch.tensor([1.0])
