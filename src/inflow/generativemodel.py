@@ -132,7 +132,7 @@ class InFlowGenerativeModel(nn.Module):
             batch by batch, where each batch is determined by this argument.
         :return:
         '''
-        print("Reached here 1"); assert False
+        print("Reached here 1")#passed ; assert False
         assert(
             not pyg.utils.contains_self_loops(edge_index)
         )
