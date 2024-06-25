@@ -441,10 +441,9 @@ class InFlowVarDist(nn.Module):
             if(
                 set(dict_var_to_dict_nglobal_to_value[k].keys()) != set(range(ten_xy_absolute.size()[0]))
             ):
-                print("Doesn't hold for {}, missing: \n{}".format(
-                    k,
-                    set(range(ten_xy_absolute.size()[0])) - set(dict_var_to_dict_nglobal_to_value[k].keys())
-                ))
+                assert (k == 'output_imputer')
+                assert (np_out_imputer is None)
+
             dict_varname_to_output[k] = np.stack(
                 [dict_var_to_dict_nglobal_to_value[k][n] for n in range(ten_xy_absolute.size()[0])],
                 0
