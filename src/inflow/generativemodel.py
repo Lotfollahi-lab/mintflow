@@ -94,11 +94,11 @@ class InFlowGenerativeModel(nn.Module):
 
         #make the theta parameters of NegBin intrinsic and NegBin spatial
         self.theta_negbin_int = torch.nn.Parameter(
-            0.2 * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
+            0.5 * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
             requires_grad=False
         ) #TODO: tune #TODO: maybe change it to trianable?
         self.theta_negbin_spl = torch.nn.Parameter(
-            0.2 * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
+            0.5 * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
             requires_grad=False
         ) #TODO: tune #TODO: maybe change it to trianable?
 
