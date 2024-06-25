@@ -136,7 +136,7 @@ class InFlowGenerativeModel(nn.Module):
         assert(
             not pyg.utils.contains_self_loops(edge_index)
         )
-        print("Reached here 2"); assert False
+        print("Reached here 2")#passed ; assert False
         assert (
             torch.all(
                 torch.eq(
