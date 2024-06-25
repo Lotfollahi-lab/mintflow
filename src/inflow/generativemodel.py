@@ -132,11 +132,9 @@ class InFlowGenerativeModel(nn.Module):
             batch by batch, where each batch is determined by this argument.
         :return:
         '''
-        print("Reached here 1")#passed ; assert False
         assert(
             not pyg.utils.contains_self_loops(edge_index)
         )
-        print("Reached here 2")#passed ; assert False
         assert (
             torch.all(
                 torch.eq(
@@ -145,12 +143,10 @@ class InFlowGenerativeModel(nn.Module):
                 )
             )
         )
-        print("Reached here 3")#passed ; assert False
         s_out = Normal(
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
             scale=torch.tensor([1.0])
         ).sample().to(device) #[num_cell, dim_s]
-        print("Reached here 4")#passed; assert False
         s_in = probutils.ExtenededNormal(
             loc=self.module_theta_aggr.evaluate_layered(
                 x=s_out,
@@ -160,14 +156,13 @@ class InFlowGenerativeModel(nn.Module):
             scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_aggr'])),
             flag_unweighted=True
         ).sample().to(device) #[num_cell, dim_s]
-        print("Reached here 5"); assert False
+        # ---> NOT PASSED print("Reached here xxx"); assert False
         # #TODO: add description of `evaluate_layered` with x and edge_index signatures.
         #TODO: assert the evalu_layered function and args.
         z = Normal(
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
             scale=torch.tensor([1.0])
         ).sample().to(device)  # [num_cell, dim_z]
-        print("Reached here 6")
         '''
         recall the output from neuralODE module is as follows
         - output[0]: is the t_range.
