@@ -23,10 +23,10 @@ Python installed, we recommend installing [Mambaforge](https://github.com/conda-
 There are several alternative options to install celldino:
 
 <!--
-1) Install the latest release of `celldino` from `PyPI <https://pypi.org/project/celldino/>`_:
+1) Install the latest release of `inflow` from `PyPI <https://pypi.org/project/celldino/>`_:
 
 ```bash
-pip install celldino
+pip install inflow
 ```
 -->
 
