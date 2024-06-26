@@ -10,6 +10,7 @@ from scvi.distributions import ZeroInflatedNegativeBinomial
 from . import utils
 from . import probutils
 from .modules import mlp
+from . import zs_samplers
 
 
 class DummyModule(nn.Module):
@@ -24,6 +25,8 @@ class InFlowGenerativeModel(nn.Module):
             num_cells,
             dict_varname_to_dim,
             dict_sigma2s,
+            module_z_sampler: zs_samplers.ZSSampler,
+            module_s_sampler: zs_samplers.ZSSampler,
             type_theta_aggr, kwargs_theta_aggr,
             type_moduleflow, kwargs_moduleflow,
             type_w_dec, kwargs_w_dec,
@@ -48,6 +51,8 @@ class InFlowGenerativeModel(nn.Module):
         self.num_cells = num_cells
         self.dict_varname_to_dim = dict_varname_to_dim
         self.dict_sigma2s = dict_sigma2s
+        self.module_z_sampler = module_z_sampler
+        self.module_s_sampler = module_s_sampler
         self.kwargs_negbin_int, self.kwargs_negbin_spl = kwargs_negbin_int, kwargs_negbin_spl
         #check args ===
         assert(
@@ -143,10 +148,16 @@ class InFlowGenerativeModel(nn.Module):
                 )
             )
         )
+        s_out = self.module_s_sampler.gen_zs(
+            N=self.num_cells,
+            D=self.dict_varname_to_dim['s']
+        ).to(device)  # [num_cell, dim_s]
+        '''
         s_out = Normal(
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
             scale=torch.tensor([1.0])
-        ).sample().to(device) #[num_cell, dim_s]
+        ).sample().to(device) # [num_cell, dim_s]
+        '''
         s_in = probutils.ExtenededNormal(
             loc=self.module_theta_aggr.evaluate_layered(
                 x=s_out,
@@ -155,14 +166,23 @@ class InFlowGenerativeModel(nn.Module):
             ),
             scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_aggr'])),
             flag_unweighted=True
-        ).sample().to(device) #[num_cell, dim_s]
-        # ---> NOT PASSED print("Reached here xxx"); assert False
+        ).sample().to(device) # [num_cell, dim_s]
         # #TODO: add description of `evaluate_layered` with x and edge_index signatures.
         #TODO: assert the evalu_layered function and args.
+
+        z = self.module_z_sampler.gen_zs(
+            N=self.num_cells,
+            D=self.dict_varname_to_dim['z']
+        ).to(device)  # [num_cell, dim_z]
+        
+        '''
         z = Normal(
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
             scale=torch.tensor([1.0])
         ).sample().to(device)  # [num_cell, dim_z]
+        '''
+
+
         '''
         recall the output from neuralODE module is as follows
         - output[0]: is the t_range.
@@ -292,9 +312,7 @@ class InFlowGenerativeModel(nn.Module):
         )  # [b, dim_s]
 
 
-        print(
 
-        )
         # x_int
         logp_x_int = ZeroInflatedNegativeBinomial(
             **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]),
