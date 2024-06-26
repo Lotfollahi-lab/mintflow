@@ -126,7 +126,8 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             ten_manually_masked = (~ten_masked_c1) & (~a)
 
             #mask xe
-            xe[~a, :] = xe[~a, :] * 0
+            if torch.any(~a):
+                xe[~a, :] = xe[~a, :] * 0
 
         em_final = torch.cat(
             [xe+pe, em_iscentralnode, em_blankorobserved],
