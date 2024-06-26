@@ -174,7 +174,7 @@ class InFlowGenerativeModel(nn.Module):
             N=self.num_cells,
             D=self.dict_varname_to_dim['z']
         ).to(device)  # [num_cell, dim_z]
-        
+
         '''
         z = Normal(
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
