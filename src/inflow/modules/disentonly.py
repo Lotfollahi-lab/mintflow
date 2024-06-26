@@ -83,7 +83,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
         x = torch.log(
             1.0 + batch.x.to_dense()
         ).to(ten_xy_absolute.device)
-        ten_initmask = torch.tensor([True]*len(batch.y.tolist()))
+        ten_initmask = torch.tensor([False]*len(batch.y.tolist()))
            # no imputation now --> no unobserved expvect. (batch.y == MaskLabel.UNKNOWN_TEST.value)
         with torch.no_grad():
             x[ten_initmask, :] = x[ten_initmask, :] * 0  # to mask expressions kept for testing.
