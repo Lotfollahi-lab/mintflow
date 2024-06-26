@@ -86,10 +86,12 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
         ten_initmask = torch.tensor([False]*len(batch.y.tolist()))
            # no imputation now --> no unobserved expvect. (batch.y == MaskLabel.UNKNOWN_TEST.value)
         with torch.no_grad():
-            x[ten_initmask, :] = x[ten_initmask, :] * 0  # to mask expressions kept for testing.
+            if torch.any(ten_initmask):
+                x[ten_initmask, :] = x[ten_initmask, :] * 0  # to mask expressions kept for testing.
         xe = self.encoder_x(x)  # [N, dim_embedding]
         with torch.no_grad():
-            xe[ten_initmask, :] = xe[ten_initmask, :] * 0  # to mask expressions kept for testing.
+            if torch.any(ten_initmask):
+                xe[ten_initmask, :] = xe[ten_initmask, :] * 0  # to mask expressions kept for testing.
 
         with torch.no_grad():
             pe = self._position_encoding(
