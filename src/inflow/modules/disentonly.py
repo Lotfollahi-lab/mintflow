@@ -121,6 +121,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
                 a[a == True] = a[a == True] & torch.tensor(
                     [np.random.rand() > prob_maskknowngenes for _ in range(torch.sum(a == True).tolist())]
                 ).to(ten_xy_absolute.device)
+            assert (torch.all(a))  # assert all expvects are available.
             em_blankorobserved = self.embedding_blankorobserved(
                 a+0
             )  # [N, 10]
@@ -130,17 +131,19 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             if torch.any(~a):
                 xe[~a, :] = xe[~a, :] * 0
 
+        '''
         print("batch.x.shape = {}".format(batch.x.shape))
         print("batch.y.shape = {}".format(batch.y.shape))
         print("xe.shape = {}".format(xe.shape))
         print("pe.shape = {}".format(pe.shape))
         print("em_iscentralnode.shape = {}".format(em_iscentralnode.shape))
         print("em_blankorobserved.shape = {}".format(em_blankorobserved.shape))
+        '''
         em_final = torch.cat(
             [xe+pe, em_iscentralnode, em_blankorobserved],
             1
         )
-        assert False
+
         return em_final, ten_manually_masked
 
 
