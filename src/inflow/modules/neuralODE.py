@@ -59,15 +59,9 @@ class MLP(torch.nn.Module):
 
     def forward(self, x):
         dim = self.dim
-        print(
-            x[:, 0:dim // 2].shape
-        )
-        print(
-            x[:, -1].unsqueeze(0).shape
-        )
         output_z = self.net_z(
             torch.cat(
-                [x[:, 0:dim//2], x[:,-1].unsqueeze(0)],
+                [x[:, 0:dim//2], x[:,-1].unsqueeze(1)],
                 1
             )
         )  # [N, dim//2]
