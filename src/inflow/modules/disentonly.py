@@ -117,7 +117,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
               # no imputation now --> no unobserved expvect. (batch.y == MaskLabel.UNKNOWN_TEST.value).to(ten_xy_absolute.device)
             a = ~ten_masked_c1  # a; available expression vectors.
             a : torch.Tensor
-            if torch.any(a==True) and (prob_maskknowngenes > 0.0):
+            if torch.any(a) and (prob_maskknowngenes > 0.0):
                 a[a == True] = a[a == True] & torch.tensor(
                     [np.random.rand() > prob_maskknowngenes for _ in range(torch.sum(a == True).tolist())]
                 ).to(ten_xy_absolute.device)
@@ -130,6 +130,10 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             if torch.any(~a):
                 xe[~a, :] = xe[~a, :] * 0
 
+        print("xe.shape = {}".format(xe.shape))
+        print("pe.shape = {}".format(pe.shape))
+        print("em_iscentralnode.shape = {}".format(em_iscentralnode.shape))
+        print("em_blankorobserved.shape = {}".format(em_blankorobserved.shape))
         em_final = torch.cat(
             [xe+pe, em_iscentralnode, em_blankorobserved],
             1
