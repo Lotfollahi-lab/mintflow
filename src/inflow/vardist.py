@@ -325,6 +325,16 @@ class InFlowVarDist(nn.Module):
                                 step=itrcount_wandb
                             )
 
+            # wandblog other measures ===
+            if flag_tensorboardsave:
+                with torch.no_grad():
+                    wandb.log(
+                        {"OtherProbes/pred_x_spl_over_pred_x_int":
+                             torch.sum(dict_q_sample['x_spl'])/torch.sum(dict_q_sample['x_int'])
+                        },
+                        step=itrcount_wandb
+                    )
+
 
 
 
