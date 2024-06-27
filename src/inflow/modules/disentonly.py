@@ -130,6 +130,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             if torch.any(~a):
                 xe[~a, :] = xe[~a, :] * 0
 
+        print("batch.x.shape = {}".format(batch.x.shape))
         print("batch.y.shape = {}".format(batch.y.shape))
         print("xe.shape = {}".format(xe.shape))
         print("pe.shape = {}".format(pe.shape))
