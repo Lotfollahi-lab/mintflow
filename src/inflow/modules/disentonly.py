@@ -113,7 +113,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             In both cases the imputer must not be able to distinguish between the two.
             But the imputation loss is only defined on case 2.
             '''
-            ten_masked_c1 = torch.tensor([False]*len(batch.y.tolist())).unsqueeze(0).to(ten_xy_absolute.device)
+            ten_masked_c1 = torch.tensor([False]*len(batch.y.tolist())).to(ten_xy_absolute.device)
               # no imputation now --> no unobserved expvect. (batch.y == MaskLabel.UNKNOWN_TEST.value).to(ten_xy_absolute.device)
             a = ~ten_masked_c1  # a; available expression vectors.
             a : torch.Tensor
@@ -140,6 +140,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             [xe+pe, em_iscentralnode, em_blankorobserved],
             1
         )
+        assert False
         return em_final, ten_manually_masked
 
 
