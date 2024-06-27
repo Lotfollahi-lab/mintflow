@@ -303,9 +303,9 @@ class InFlowVarDist(nn.Module):
                 for c in set_celltype_minibatch:
                     if batch.y.tolist().count(c) >= 2:  # if there are atleast two cells of that type.
                         z_incelltype = dict_q_sample['z'][batch.y == c, :]  # [n, dimz]
-                        pairwise_dist = torch.norm(
-                            z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1),
-                            dim=2
+                        pairwise_dist = torch.sum(
+                            (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)) * (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)),
+                            2
                         )  # [n, n]
                         assert (len(pairwise_dist.size()) == 2)
                         loss_zzcloseness += torch.sum(
