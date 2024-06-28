@@ -30,7 +30,8 @@ class InFlowGenerativeModel(nn.Module):
             type_theta_aggr, kwargs_theta_aggr,
             type_moduleflow, kwargs_moduleflow,
             type_w_dec, kwargs_w_dec,
-            kwargs_negbin_int, kwargs_negbin_spl
+            kwargs_negbin_int, kwargs_negbin_spl,
+            scalar_thetanegbin_int:float, scalar_thetanegbin_spl:float
     ):
         '''
 
@@ -44,7 +45,10 @@ class InFlowGenerativeModel(nn.Module):
             - sigma2_neuralODE
             - sigma2_decoder
             - sigma2_sum
+        :param scalar_thetanegbin_int, scalar_thetanegbin_spl: the negbin theta parameters for intrinsic/spatial
+            Now only scalar theta (i.e. fixed over different genes) is supported.
         :param TODO:complete
+
         '''
         super(InFlowGenerativeModel, self).__init__()
         #grab args ===
@@ -54,12 +58,10 @@ class InFlowGenerativeModel(nn.Module):
         self.module_z_sampler = module_z_sampler
         self.module_s_sampler = module_s_sampler
         self.kwargs_negbin_int, self.kwargs_negbin_spl = kwargs_negbin_int, kwargs_negbin_spl
-        #check args ===
-        assert(
-            self.dict_sigma2s.keys() == {
-                'sigma2_aggr', 'sigma2_neuralODE', 'sigma2_decoder', 'sigma2_sum'
-            }
-        )
+        self.scalar_thetanegbin_int, self.scalar_thetanegbin_spl = scalar_thetanegbin_int, scalar_thetanegbin_spl
+
+
+
         #make internals ===
         self.module_theta_aggr = type_theta_aggr(
             **{**{
@@ -99,11 +101,11 @@ class InFlowGenerativeModel(nn.Module):
 
         #make the theta parameters of NegBin intrinsic and NegBin spatial
         self.theta_negbin_int = torch.nn.Parameter(
-            0.5 * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
+            self.scalar_thetanegbin_int * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
             requires_grad=False
         ) #TODO: tune #TODO: maybe change it to trianable?
         self.theta_negbin_spl = torch.nn.Parameter(
-            0.5 * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
+            self.scalar_thetanegbin_spl * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
             requires_grad=False
         ) #TODO: tune #TODO: maybe change it to trianable?
 
@@ -114,7 +116,21 @@ class InFlowGenerativeModel(nn.Module):
         Check args and raise appropriate error.
         :return:
         '''
-        pass
+        assert (
+            self.dict_sigma2s.keys() == {
+                'sigma2_aggr', 'sigma2_neuralODE', 'sigma2_decoder', 'sigma2_sum'
+            }
+        )
+        assert (
+            isinstance(
+                self.scalar_thetanegbin_int, float
+            )
+        )
+        assert (
+            isinstance(
+                self.scalar_thetanegbin_spl, float
+            )
+        )
         if isinstance(self.module_w_dec_int, mlp.SimpleMLP):
             if not self.module_w_dec_int.flag_endwithReLU:
                 raise Exception(
