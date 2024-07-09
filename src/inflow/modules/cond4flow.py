@@ -157,12 +157,12 @@ class Cond4FlowVarphi0(nn.Module):
         num_celltypes = self.kwargs_genmodel['dict_varname_to_dim']['cell-types']
         self.module_head_mus_sin = nn.Sequential(
             nn.LeakyReLU(),
-            nn.Linear(dim_tfspl + (num_celltypes if(self.kwargs_genmodel['flag_use_spl_u']) else 0), dim_s)
-        )  # TODO: double-check the way of conditioning on u_s
-        self.module_head_mus_sout = nn.Sequential(
-            nn.LeakyReLU(),
             nn.Linear(dim_tfspl, dim_s)
         )  # TODO: double-check if it should be conditioned on u_s
+        self.module_head_mus_sout = nn.Sequential(
+            nn.LeakyReLU(),
+            nn.Linear(dim_tfspl + (num_celltypes if(self.kwargs_genmodel['flag_use_spl_u']) else 0), dim_s)
+        )  # TODO: double-check the way of conditioning on u_s
 
     def forward(self, ten_xbar_int, batch, ten_xbar_spl, ten_xy_absolute: torch.Tensor):
         '''
