@@ -305,7 +305,9 @@ class InFlowVarDist(nn.Module):
                             )
 
             # add the z-z closeness loss ===
+            num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
             if coef_loss_zzcloseness > 0.0:
+                assert False
                 loss_zzcloseness = 0.0
                 set_celltype_minibatch = set(batch.y.tolist())
                 for c in set_celltype_minibatch:
