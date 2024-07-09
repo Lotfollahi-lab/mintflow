@@ -26,8 +26,6 @@ class InFlowGenerativeModel(nn.Module):
             num_cells,
             dict_varname_to_dim,
             dict_sigma2s,
-            module_z_sampler: zs_samplers.ZSSampler,
-            module_s_sampler: zs_samplers.ZSSampler,
             type_theta_aggr, kwargs_theta_aggr,
             type_moduleflow, kwargs_moduleflow,
             type_w_dec, kwargs_w_dec,
@@ -64,8 +62,8 @@ class InFlowGenerativeModel(nn.Module):
         self.num_cells = num_cells
         self.dict_varname_to_dim = dict_varname_to_dim
         self.dict_sigma2s = dict_sigma2s
-        self.module_z_sampler = module_z_sampler
-        self.module_s_sampler = module_s_sampler
+        # self.module_z_sampler = module_z_sampler
+        # self.module_s_sampler = module_s_sampler
         self.kwargs_negbin_int, self.kwargs_negbin_spl = kwargs_negbin_int, kwargs_negbin_spl
         self.scalar_thetanegbin_int, self.scalar_thetanegbin_spl = scalar_thetanegbin_int, scalar_thetanegbin_spl
         self.flag_use_int_u, self.module_int_mu_u, self.module_int_cov_u = flag_use_int_u, module_int_mu_u, module_int_cov_u
@@ -141,7 +139,7 @@ class InFlowGenerativeModel(nn.Module):
             assert (isinstance(self.module_spl_mu_u,  nn.Module))
             assert (isinstance(self.module_spl_cov_u, mlp.SimpleMLPandExp))
 
-        
+
 
         assert (
             self.dict_sigma2s.keys() == {
@@ -171,7 +169,16 @@ class InFlowGenerativeModel(nn.Module):
 
 
     @torch.no_grad()
-    def sample(self, edge_index, t_num_steps:int, device, batch_size_feedforward, kwargs_dl_neighbourloader):
+    def sample(
+        self,
+        edge_index,
+        t_num_steps:int,
+        device,
+        batch_size_feedforward,
+        kwargs_dl_neighbourloader,
+        ten_u_int : torch.Tensor | None,
+        ten_u_spl : torch.Tensor | None
+    ):
         '''
         Generates a single sample from all variables.
         :param edge_index: the edges of the neighbourhood graph, must not contain self-loops.
@@ -191,10 +198,25 @@ class InFlowGenerativeModel(nn.Module):
                 )
             )
         )
+
+        # TODO:HERE
+        if not self.flag_use_spl_u:
+            s_out = Normal(
+                loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
+                scale=torch.tensor([1.0])
+            ).sample().to(device)  # [num_cell, dim_s]
+        else:
+            s_out = Normal(
+                loc=self.module_spl_mu_u(ten_u_spl),
+                scale=self.module_spl_cov_u(ten_u_spl).sqrt()
+            ).sample().to(device)  # [num_cell, dim_s]
+
+        '''
         s_out = self.module_s_sampler.gen_zs(
             N=self.num_cells,
             D=self.dict_varname_to_dim['s']
         ).to(device)  # [num_cell, dim_s]
+        '''
         '''
         s_out = Normal(
             loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
@@ -213,10 +235,24 @@ class InFlowGenerativeModel(nn.Module):
         # #TODO: add description of `evaluate_layered` with x and edge_index signatures.
         #TODO: assert the evalu_layered function and args.
 
+
+        if not self.flag_use_int_u:
+            z = Normal(
+                loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
+                scale=torch.tensor([1.0])
+            ).sample().to(device)  # [num_cell, dim_z]
+        else:
+            z = Normal(
+                loc=self.module_int_mu_u(ten_u_int),
+                scale=self.module_int_cov_u(ten_u_int).sqrt()
+            ).sample().to(device)  # [num_cell, dim_z]
+
+        '''
         z = self.module_z_sampler.gen_zs(
             N=self.num_cells,
             D=self.dict_varname_to_dim['z']
         ).to(device)  # [num_cell, dim_z]
+        '''
 
         '''
         z = Normal(
@@ -286,6 +322,8 @@ class InFlowGenerativeModel(nn.Module):
         ).sample()  # [num_cells, num_genes]
 
         dict_toret = dict(
+            ten_u_int=ten_u_int,
+            ten_u_spl=ten_u_spl,
             s_out=s_out,
             s_in=s_in,
             z=z,
