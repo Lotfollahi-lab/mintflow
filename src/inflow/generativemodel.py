@@ -346,10 +346,16 @@ class InFlowGenerativeModel(nn.Module):
         device = dict_qsamples['z'].device
 
         # s_out
-        logp_s_out = Normal(
-            loc=torch.zeros([dict_qsamples['s_out'].size()[0], self.dict_varname_to_dim['s']]).to(device),
-            scale=torch.tensor([1.0]).to(device)
-        ).log_prob(dict_qsamples['s_out'])  # [num_cells, dim_s]
+        if not self.flag_use_spl_u:
+            logp_s_out = Normal(
+                loc=torch.zeros([dict_qsamples['s_out'].size()[0], self.dict_varname_to_dim['s']]).to(device),
+                scale=torch.tensor([1.0]).to(device)
+            ).log_prob(dict_qsamples['s_out'])  # [num_cells, dim_s]
+        else:
+            logp_s_out = Normal(
+                loc=self.module_spl_mu_u(dict_qsamples['ten_u_spl']),
+                scale=self.module_spl_cov_u(dict_qsamples['ten_u_spl']).sqrt()
+            ).log_prob(dict_qsamples['s_out'])  # [num_cell, dim_s]
 
         # s_in
         logp_s_in = probutils.ExtenededNormal(
@@ -362,10 +368,17 @@ class InFlowGenerativeModel(nn.Module):
         ).log_prob(dict_qsamples['s_in'][:batch.batch_size])  # [b, dim_s] TODO: what if all instances are included ???
 
         # z
-        logp_z = Normal(
-            loc=torch.zeros([dict_qsamples['z'].size()[0], self.dict_varname_to_dim['z']]).to(device),
-            scale=torch.tensor([1.0]).to(device)
-        ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
+        if not self.flag_use_int_u:
+            logp_z = Normal(
+                loc=torch.zeros([dict_qsamples['z'].size()[0], self.dict_varname_to_dim['z']]).to(device),
+                scale=torch.tensor([1.0]).to(device)
+            ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
+        else:
+            logp_z = Normal(
+                loc=self.module_int_mu_u(dict_qsamples['ten_u_int']),
+                scale=self.module_int_cov_u(dict_qsamples['ten_u_int']).sqrt()
+            ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
+
 
         # xbar_int, xbar_spl
         output_neuralODE = self.module_flow(
