@@ -128,6 +128,12 @@ class InFlowVarDist(nn.Module):
             flag_unweighted=self.dict_qname_to_scaleandunweighted['sout']['flag_unweighted']
         ).rsample()  # [N, dim_s]
 
+        #set ten_u_int and ten_u_spl ===
+        num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
+        ten_u_int = batch.y[:, 0:num_celltypes] if(self.module_genmodel.flag_use_int_u) else None
+        ten_u_spl = batch.y[:, num_celltypes::] if(self.module_genmodel.flag_use_spl_u) else None
+
+
         # ret
         return dict(
             params_q_impanddisentgl=params_q_impanddisentgl,
@@ -142,7 +148,9 @@ class InFlowVarDist(nn.Module):
             s_in=s_in,
             s_out=s_out,
             loss_imputex=params_q_impanddisentgl['loss_imputex'],
-            ten_out_imputer=params_q_impanddisentgl['ten_out_imputer']
+            ten_out_imputer=params_q_impanddisentgl['ten_out_imputer'],
+            ten_u_int=ten_u_int,
+            ten_u_spl=ten_u_spl
         )
 
     def log_prob(self, dict_retvalrsample):
