@@ -50,9 +50,9 @@ class InFlowGenerativeModel(nn.Module):
             Now only scalar theta (i.e. fixed over different genes) is supported.
         :param module_z_sampler: "only" to be used when generating data (in the `sample` function), and not used when computing the loglik.
         :param module_s_sampler: "only" to be used when generating data (in the `sample` function), and not used when computing the loglik.
-        :param lag_use_int_u, module_int_mu_u, module_int_cov_u: whether the u-label (with the notation of iVAE) is used for z, and modules to produce
+        :param flag_use_int_u, module_int_mu_u, module_int_cov_u: whether the u-label (with the notation of iVAE) is used for z, and modules to produce
             the mean and cov of p(z|u).
-        :param lag_use_spl_u, module_spl_mu_u, module_spl_cov_u: whether the u-label (with the notation of iVAE) is used for s_out, and modules to produce
+        :param flag_use_spl_u, module_spl_mu_u, module_spl_cov_u: whether the u-label (with the notation of iVAE) is used for s_out, and modules to produce
             the mean and cov of p(s_out|u).
         :param TODO:complete
 
@@ -129,15 +129,18 @@ class InFlowGenerativeModel(nn.Module):
             assert (self.module_int_mu_u  is None)
             assert (self.module_int_cov_u is None)
         else:
-            assert (isinstance(self.module_int_mu_u,  nn.Module))
+            assert (isinstance(self.module_int_mu_u,  mlp.SimpleMLP))
+            assert (self.module_int_mu_u.flag_endwithReLU == False)
             assert (isinstance(self.module_int_cov_u, mlp.SimpleMLPandExp))
 
         if not self.flag_use_spl_u:
             assert (self.module_spl_mu_u  is None)
             assert (self.module_spl_cov_u is None)
         else:
-            assert (isinstance(self.module_spl_mu_u,  nn.Module))
+            assert (isinstance(self.module_spl_mu_u,  mlp.SimpleMLP))
+            assert (self.module_spl_mu_u.flag_endwithReLU == False)
             assert (isinstance(self.module_spl_cov_u, mlp.SimpleMLPandExp))
+
 
 
 
@@ -198,8 +201,18 @@ class InFlowGenerativeModel(nn.Module):
                 )
             )
         )
+        if self.flag_use_int_u:
+            assert (ten_u_int is not None)
+            assert (isinstance(ten_u_int, torch.Tensor))
+        else:
+            assert (ten_u_int is None)
 
-        # TODO:HERE
+        if self.flag_use_spl_u:
+            assert (ten_u_spl is not None)
+            assert (isinstance(ten_u_spl, torch.Tensor))
+        else:
+            assert (ten_u_spl is None)
+        
         if not self.flag_use_spl_u:
             s_out = Normal(
                 loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
