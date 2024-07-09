@@ -76,14 +76,14 @@ class SubgraphEmbeddingCond4Flow(nn.Module):
         '''
         assert (ten_xy_absolute.size()[0] > ten_xbar_spl.size()[0])
         x = ten_xbar_spl.to(ten_xy_absolute.device)
-        ten_initmask = (batch.y == impanddisentgl.MaskLabel.UNKNOWN_TEST.value)
-        with torch.no_grad():
-            x[ten_initmask, :] = x[ten_initmask, :] * 0  # to mask expressions kept for testing.
-        xe = self.encoder_x_spl(x)  # [N, dim_embedding]
-        with torch.no_grad():
-            xe[ten_initmask, :] = xe[ten_initmask, :] * 0  # to mask expressions kept for testing.
+        ten_initmask = torch.tensor([False] * x.size()[0])
+        # (batch.y == impanddisentgl.MaskLabel.UNKNOWN_TEST.value)
 
-        with torch.no_grad():
+
+        xe = self.encoder_x_spl(x)  # [N, dim_embedding]
+
+
+        with (torch.no_grad()):
             pe = self._position_encoding(
                 batch=batch,
                 ten_xy_absolute=ten_xy_absolute
@@ -95,23 +95,25 @@ class SubgraphEmbeddingCond4Flow(nn.Module):
             ).detach()  # [N, 10]
 
             # define the masking token
-            '''
-            Here only UNKNOWN_TEST is masked.
-            '''
-            ten_masked_c1 = (batch.y == impanddisentgl.MaskLabel.UNKNOWN_TEST.value).to(ten_xy_absolute.device)
+
+
+
+            ten_masked_c1 = torch.tensor([False] * x.size()[0]).to(ten_xy_absolute.device)
+            # (batch.y == impanddisentgl.MaskLabel.UNKNOWN_TEST.value).to(ten_xy_absolute.device)
             a = ~ten_masked_c1  # a; available expression vectors.
             em_blankorobserved = self.embedding_blankorobserved(
                 a + 0
             )  # [N, 10]
 
-            # mask xe
-            xe[~a, :] = xe[~a, :] * 0
+
 
         em_final = torch.cat(
             [xe + pe, em_iscentralnode, em_blankorobserved],
             1
         )
         return em_final
+
+
 
 
 class Cond4FlowVarphi0(nn.Module):
