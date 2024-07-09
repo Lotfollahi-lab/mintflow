@@ -212,7 +212,7 @@ class InFlowGenerativeModel(nn.Module):
             assert (isinstance(ten_u_spl, torch.Tensor))
         else:
             assert (ten_u_spl is None)
-        
+
         if not self.flag_use_spl_u:
             s_out = Normal(
                 loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),

@@ -116,7 +116,7 @@ class SubgraphEmbeddingCond4Flow(nn.Module):
 
 class Cond4FlowVarphi0(nn.Module):
     def __init__(self, maxsize_subgraph:int, dim_s:int, kwargs_em_spl,
-                 kwargs_tformer_spl, type_module_xbartoz, kwargs_module_xbartoz):
+                 kwargs_tformer_spl, type_module_xbartoz, kwargs_module_xbartoz, kwargs_genmodel):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
         :param kwargs_em_spl:
@@ -124,9 +124,11 @@ class Cond4FlowVarphi0(nn.Module):
         :param kwargs_tformer_spl: other than `channels` and `input_size` which is determined by `maxsize_subgraph`
         :param type_module_xbartoz: type of the module that maps xbar_int to z. Can be, e.g., a MLP.
         :param kwargs_module_xbartoz: kwargs of the module that maps xbar_int to z.
+        :param kwargs_genmodel: so this module knows wheter to add cell-type/niche labels for z and s_out.
         '''
         super(Cond4FlowVarphi0, self).__init__()
         # self.sigma_sz = sigma_sz
+        self.kwargs_genmodel = kwargs_genmodel
         dim_tfspl = kwargs_em_spl['dim_embedding'] +\
                     kwargs_em_spl['dim_em_iscentralnode'] + kwargs_em_spl['dim_em_blankorobserved']
         # TODO: dim_tfspl is same as dim_s in the genrative model. It has to be somewhere checked.
@@ -143,21 +145,22 @@ class Cond4FlowVarphi0(nn.Module):
                 **kwargs_tformer_spl
             })
         )
-        self.module_xbarint_to_z = type_module_xbartoz(**kwargs_module_xbartoz)
+        self.module_xbarint_to_z = type_module_xbartoz(**kwargs_module_xbartoz)  # when passed in, either operates on xbar_int or both [xbar_int, u_z]
 
         # # infer dim_z
         # with torch.no_grad():
         #     dim_z = self.module_xbarint_to_z(torch.randn(1, kwargs_em_spl['dim_x'])).size()[1]
 
         # for linear head mu_s to be placed atop tf_spl
+        num_celltypes = self.kwargs_genmodel['dict_varname_to_dim']['cell-types']
         self.module_head_mus_sin = nn.Sequential(
             nn.LeakyReLU(),
-            nn.Linear(dim_tfspl, dim_s)
-        )
+            nn.Linear(dim_tfspl + (num_celltypes if(self.kwargs_genmodel['flag_use_spl_u']) else 0), dim_s)
+        )  # TODO: double-check the way of conditioning on u_s
         self.module_head_mus_sout = nn.Sequential(
             nn.LeakyReLU(),
             nn.Linear(dim_tfspl, dim_s)
-        )
+        )  # TODO: double-check if it should be conditioned on u_s
 
     def forward(self, ten_xbar_int, batch, ten_xbar_spl, ten_xy_absolute: torch.Tensor):
         '''
@@ -167,6 +170,14 @@ class Cond4FlowVarphi0(nn.Module):
         :param ten_xy_absolute:
         :return:
         '''
+        # get u_z and u_s_out
+        num_celltypes = self.kwargs_genmodel['dict_varname_to_dim']['cell-types']
+        assert (batch.y.size()[1] == 2*num_celltypes)
+
+        ten_uz = batch.y[:, 0:num_celltypes] if(self.kwargs_genmodel['flag_use_int_u']) else None
+        ten_us = batch.y[:, num_celltypes::] if(self.kwargs_genmodel['flag_use_spl_u']) else None
+
+
         in_tf = self.module_em_spl(
             batch=batch,
             ten_xbar_spl=ten_xbar_spl,
@@ -175,10 +186,27 @@ class Cond4FlowVarphi0(nn.Module):
         mu_sin = self.module_head_mus_sin(
             self.module_tf_spl_sin(in_tf.unsqueeze(0))[0,:,:]
         )  # [N, dim_s]
-        mu_sout = self.module_head_mus_sout(
-            self.module_tf_spl_sout(in_tf.unsqueeze(0))[0, :, :]
-        )  # [N, dim_s]
-        mu_z = self.module_xbarint_to_z(ten_xbar_int)  # [N, dim_z]
+
+        if ten_us is None:
+            mu_sout = self.module_head_mus_sout(
+                self.module_tf_spl_sout(in_tf.unsqueeze(0))[0, :, :]
+            )  # [N, dim_s]
+        else:
+            mu_sout = self.module_head_mus_sout(
+                torch.cat(
+                    [self.module_tf_spl_sout(in_tf.unsqueeze(0))[0, :, :], ten_us],
+                    1
+                )
+            )  # [N, dim_s]
+
+        if ten_uz is None:
+            mu_z = self.module_xbarint_to_z(ten_xbar_int)  # [N, dim_z]
+        else:
+            mu_z = self.module_xbarint_to_z(
+                torch.cat([ten_xbar_int, ten_uz], 1)
+            )  # [N, dim_z]
+
+
         sigma_sz = torch.ones(
             size=[mu_z.size()[1]+mu_sin.size()[1]],
             device=mu_sin.device
