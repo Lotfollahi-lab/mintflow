@@ -130,8 +130,8 @@ class InFlowVarDist(nn.Module):
 
         #set ten_u_int and ten_u_spl ===
         num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
-        ten_u_int = batch.y[:, 0:num_celltypes] if(self.module_genmodel.flag_use_int_u) else None
-        ten_u_spl = batch.y[:, num_celltypes::] if(self.module_genmodel.flag_use_spl_u) else None
+        ten_u_int = batch.y[:, 0:num_celltypes].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
+        ten_u_spl = batch.y[:, num_celltypes::].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_spl_u) else None
 
 
         # ret
