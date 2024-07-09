@@ -28,3 +28,22 @@ class SimpleMLP(torch.nn.Module):
         out = self.module(x)
         return out
 
+
+class SimpleMLPandExp(torch.nn.Module):
+    '''
+    MLP ending with .exp(), to be used in, e.g., covariance matrix which is essential for identfiability.
+    '''
+    def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool):
+        super(SimpleMLPandExp, self).__init__()
+        self.module_mlp = SimpleMLP(
+            dim_input=dim_input,
+            list_dim_hidden=list_dim_hidden,
+            dim_output=dim_output,
+            bias=bias,
+            flag_endwithReLU=False
+        )
+
+    def forward(self, x):
+        return self.module_mlp(x).exp()
+
+

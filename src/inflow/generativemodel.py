@@ -13,6 +13,7 @@ from .modules import mlp
 from . import zs_samplers
 
 
+
 class DummyModule(nn.Module):
     def __init__(self, dim_input, dim_output):
         super(DummyModule, self).__init__()
@@ -31,7 +32,9 @@ class InFlowGenerativeModel(nn.Module):
             type_moduleflow, kwargs_moduleflow,
             type_w_dec, kwargs_w_dec,
             kwargs_negbin_int, kwargs_negbin_spl,
-            scalar_thetanegbin_int:float, scalar_thetanegbin_spl:float
+            scalar_thetanegbin_int:float, scalar_thetanegbin_spl:float,
+            flag_use_int_u: bool, module_int_mu_u: nn.Module | None, module_int_cov_u: mlp.SimpleMLPandExp | None,
+            flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
     ):
         '''
 
@@ -47,6 +50,12 @@ class InFlowGenerativeModel(nn.Module):
             - sigma2_sum
         :param scalar_thetanegbin_int, scalar_thetanegbin_spl: the negbin theta parameters for intrinsic/spatial
             Now only scalar theta (i.e. fixed over different genes) is supported.
+        :param module_z_sampler: "only" to be used when generating data (in the `sample` function), and not used when computing the loglik.
+        :param module_s_sampler: "only" to be used when generating data (in the `sample` function), and not used when computing the loglik.
+        :param lag_use_int_u, module_int_mu_u, module_int_cov_u: whether the u-label (with the notation of iVAE) is used for z, and modules to produce
+            the mean and cov of p(z|u).
+        :param lag_use_spl_u, module_spl_mu_u, module_spl_cov_u: whether the u-label (with the notation of iVAE) is used for s_out, and modules to produce
+            the mean and cov of p(s_out|u).
         :param TODO:complete
 
         '''
@@ -59,7 +68,8 @@ class InFlowGenerativeModel(nn.Module):
         self.module_s_sampler = module_s_sampler
         self.kwargs_negbin_int, self.kwargs_negbin_spl = kwargs_negbin_int, kwargs_negbin_spl
         self.scalar_thetanegbin_int, self.scalar_thetanegbin_spl = scalar_thetanegbin_int, scalar_thetanegbin_spl
-
+        self.flag_use_int_u, self.module_int_mu_u, self.module_int_cov_u = flag_use_int_u, module_int_mu_u, module_int_cov_u
+        self.flag_use_spl_u, self.module_spl_mu_u, self.module_spl_cov_u = flag_use_spl_u, module_spl_mu_u, module_spl_cov_u
 
 
         #make internals ===
@@ -116,6 +126,23 @@ class InFlowGenerativeModel(nn.Module):
         Check args and raise appropriate error.
         :return:
         '''
+
+        if not self.flag_use_int_u:
+            assert (self.module_int_mu_u  is None)
+            assert (self.module_int_cov_u is None)
+        else:
+            assert (isinstance(self.module_int_mu_u,  nn.Module))
+            assert (isinstance(self.module_int_cov_u, mlp.SimpleMLPandExp))
+
+        if not self.flag_use_spl_u:
+            assert (self.module_spl_mu_u  is None)
+            assert (self.module_spl_cov_u is None)
+        else:
+            assert (isinstance(self.module_spl_mu_u,  nn.Module))
+            assert (isinstance(self.module_spl_cov_u, mlp.SimpleMLPandExp))
+
+        
+
         assert (
             self.dict_sigma2s.keys() == {
                 'sigma2_aggr', 'sigma2_neuralODE', 'sigma2_decoder', 'sigma2_sum'
