@@ -50,15 +50,15 @@ class SimpleMLPandExp(torch.nn.Module):
 
 
 
-class RandFixedLinear(torch.nn.Module):
+class LinearEncoding(torch.nn.Module):
     '''
     Fixed linear layer (similar to torch.Embedding).
     '''
     def __init__(self, dim_input:int, dim_output:int):
-        super(RandFixedLinear, self).__init__()
+        super(LinearEncoding, self).__init__()
         self.W = torch.nn.Parameter(
             torch.rand(dim_input, dim_output),
-            requires_grad=False
+            requires_grad=True
         )
         self.flag_endwithReLU = False  # so this module passes an external assertion
 
