@@ -47,3 +47,21 @@ class SimpleMLPandExp(torch.nn.Module):
         return self.module_mlp(x).exp()
 
 
+
+
+
+class RandFixedLinear(torch.nn.Module):
+    '''
+    Fixed linear layer (similar to torch.Embedding).
+    '''
+    def __init__(self, dim_input:int, dim_output:int):
+        super(RandFixedLinear, self).__init__()
+        self.W = torch.nn.Parameter(
+            torch.rand(dim_input, dim_output),
+            requires_grad=False
+        )
+
+    def forward(self, x):
+        return torch.matmul(x, self.W)
+
+
