@@ -60,6 +60,7 @@ class RandFixedLinear(torch.nn.Module):
             torch.rand(dim_input, dim_output),
             requires_grad=False
         )
+        self.flag_endwithReLU = False  # so this module passes an external assertion
 
     def forward(self, x):
         return torch.matmul(x, self.W)
