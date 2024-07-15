@@ -161,6 +161,23 @@ class InFlowGenerativeModel(nn.Module):
 
         self._check_args()
 
+
+    def clamp_thetanegbins(self):
+        with torch.no_grad():
+            if not (self.negbintheta_int_clamp_minmax is None):
+                self.theta_negbin_int.clamp_(
+                    self.negbintheta_int_clamp_minmax[0],
+                    self.negbintheta_int_clamp_minmax[1]
+                )
+
+        with torch.no_grad():
+            if not (self.negbintheta_spl_clamp_minmax is None):
+                self.theta_negbin_spl.clamp_(
+                    self.negbintheta_spl_clamp_minmax[0],
+                    self.negbintheta_spl_clamp_minmax[1]
+                )
+
+
     def _check_args(self):
         '''
         Check args and raise appropriate error.

@@ -245,6 +245,9 @@ class InFlowVarDist(nn.Module):
 
 
         for batch in tqdm(dl):
+
+            self.module_genmodel.clamp_thetanegbins()
+
             optim_training.zero_grad()
             flag_tensorboardsave = (itrcount_wandb%tensorboard_stepsize_save == 0)
 
