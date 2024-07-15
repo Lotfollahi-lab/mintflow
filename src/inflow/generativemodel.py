@@ -1,6 +1,7 @@
 
 
 import torch
+from typing import List
 import torch.nn as nn
 from torch.distributions.normal import Normal
 from torchdyn.core import NeuralODE
@@ -30,7 +31,8 @@ class InFlowGenerativeModel(nn.Module):
             type_moduleflow, kwargs_moduleflow,
             type_w_dec, kwargs_w_dec,
             kwargs_negbin_int, kwargs_negbin_spl,
-            scalar_thetanegbin_int:float, scalar_thetanegbin_spl:float,
+            initval_thetanegbin_int:float | str, flag_train_negbintheta_int:bool, negbintheta_int_clamp_minmax:List[float] | None,
+            initval_thetanegbin_spl:float | str, flag_train_negbintheta_spl:bool, negbintheta_spl_clamp_minmax:List[float] | None,
             flag_use_int_u: bool, module_int_mu_u: nn.Module | None, module_int_cov_u: mlp.SimpleMLPandExp | None,
             flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
     ):
@@ -46,8 +48,15 @@ class InFlowGenerativeModel(nn.Module):
             - sigma2_neuralODE
             - sigma2_decoder
             - sigma2_sum
-        :param scalar_thetanegbin_int, scalar_thetanegbin_spl: the negbin theta parameters for intrinsic/spatial
-            Now only scalar theta (i.e. fixed over different genes) is supported.
+        :param initval_thetanegbin_int:float | str, flag_train_negbintheta_int:bool, negbintheta_clamp_minmax:List[int] | None: the negbin theta parameters for intrinsic.
+            `initval_thetanegbin_int` could be either a float, or 'rand'.
+            `flag_train_negbintheta_int` if set to True, the negbin theta parameter is trained.
+            `negbintheta_clamp_minmax`: either a list of floats of length 2 (the min/max clip values for theta) or None, which means no clipping is applied.
+
+        :param initval_thetanegbin_spl:float | str, flag_train_negbintheta_spl:bool, negbintheta_clamp_minmax:List[float] | None: the negbin theta parameters for intrinsic.
+            `initval_thetanegbin_int` could be either a float, or 'rand'.
+            `flag_train_negbintheta_int` if set to True, the negbin theta parameter is trained.
+            `negbintheta_int_clamp_minmax`: either a list of floats of length 2 (the min/max clip values for theta) or None, which means no clipping is applied.
         :param module_z_sampler: "only" to be used when generating data (in the `sample` function), and not used when computing the loglik.
         :param module_s_sampler: "only" to be used when generating data (in the `sample` function), and not used when computing the loglik.
         :param flag_use_int_u, module_int_mu_u, module_int_cov_u: whether the u-label (with the notation of iVAE) is used for z, and modules to produce
@@ -65,7 +74,9 @@ class InFlowGenerativeModel(nn.Module):
         # self.module_z_sampler = module_z_sampler
         # self.module_s_sampler = module_s_sampler
         self.kwargs_negbin_int, self.kwargs_negbin_spl = kwargs_negbin_int, kwargs_negbin_spl
-        self.scalar_thetanegbin_int, self.scalar_thetanegbin_spl = scalar_thetanegbin_int, scalar_thetanegbin_spl
+        self.initval_thetanegbin_int, self.initval_thetanegbin_spl = initval_thetanegbin_int, initval_thetanegbin_spl
+        self.flag_train_negbintheta_int, self.flag_train_negbintheta_spl = flag_train_negbintheta_int, flag_train_negbintheta_spl
+        self.negbintheta_int_clamp_minmax, self.negbintheta_spl_clamp_minmax = negbintheta_int_clamp_minmax, negbintheta_spl_clamp_minmax
         self.flag_use_int_u, self.module_int_mu_u, self.module_int_cov_u = flag_use_int_u, module_int_mu_u, module_int_cov_u
         self.flag_use_spl_u, self.module_spl_mu_u, self.module_spl_cov_u = flag_use_spl_u, module_spl_mu_u, module_spl_cov_u
 
@@ -107,15 +118,46 @@ class InFlowGenerativeModel(nn.Module):
             }
         )
 
-        #make the theta parameters of NegBin intrinsic and NegBin spatial
-        self.theta_negbin_int = torch.nn.Parameter(
-            self.scalar_thetanegbin_int * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
-            requires_grad=False
-        ) #TODO: tune #TODO: maybe change it to trianable?
-        self.theta_negbin_spl = torch.nn.Parameter(
-            self.scalar_thetanegbin_spl * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
-            requires_grad=False
-        ) #TODO: tune #TODO: maybe change it to trianable?
+        # make the theta parameters of NegBin intrinsic and NegBin spatial
+        # for intrinsic
+        if not isinstance(self.initval_thetanegbin_int, str):
+            self.theta_negbin_int = torch.nn.Parameter(
+                self.initval_thetanegbin_int * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
+                requires_grad=self.flag_train_negbintheta_int
+            )
+        else:
+            assert (self.initval_thetanegbin_int == 'rand')
+            self.theta_negbin_int = torch.nn.Parameter(
+                torch.rand(size=[self.dict_varname_to_dim['x']]).unsqueeze(0),
+                requires_grad=self.flag_train_negbintheta_int
+            )
+        with torch.no_grad():
+            if not (self.negbintheta_int_clamp_minmax is None):
+                self.theta_negbin_int.clamp_(
+                    self.negbintheta_int_clamp_minmax[0],
+                    self.negbintheta_int_clamp_minmax[1]
+                )
+
+        # for spatial
+        if not isinstance(self.initval_thetanegbin_spl, str):
+            self.theta_negbin_spl = torch.nn.Parameter(
+                self.initval_thetanegbin_spl * torch.ones(self.dict_varname_to_dim['x']).unsqueeze(0),
+                requires_grad=self.flag_train_negbintheta_spl
+            )
+        else:
+            assert (self.initval_thetanegbin_spl == 'rand')
+            self.theta_negbin_spl = torch.nn.Parameter(
+                torch.rand(size=[self.dict_varname_to_dim['x']]).unsqueeze(0),
+                requires_grad=self.flag_train_negbintheta_spl
+            )
+        with torch.no_grad():
+            if not (self.negbintheta_spl_clamp_minmax is None):
+                self.theta_negbin_spl.clamp_(
+                    self.negbintheta_spl_clamp_minmax[0],
+                    self.negbintheta_spl_clamp_minmax[1]
+                )
+
+
 
         self._check_args()
 
@@ -124,6 +166,44 @@ class InFlowGenerativeModel(nn.Module):
         Check args and raise appropriate error.
         :return:
         '''
+
+        # the negbin_theta initvals, train flags, and minmax ===
+        if not isinstance(self.initval_thetanegbin_int, float):
+            assert(self.initval_thetanegbin_int == 'rand')
+
+        if not isinstance(self.initval_thetanegbin_spl, float):
+            assert(self.initval_thetanegbin_spl == 'rand')
+
+        if not isinstance(self.negbintheta_int_clamp_minmax, list):
+            assert (self.negbintheta_int_clamp_minmax is None)
+            if self.flag_train_negbintheta_int:
+                raise Exception(
+                    "Since theta_negbin_int is set to trainable, min/max clip values must be provided for negbintheta_int."
+                )
+        else:
+            assert (len(self.negbintheta_int_clamp_minmax) == 2)
+            for u in self.negbintheta_int_clamp_minmax:
+                assert (isinstance(u, float))
+            if not self.flag_train_negbintheta_int:
+                raise Exception(
+                    "Since theta_negbin_int is not trainable, the min/max clip values must be set to None."
+                )
+
+        if not isinstance(self.negbintheta_spl_clamp_minmax, list):
+            assert (self.negbintheta_spl_clamp_minmax is None)
+            if self.flag_train_negbintheta_spl:
+                raise Exception(
+                    "Since theta_negbin_int is set to trainable, min/max clip values must be provided for negbintheta_int."
+                )
+        else:
+            assert (len(self.negbintheta_spl_clamp_minmax) == 2)
+            for u in self.negbintheta_spl_clamp_minmax:
+                assert (isinstance(u, float))
+            if not self.flag_train_negbintheta_spl:
+                raise Exception(
+                    "Since theta_negbin_int is not trainable, the min/max clip values must be set to None."
+                )
+
 
         if not self.flag_use_int_u:
             assert (self.module_int_mu_u  is None)
