@@ -111,6 +111,7 @@ class AdjMatPredLoss(nn.Module):
                 pyg_batch.edge_index,
                 batch=torch.Tensor([0 for u in range(pyg_batch.x.shape[0])]).long()
             )[0, :, :]  # [bsize, bsize]
+            dense_adj = dense_adj.to(dict_q_sample['xbar_int'].device)
             '''
             To double-check
             for colidx in range(pyg_batch.edge_index.size()[1]):
