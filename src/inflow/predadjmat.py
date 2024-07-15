@@ -121,7 +121,7 @@ class AdjMatPredLoss(nn.Module):
                 )
             '''
             dense_adj = ((dense_adj + dense_adj.T) > 0.0) + 0.0  # [bsize, bsize]
-            dense_adj = dense_adj * (1.0 - torch.eye(pyg_batch.x.size()[0]))  # [bsize, bsize]
+            dense_adj = dense_adj * (1.0 - torch.eye(pyg_batch.x.size()[0], device=dense_adj.device))  # [bsize, bsize]
 
         var_input_1 = dict_q_sample[self.varname_1]  # [bsize, dimvar1]
         var_input_2 = dict_q_sample[self.varname_2]  # [bsize, dimvar2]
