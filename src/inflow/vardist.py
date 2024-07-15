@@ -9,6 +9,7 @@ from .modules.disentonly import Disentangler
 from .modules.cond4flow import Cond4FlowVarphi0
 from . import probutils
 from . import utils_imputer
+from . predadjmat import ListAdjMatPredLoss
 #from tqdm.auto import tqdm
 from tqdm.notebook import tqdm, trange
 import wandb
@@ -27,7 +28,8 @@ class InFlowVarDist(nn.Module):
             module_varphi_enc_int:nn.Module,
             module_varphi_enc_spl:nn.Module,
             kwargs_cond4flowvarphi0:dict,
-            dict_qname_to_scaleandunweighted:dict
+            dict_qname_to_scaleandunweighted:dict,
+            list_ajdmatpredloss:ListAdjMatPredLoss
     ):
         '''
 
@@ -67,6 +69,7 @@ class InFlowVarDist(nn.Module):
         self.module_varphi_enc_spl = module_varphi_enc_spl
         self.kwargs_cond4flowvarphi0 = kwargs_cond4flowvarphi0
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
+        self.list_ajdmatpredloss = list_ajdmatpredloss
         self._check_args()
 
         # make internals
@@ -306,6 +309,23 @@ class InFlowVarDist(nn.Module):
                                 {"Loss/loss_imputex": torch.nan},
                                 step=itrcount_wandb
                             )
+
+            # add the loss terms to predict adjecancy matrix ===
+            if len(self.list_ajdmatpredloss.list_adjpredictors) > 0:
+                dict_varname_to_adjpredloss = self.list_ajdmatpredloss(
+                    dict_q_sample=dict_q_sample,
+                    pyg_batch=batch
+                )
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        for varname in dict_varname_to_adjpredloss.keys():
+                            wandb.log(
+                                {"Loss_PredAdj/{}".format(varname): dict_varname_to_adjpredloss[varname]},
+                                step=itrcount_wandb
+                            )
+
+
+
 
             # add the z-z closeness loss ===
             num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
