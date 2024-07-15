@@ -128,7 +128,7 @@ class AdjMatPredLoss(nn.Module):
         ten_var1var2 = func_all_pairwise_concatenations(
             x1=var_input_1,
             x2=var_input_2,
-            flag_doublecheck=True
+            flag_doublecheck=False
         )  # [bsize*bsize, dimvar1+dimvar2] # TODO: revert flag_doublecheck to False for speed-up
 
 
