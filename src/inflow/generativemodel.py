@@ -232,12 +232,12 @@ class InFlowGenerativeModel(nn.Module):
         )
         assert (
             isinstance(
-                self.scalar_thetanegbin_int, float
+                self.initval_thetanegbin_int, float
             )
         )
         assert (
             isinstance(
-                self.scalar_thetanegbin_spl, float
+                self.initval_thetanegbin_spl, float
             )
         )
         if isinstance(self.module_w_dec_int, mlp.SimpleMLP):
