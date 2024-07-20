@@ -164,16 +164,19 @@ class AdjMatPredLoss(nn.Module):
             )
 
         loss = self.celoss(netout, dense_adj.flatten().long())  # [bsize*bsize]
+        loss = loss.reshape(pyg_batch.x.size()[0], pyg_batch.x.size()[0])  # [bsize, bsize]
 
         if self.flag_defineloss_onlyon_pygneighinternal:
             loss = loss[0:pyg_batch.batch_size, :]
-            loss = loss[:, 0:pyg_batch.batch_size]
+            loss = loss[:, 0:pyg_batch.batch_size]  # [intnode, intnode]
             num_defloss = pyg_batch.batch_size + 0.0
         else:
             num_defloss = pyg_batch.x.size()[0]
 
 
-        loss = torch.triu(loss.reshape(num_defloss, num_defloss), diagonal=1)  # [num_defloss, num_defloss]
+
+
+        loss = torch.triu(loss, diagonal=1)  # [num_defloss, num_defloss]
         loss = torch.sum(loss) / (0.5 * num_defloss * (num_defloss - 1.0))
 
         return loss * self.coef_loss
