@@ -1,6 +1,7 @@
 
 
 import torch
+import numpy as np
 from typing import List
 import torch.nn as nn
 from torch.distributions.normal import Normal
@@ -337,11 +338,20 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).sample().to(device)  # [num_cell, dim_s]
         else:
-            s_out = probutils.ExtenededNormal(
-                loc=self.module_spl_mu_u(ten_u_spl),
-                scale=self.module_spl_cov_u(ten_u_spl).sqrt(),
-                flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
-            ).sample().to(device)  # [num_cell, dim_s]
+            spl_cov_u = self.module_spl_cov_u(ten_u_spl)
+
+            if isinstance(spl_cov_u, float):  # the case where the covariance is set to, e.g. 0.0 --> ExtendedNormal
+                s_out = probutils.ExtenededNormal(
+                    loc=self.module_spl_mu_u(ten_u_spl),
+                    scale=np.sqrt(spl_cov_u),
+                    flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
+                ).sample().to(device)  # [num_cell, dim_s]
+            else:  # covariance is of the same shape as mu --> Normal
+                assert (isinstance(spl_cov_u, torch.Tensor))
+                s_out = probutils.Normal(
+                    loc=self.module_spl_mu_u(ten_u_spl),
+                    scale=spl_cov_u.sqrt()
+                ).sample().to(device)  # [num_cell, dim_s]
 
         s_in = probutils.ExtenededNormal(
             loc=self.module_theta_aggr.evaluate_layered(
@@ -363,11 +373,19 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).sample().to(device)  # [num_cell, dim_z]
         else:
-            z = probutils.ExtenededNormal(
-                loc=self.module_int_mu_u(ten_u_int),
-                scale=self.module_int_cov_u(ten_u_int).sqrt(),
-                flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
-            ).sample().to(device)  # [num_cell, dim_z]
+            int_cov_u = self.module_int_cov_u(ten_u_int)
+
+            if isinstance(int_cov_u, float):  # the case where int_cov_u is set to, e.g., 0.0 --> ExtendedNormal
+                z = probutils.ExtenededNormal(
+                    loc=self.module_int_mu_u(ten_u_int),
+                    scale=np.sqrt(int_cov_u),
+                    flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
+                ).sample().to(device)  # [num_cell, dim_z]
+            else:  # int_cov_u is like the iVAE paper --> Normal
+                z = probutils.Normal(
+                    loc=self.module_int_mu_u(ten_u_int),
+                    scale=int_cov_u.sqrt()
+                ).sample().to(device)  # [num_cell, dim_z]
 
 
         '''
@@ -473,11 +491,20 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).log_prob(dict_qsamples['s_out'])  # [num_cells, dim_s]
         else:
-            logp_s_out = probutils.ExtenededNormal(
-                loc=self.module_spl_mu_u(dict_qsamples['ten_u_spl']),
-                scale=self.module_spl_cov_u(dict_qsamples['ten_u_spl']).sqrt(),
-                flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
-            ).log_prob(dict_qsamples['s_out'])  # [num_cell, dim_s]
+            spl_cov_u = self.module_spl_cov_u(dict_qsamples['ten_u_spl'])
+
+            if isinstance(spl_cov_u, float):  # the case where spl_cov_u is set to, e.g., 0.0 --> ExtendedNormal
+                logp_s_out = probutils.ExtenededNormal(
+                    loc=self.module_spl_mu_u(dict_qsamples['ten_u_spl']),
+                    scale=np.sqrt(spl_cov_u),
+                    flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
+                ).log_prob(dict_qsamples['s_out'])  # [num_cell, dim_s]
+            else:  # spl_cov_u is like iVAE paper --> Normals
+                assert (isinstance(spl_cov_u, torch.Tensor))
+                logp_s_out = probutils.Normal(
+                    loc=self.module_spl_mu_u(dict_qsamples['ten_u_spl']),
+                    scale=spl_cov_u.sqrt()
+                ).log_prob(dict_qsamples['s_out'])  # [num_cell, dim_s]
 
         # s_in
         logp_s_in = probutils.ExtenededNormal(
@@ -497,11 +524,21 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
         else:
-            logp_z = probutils.ExtenededNormal(
-                loc=self.module_int_mu_u(dict_qsamples['ten_u_int']),
-                scale=self.module_int_cov_u(dict_qsamples['ten_u_int']).sqrt(),
-                flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
-            ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
+
+            int_cov_u = self.module_int_cov_u(dict_qsamples['ten_u_int'])
+
+            if isinstance(int_cov_u, float):  # the case where int_cov_u is, e.g., 0.0 --> ExtendedNormal
+                logp_z = probutils.ExtenededNormal(
+                    loc=self.module_int_mu_u(dict_qsamples['ten_u_int']),
+                    scale=np.sqrt(int_cov_u),
+                    flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
+                ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
+            else:  # int_cov_u is like the iVAE paper --> Normal
+                assert (isinstance(int_cov_u, torch.Tensor))
+                logp_z = probutils.Normal(
+                    loc=self.module_int_mu_u(dict_qsamples['ten_u_int']),
+                    scale=int_cov_u.sqrt()
+                ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
 
 
         # xbar_int, xbar_spl
