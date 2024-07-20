@@ -337,9 +337,10 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).sample().to(device)  # [num_cell, dim_s]
         else:
-            s_out = Normal(
+            s_out = probutils.ExtenededNormal(
                 loc=self.module_spl_mu_u(ten_u_spl),
-                scale=self.module_spl_cov_u(ten_u_spl).sqrt()
+                scale=self.module_spl_cov_u(ten_u_spl).sqrt(),
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).sample().to(device)  # [num_cell, dim_s]
 
         s_in = probutils.ExtenededNormal(
@@ -362,9 +363,10 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).sample().to(device)  # [num_cell, dim_z]
         else:
-            z = Normal(
+            z = probutils.ExtenededNormal(
                 loc=self.module_int_mu_u(ten_u_int),
-                scale=self.module_int_cov_u(ten_u_int).sqrt()
+                scale=self.module_int_cov_u(ten_u_int).sqrt(),
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).sample().to(device)  # [num_cell, dim_z]
 
 
