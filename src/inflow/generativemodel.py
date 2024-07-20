@@ -233,7 +233,7 @@ class InFlowGenerativeModel(nn.Module):
             assert (isinstance(self.module_int_mu_u,  nn.Module))
             # if hasattr(self.module_int_mu_u, 'flag_endwithReLU'):
             assert (self.module_int_mu_u.flag_endwithReLU == False)
-            assert (isinstance(self.module_int_cov_u, mlp.SimpleMLPandExp))
+            assert (isinstance(self.module_int_cov_u, mlp.SimpleMLPandExp) or isinstance(self.module_int_cov_u, mlp.ConstMLP))
 
         if not self.flag_use_spl_u:
             assert (self.module_spl_mu_u  is None)
@@ -241,7 +241,7 @@ class InFlowGenerativeModel(nn.Module):
         else:
             assert (isinstance(self.module_spl_mu_u,  mlp.SimpleMLP))
             assert (self.module_spl_mu_u.flag_endwithReLU == False)
-            assert (isinstance(self.module_spl_cov_u, mlp.SimpleMLPandExp))
+            assert (isinstance(self.module_spl_cov_u, mlp.SimpleMLPandExp) or isinstance(self.module_spl_cov_u, mlp.ConstMLP))
 
         assert (
             self.dict_pname_to_scaleandunweighted.keys() == {
