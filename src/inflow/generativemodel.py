@@ -471,9 +471,10 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).log_prob(dict_qsamples['s_out'])  # [num_cells, dim_s]
         else:
-            logp_s_out = Normal(
+            logp_s_out = probutils.ExtenededNormal(
                 loc=self.module_spl_mu_u(dict_qsamples['ten_u_spl']),
-                scale=self.module_spl_cov_u(dict_qsamples['ten_u_spl']).sqrt()
+                scale=self.module_spl_cov_u(dict_qsamples['ten_u_spl']).sqrt(),
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).log_prob(dict_qsamples['s_out'])  # [num_cell, dim_s]
 
         # s_in
@@ -494,9 +495,10 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
         else:
-            logp_z = Normal(
+            logp_z = probutils.ExtenededNormal(
                 loc=self.module_int_mu_u(dict_qsamples['ten_u_int']),
-                scale=self.module_int_cov_u(dict_qsamples['ten_u_int']).sqrt()
+                scale=self.module_int_cov_u(dict_qsamples['ten_u_int']).sqrt(),
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
 
 
