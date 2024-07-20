@@ -63,7 +63,7 @@ def func_all_pairwise_concatenations(x1: torch.Tensor, x2: torch.Tensor, flag_do
 
 
 class AdjMatPredLoss(nn.Module):
-    def __init__(self, module_predictor:nn.Module, varname_1:str, varname_2:str, str_predicable_or_unpredictable:str):
+    def __init__(self, module_predictor:nn.Module, varname_1:str, varname_2:str, str_predicable_or_unpredictable:str, coef_loss:float):
         '''
 
         :param module_predictor: the predictor module. Since a cross-entropy loss is to be placed, this modules
@@ -77,10 +77,15 @@ class AdjMatPredLoss(nn.Module):
         self.varname_1 = varname_1
         self.varname_2 = varname_2
         self.str_predicable_or_unpredictable = str_predicable_or_unpredictable
+        self.coef_loss = coef_loss
         self.celoss = nn.CrossEntropyLoss(reduction='none')
         self._check_args()
 
     def _check_args(self):
+        assert (
+            isinstance(self.coef_loss, float)
+        )
+        assert (self.coef_loss > 0.0)
         assert(
             isinstance(self.str_predicable_or_unpredictable, str)
         )
@@ -149,7 +154,7 @@ class AdjMatPredLoss(nn.Module):
         loss = torch.triu(loss.reshape(pyg_batch.x.size()[0], pyg_batch.x.size()[0]), diagonal=1)  # [bsize, bsize]
         loss = torch.sum(loss) / (0.5 * pyg_batch.x.size()[0] * (pyg_batch.x.size()[0] - 1.0))
 
-        return loss
+        return loss * self.coef_loss
 
 
 
