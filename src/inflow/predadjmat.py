@@ -63,7 +63,15 @@ def func_all_pairwise_concatenations(x1: torch.Tensor, x2: torch.Tensor, flag_do
 
 
 class AdjMatPredLoss(nn.Module):
-    def __init__(self, module_predictor:nn.Module, varname_1:str, varname_2:str, str_predicable_or_unpredictable:str, coef_loss:float):
+    def __init__(
+        self,
+        module_predictor:nn.Module,
+        varname_1:str,
+        varname_2:str,
+        str_predicable_or_unpredictable:str,
+        coef_loss:float,
+        flag_defineloss_onlyon_pygneighinternal:bool
+    ):
         '''
 
         :param module_predictor: the predictor module. Since a cross-entropy loss is to be placed, this modules
@@ -78,10 +86,14 @@ class AdjMatPredLoss(nn.Module):
         self.varname_2 = varname_2
         self.str_predicable_or_unpredictable = str_predicable_or_unpredictable
         self.coef_loss = coef_loss
+        self.flag_defineloss_onlyon_pygneighinternal = flag_defineloss_onlyon_pygneighinternal
         self.celoss = nn.CrossEntropyLoss(reduction='none')
         self._check_args()
 
     def _check_args(self):
+        assert (
+            self.flag_defineloss_onlyon_pygneighinternal in [False, True]
+        )
         assert (
             isinstance(self.coef_loss, float)
         )
@@ -150,9 +162,19 @@ class AdjMatPredLoss(nn.Module):
             raise Exception(
                 "Unknown str_predicable_or_unpredictable = {}".format(self.str_predicable_or_unpredictable)
             )
+
         loss = self.celoss(netout, dense_adj.flatten().long())  # [bsize*bsize]
-        loss = torch.triu(loss.reshape(pyg_batch.x.size()[0], pyg_batch.x.size()[0]), diagonal=1)  # [bsize, bsize]
-        loss = torch.sum(loss) / (0.5 * pyg_batch.x.size()[0] * (pyg_batch.x.size()[0] - 1.0))
+
+        if self.flag_defineloss_onlyon_pygneighinternal:
+            loss = loss[0:pyg_batch.batch_size, :]
+            loss = loss[:, 0:pyg_batch.batch_size]
+            num_defloss = pyg_batch.batch_size + 0.0
+        else:
+            num_defloss = pyg_batch.x.size()[0]
+
+
+        loss = torch.triu(loss.reshape(num_defloss, num_defloss), diagonal=1)  # [num_defloss, num_defloss]
+        loss = torch.sum(loss) / (0.5 * num_defloss * (num_defloss - 1.0))
 
         return loss * self.coef_loss
 
