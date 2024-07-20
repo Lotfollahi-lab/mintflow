@@ -26,7 +26,7 @@ class InFlowGenerativeModel(nn.Module):
             self,
             num_cells,
             dict_varname_to_dim,
-            dict_sigma2s,
+            dict_pname_to_scaleandunweighted,
             type_theta_aggr, kwargs_theta_aggr,
             type_moduleflow, kwargs_moduleflow,
             type_w_dec, kwargs_w_dec,
@@ -43,11 +43,14 @@ class InFlowGenerativeModel(nn.Module):
             - z
             - x
             - TODO:maybe more
-        :param dict_sigma2s containning
-            - sigma2_aggr
-            - sigma2_neuralODE
-            - sigma2_decoder
-            - sigma2_sum
+        :param dict_pname_to_scaleandunweighted, with keys
+            - z
+            - sin
+            - sout
+            - xbar_int
+            - xbar_spl
+            - x: If set to [None, None] it means that p(x | xbar_int, xbar_spl) is not consider because, e.g., the decoder enforces that by design.
+                Otherwise it contains [scale, flag_unweighted] as usual.
         :param initval_thetanegbin_int:float | str, flag_train_negbintheta_int:bool, negbintheta_clamp_minmax:List[int] | None: the negbin theta parameters for intrinsic.
             `initval_thetanegbin_int` could be either a float, or 'rand'.
             `flag_train_negbintheta_int` if set to True, the negbin theta parameter is trained.
@@ -70,7 +73,8 @@ class InFlowGenerativeModel(nn.Module):
         #grab args ===
         self.num_cells = num_cells
         self.dict_varname_to_dim = dict_varname_to_dim
-        self.dict_sigma2s = dict_sigma2s
+        # self.dict_sigma2s = dict_sigma2s
+        self.dict_pname_to_scaleandunweighted = dict_pname_to_scaleandunweighted
         # self.module_z_sampler = module_z_sampler
         # self.module_s_sampler = module_s_sampler
         self.kwargs_negbin_int, self.kwargs_negbin_spl = kwargs_negbin_int, kwargs_negbin_spl
@@ -239,14 +243,29 @@ class InFlowGenerativeModel(nn.Module):
             assert (self.module_spl_mu_u.flag_endwithReLU == False)
             assert (isinstance(self.module_spl_cov_u, mlp.SimpleMLPandExp))
 
-
-
-
         assert (
-            self.dict_sigma2s.keys() == {
-                'sigma2_aggr', 'sigma2_neuralODE', 'sigma2_decoder', 'sigma2_sum'
+            self.dict_pname_to_scaleandunweighted.keys() == {
+                'z', 'sin', 'sout', 'xbar_int', 'xbar_spl', 'x'
             }
         )
+        for k in ['z', 'sin', 'sout', 'xbar_int', 'xbar_spl']:
+            assert (isinstance(self.dict_pname_to_scaleandunweighted[k], list))
+            assert (len(self.dict_pname_to_scaleandunweighted[k]) == 2)
+            assert (self.dict_pname_to_scaleandunweighted[k][1] in [True, False])
+        assert (
+           isinstance(self.dict_pname_to_scaleandunweighted['x'], list)
+        )
+        assert (
+            len(self.dict_pname_to_scaleandunweighted['x']) == 2
+        )
+        if None in self.dict_pname_to_scaleandunweighted['x']:
+            assert (
+                self.dict_pname_to_scaleandunweighted['x'] == [None, None]
+            )
+        else:
+            assert (isinstance(self.dict_pname_to_scaleandunweighted['x'][0], float))
+            assert (self.dict_pname_to_scaleandunweighted['x'][1] in [True, False])
+
         assert (
             isinstance(
                 self.initval_thetanegbin_int, float
@@ -312,9 +331,10 @@ class InFlowGenerativeModel(nn.Module):
             assert (ten_u_spl is None)
 
         if not self.flag_use_spl_u:
-            s_out = Normal(
+            s_out = probutils.ExtenededNormal(
                 loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
-                scale=torch.tensor([1.0])
+                scale=self.dict_pname_to_scaleandunweighted['sout'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).sample().to(device)  # [num_cell, dim_s]
         else:
             s_out = Normal(
@@ -322,35 +342,24 @@ class InFlowGenerativeModel(nn.Module):
                 scale=self.module_spl_cov_u(ten_u_spl).sqrt()
             ).sample().to(device)  # [num_cell, dim_s]
 
-        '''
-        s_out = self.module_s_sampler.gen_zs(
-            N=self.num_cells,
-            D=self.dict_varname_to_dim['s']
-        ).to(device)  # [num_cell, dim_s]
-        '''
-        '''
-        s_out = Normal(
-            loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
-            scale=torch.tensor([1.0])
-        ).sample().to(device) # [num_cell, dim_s]
-        '''
         s_in = probutils.ExtenededNormal(
             loc=self.module_theta_aggr.evaluate_layered(
                 x=s_out,
                 edge_index=edge_index,
                 kwargs_dl=kwargs_dl_neighbourloader
             ),
-            scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_aggr'])),
-            flag_unweighted=True
+            scale=self.dict_pname_to_scaleandunweighted['sin'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['sin'][1]
         ).sample().to(device) # [num_cell, dim_s]
         # #TODO: add description of `evaluate_layered` with x and edge_index signatures.
         #TODO: assert the evalu_layered function and args.
 
 
         if not self.flag_use_int_u:
-            z = Normal(
+            z = probutils.ExtenededNormal(
                 loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
-                scale=torch.tensor([1.0])
+                scale=self.dict_pname_to_scaleandunweighted['z'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).sample().to(device)  # [num_cell, dim_z]
         else:
             z = Normal(
@@ -358,26 +367,16 @@ class InFlowGenerativeModel(nn.Module):
                 scale=self.module_int_cov_u(ten_u_int).sqrt()
             ).sample().to(device)  # [num_cell, dim_z]
 
-        '''
-        z = self.module_z_sampler.gen_zs(
-            N=self.num_cells,
-            D=self.dict_varname_to_dim['z']
-        ).to(device)  # [num_cell, dim_z]
-        '''
-
-        '''
-        z = Normal(
-            loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
-            scale=torch.tensor([1.0])
-        ).sample().to(device)  # [num_cell, dim_z]
-        '''
-
 
         '''
         recall the output from neuralODE module is as follows
         - output[0]: is the t_range.
         - output[1]: is of shape [len(t_range), N, D].
         '''
+
+        # TODO: is the below part needed?
+        '''
+        OLD: no conddist on the output of neural ODE
         output_neuralODE = probutils.ExtenededNormal(
             loc=utils.func_feed_x_to_neuralODEmodule(
                 module_input=self.module_flow,
@@ -388,15 +387,25 @@ class InFlowGenerativeModel(nn.Module):
             scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_neuralODE'])),
             flag_unweighted=True
         ).sample().to(device)  # [num_cell, dim_z+dim_s]
+        '''
+
+        output_neuralODE = utils.func_feed_x_to_neuralODEmodule(
+            module_input=self.module_flow,
+            x=torch.cat([z, s_in], 1),
+            batch_size=batch_size_feedforward,
+            t_span=torch.linspace(0, 1, t_num_steps).to(device)
+        )  # [num_cell, dim_z+dim_s]
+
         xbar_int = probutils.ExtenededNormal(
             loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
-            scale=self.dict_sigma2s['sigma2_decoder'],
-            flag_unweighted=True
+            scale=self.dict_pname_to_scaleandunweighted['xbar_int'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_int'][1]
         ).sample().to(device)  # [num_cells, dim_z]
+
         xbar_spl = probutils.ExtenededNormal(
             loc=output_neuralODE[:, self.dict_varname_to_dim['z']::],
-            scale=self.dict_sigma2s['sigma2_decoder'],
-            flag_unweighted=True
+            scale=self.dict_pname_to_scaleandunweighted['xbar_spl'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_spl'][1]
         ).sample().to(device)  # [num_cells, dim_s]
 
 
@@ -409,7 +418,7 @@ class InFlowGenerativeModel(nn.Module):
                     batch_size=batch_size_feedforward),
                   'theta':self.theta_negbin_int},
                 **self.kwargs_negbin_int}
-        ).sample() #[num_cells, num_genes] #TODO: make the theta parameter learnable.
+        ).sample() #[num_cells, num_genes]
         x_spl = ZeroInflatedNegativeBinomial(
             **{**{'mu': utils.func_feed_x_to_module(
                     module_input=self.module_w_dec_spl,
@@ -417,20 +426,17 @@ class InFlowGenerativeModel(nn.Module):
                     batch_size=batch_size_feedforward),
                   'theta':self.theta_negbin_spl},
                 **self.kwargs_negbin_spl}
-        ).sample()  # [num_cells, num_genes] #TODO: make the theta parameter learnable.
+        ).sample()  # [num_cells, num_genes]
 
         #generate x ===
-        if self.dict_sigma2s['sigma2_sum'] != 0.0:
-            raise Exception(
-                "Please set dict_sigma2s['sigma2_sum'] to 0"+
-                "otherwise the final generated x will have continuous values unless x_int and x_spl are continuous."
-            )
-
+        '''
+        OLD: during sample generation x=x_int + x_spl deterministically. Because otherwise x would contain continuous values.
         x = probutils.ExtenededNormal(
             loc=x_int+x_spl,
             scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_sum'])),
             flag_unweighted=True
         ).sample()  # [num_cells, num_genes]
+        '''
 
         dict_toret = dict(
             ten_u_int=ten_u_int,
