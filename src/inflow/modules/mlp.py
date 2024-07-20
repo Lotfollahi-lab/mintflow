@@ -78,5 +78,9 @@ class ConstMLP(torch.nn.Module):
         self.dim_output = dim_output
         self.constval = constval
 
-    def forward(self, x):
-        return torch.ones_like(x) * self.constval
+    def forward(self, x:torch.Tensor):
+        return self.constval * torch.ones(
+            size=[x.size()[0], self.dim_output],
+            device=x.device,
+            requires_grad=False
+        )
