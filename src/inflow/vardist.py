@@ -542,6 +542,15 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        self.type_impanddisentgl : Disentangler
+        if self.type_impanddisentgl.str_mode_headxint_headxspl_headboth == 'headboth':
+            if self.module_genmodel.dict_pname_to_scaleandunweighted['x'] == [None, None]:
+                raise Exception(
+                    "Disentangler.str_mode_headxint_headxspl_headboth is set to 'headboth' and dict_pname_to_scaleandunweighted['x'] is set to [None, None]."+\
+                    "Doing this is problematic because nothing ensures that x = x_int + x_spl."
+                )
+
         # check dict_qname_to_scaleandunweighted
         assert(
             set(self.dict_qname_to_scaleandunweighted.keys()) ==
@@ -556,7 +565,7 @@ class InFlowVarDist(nn.Module):
                 {'scale', 'flag_unweighted'}
             )
         assert(
-            self.type_impanddisentgl in [ImputerAndDisentangler, Disentangler]
+            self.type_impanddisentgl in [Disentangler]
         )
 
 

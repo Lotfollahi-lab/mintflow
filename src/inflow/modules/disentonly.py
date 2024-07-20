@@ -176,7 +176,7 @@ class Disentangler(nn.Module):
                 nn.Linear(dim_tf1, dim_tf1),
                 nn.LeakyReLU(),
                 nn.Linear(dim_tf1, kwargs_em1['num_genes'])
-            )
+            )  # TODO: maybe add more layers to this head?
             self.module_linearhead_muxspl = None
         elif self.str_mode_headxint_headxspl_headboth == 'headxspl':
             self.module_linearhead_muxspl = nn.Sequential(
@@ -184,7 +184,7 @@ class Disentangler(nn.Module):
                 nn.Linear(dim_tf1, dim_tf1),
                 nn.LeakyReLU(),
                 nn.Linear(dim_tf1, kwargs_em1['num_genes'])
-            )
+            )  # TODO: maybe add more layers to this head?
             self.module_linearhead_muxint = None
         elif self.str_mode_headxint_headxspl_headboth == 'headboth':
             self.module_linearhead_muxint = nn.Sequential(
@@ -192,13 +192,13 @@ class Disentangler(nn.Module):
                 nn.Linear(dim_tf1, dim_tf1),
                 nn.LeakyReLU(),
                 nn.Linear(dim_tf1, kwargs_em1['num_genes'])
-            )
+            )  # TODO: maybe add more layers to this head?
             self.module_linearhead_muxspl = nn.Sequential(
                 nn.LeakyReLU(),
                 nn.Linear(dim_tf1, dim_tf1),
                 nn.LeakyReLU(),
                 nn.Linear(dim_tf1, kwargs_em1['num_genes'])
-            )
+            )  # TODO: maybe add more layers to this head?
         else:
             raise Exception(
                 "Uknown value {} for str_mode_headxint_headxspl_headboth.".format(self.str_mode_headxint_headxspl_headboth)
@@ -246,7 +246,7 @@ class Disentangler(nn.Module):
 
         # compute muxint, muxspl
         with torch.no_grad():
-            oneon_x_nonzero = (x_cnt > 0.0) + 0.0  # [N, num_genes]
+            oneon_x_nonzero = (x_cnt > 0.0) + 0  # [N, num_genes]
 
         if self.str_mode_headxint_headxspl_headboth == 'headxint':
             muxint = torch.clamp(

@@ -66,3 +66,17 @@ class LinearEncoding(torch.nn.Module):
         return torch.matmul(x, self.W)
 
 
+
+class ConstMLP(torch.nn.Module):
+    '''
+    A constant number to be used for, e.g., the covariance of p(z | u_z)
+    '''
+
+    def __init__(self, dim_input:int, dim_output:int, constval:float):
+        super(ConstMLP, self).__init__()
+        self.dim_input = dim_input
+        self.dim_output = dim_output
+        self.constval = constval
+
+    def forward(self, x):
+        return torch.ones_like(x) * self.constval
