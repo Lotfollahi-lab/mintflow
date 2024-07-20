@@ -464,9 +464,10 @@ class InFlowGenerativeModel(nn.Module):
 
         # s_out
         if not self.flag_use_spl_u:
-            logp_s_out = Normal(
+            logp_s_out = probutils.ExtenededNormal(
                 loc=torch.zeros([dict_qsamples['s_out'].size()[0], self.dict_varname_to_dim['s']]).to(device),
-                scale=torch.tensor([1.0]).to(device)
+                scale=self.dict_pname_to_scaleandunweighted['sout'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).log_prob(dict_qsamples['s_out'])  # [num_cells, dim_s]
         else:
             logp_s_out = Normal(
@@ -480,15 +481,16 @@ class InFlowGenerativeModel(nn.Module):
                 x=dict_qsamples['s_out'],
                 edge_index=batch.edge_index.to(device)
             )[:batch.batch_size],
-            scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_aggr'])).to(device),
-            flag_unweighted=True
+            scale=self.dict_pname_to_scaleandunweighted['sin'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['sin'][1]
         ).log_prob(dict_qsamples['s_in'][:batch.batch_size])  # [b, dim_s] TODO: what if all instances are included ???
 
         # z
         if not self.flag_use_int_u:
-            logp_z = Normal(
+            logp_z = probutils.ExtenededNormal(
                 loc=torch.zeros([dict_qsamples['z'].size()[0], self.dict_varname_to_dim['z']]).to(device),
-                scale=torch.tensor([1.0]).to(device)
+                scale=self.dict_pname_to_scaleandunweighted['z'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
         else:
             logp_z = Normal(
@@ -508,16 +510,16 @@ class InFlowGenerativeModel(nn.Module):
 
         logp_xbarint = probutils.ExtenededNormal(
             loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
-            scale=torch.tensor([self.dict_sigma2s['sigma2_decoder']]).to(device),
-            flag_unweighted=True
+            scale=self.dict_pname_to_scaleandunweighted['xbar_int'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_int'][1]
         ).log_prob(
             dict_qsamples['xbar_int'][:batch.batch_size]
         )  # [b, dim_z]
 
         logp_xbarspl = probutils.ExtenededNormal(
             loc=output_neuralODE[:, self.dict_varname_to_dim['z']::],
-            scale=torch.tensor(self.dict_sigma2s['sigma2_decoder']).to(device),
-            flag_unweighted=True
+            scale=self.dict_pname_to_scaleandunweighted['xbar_spl'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_spl'][1]
         ).log_prob(
             dict_qsamples['xbar_spl'][:batch.batch_size]
         )  # [b, dim_s]
@@ -539,11 +541,16 @@ class InFlowGenerativeModel(nn.Module):
         ).log_prob(dict_qsamples['x_spl'][:batch.batch_size])  # [b, num_genes]
 
         # x
-        logp_x = probutils.ExtenededNormal(
-            loc=dict_qsamples['x_int'][:batch.batch_size]+dict_qsamples['x_spl'][:batch.batch_size],
-            scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_sum'])).to(device),
-            flag_unweighted=True
-        ).log_prob(batch.x.to_dense()[:batch.batch_size].to(device))  # [b, num_genes]
+        if None in self.dict_pname_to_scaleandunweighted['x']:
+            # no logp(x | x_int, x_spl) term
+            assert ( self.dict_pname_to_scaleandunweighted['x'] == [None, None])
+            logp_x = 0.0
+        else:
+            logp_x = probutils.ExtenededNormal(
+                loc=dict_qsamples['x_int'][:batch.batch_size]+dict_qsamples['x_spl'][:batch.batch_size],
+                scale=self.dict_pname_to_scaleandunweighted['x'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['x'][1]
+            ).log_prob(batch.x.to_dense()[:batch.batch_size].to(device))  # [b, num_genes]
 
         return dict(
             logp_s_out=logp_s_out,
