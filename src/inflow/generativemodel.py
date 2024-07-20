@@ -545,7 +545,7 @@ class InFlowGenerativeModel(nn.Module):
         if None in self.dict_pname_to_scaleandunweighted['x']:
             # no logp(x | x_int, x_spl) term
             assert ( self.dict_pname_to_scaleandunweighted['x'] == [None, None])
-            logp_x = 0.0
+            logp_x = torch.tensor([1.0], device=logp_x_spl.device, requires_grad=False)
         else:
             logp_x = probutils.ExtenededNormal(
                 loc=dict_qsamples['x_int'][:batch.batch_size]+dict_qsamples['x_spl'][:batch.batch_size],
