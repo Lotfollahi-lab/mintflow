@@ -70,11 +70,13 @@ class InFlowVarDist(nn.Module):
         self.kwargs_cond4flowvarphi0 = kwargs_cond4flowvarphi0
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
-        self._check_args()
+
 
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
         self.module_cond4flowvarphi0 = Cond4FlowVarphi0(**kwargs_cond4flowvarphi0)
+
+        self._check_args()
 
     def rsample(self, batch, prob_maskknowngenes:float, ten_xy_absolute:torch.Tensor):
         # step 1, rsample from imputer and disentangler
@@ -367,11 +369,6 @@ class InFlowVarDist(nn.Module):
                         },
                         step=itrcount_wandb
                     )
-
-
-
-
-
 
 
             # update params
