@@ -429,6 +429,7 @@ class InFlowGenerativeModel(nn.Module):
         ).sample()  # [num_cells, num_genes]
 
         #generate x ===
+        x = x_int + x_spl  # [num_cells, num_genes]
         '''
         OLD: during sample generation x=x_int + x_spl deterministically. Because otherwise x would contain continuous values.
         x = probutils.ExtenededNormal(
