@@ -263,6 +263,7 @@ class InFlowVarDist(nn.Module):
 
         for batch in tqdm(dl):
 
+            ten_xy_touse = ten_xy_absolute + 0.0
             if prob_applytfm_affinexy > 0.0:
                 with torch.no_grad():
                     ten_xy_touse = tfm_affinexy.forward(ten_xy=ten_xy_absolute).detach()
