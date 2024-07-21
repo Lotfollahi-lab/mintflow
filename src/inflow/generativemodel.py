@@ -240,7 +240,7 @@ class InFlowGenerativeModel(nn.Module):
             assert (self.module_spl_mu_u  is None)
             assert (self.module_spl_cov_u is None)
         else:
-            assert (isinstance(self.module_spl_mu_u,  mlp.SimpleMLP))
+            assert (isinstance(self.module_spl_mu_u,  nn.Module))
             assert (self.module_spl_mu_u.flag_endwithReLU == False)
             assert (isinstance(self.module_spl_cov_u, mlp.SimpleMLPandExp) or isinstance(self.module_spl_cov_u, mlp.ConstMLP))
 

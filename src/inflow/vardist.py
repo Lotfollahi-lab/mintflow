@@ -224,10 +224,10 @@ class InFlowVarDist(nn.Module):
             ten_xy_absolute:torch.Tensor,
             optim_training:torch.optim.Optimizer,
             tensorboard_stepsize_save:int,
+            prob_applytfm_affinexy:float,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
-            coef_loss_zzcloseness:float=0.0,
-            prob_applytfm_affinexy: float = 0.5
+            coef_loss_zzcloseness:float=0.0
     ):
         '''
         One epoch of the training.
@@ -263,7 +263,9 @@ class InFlowVarDist(nn.Module):
 
         for batch in tqdm(dl):
 
-            ten_xy_touse = tfm_affinexy.forward(ten_xy=ten_xy_absolute)
+            if prob_applytfm_affinexy > 0.0:
+                with torch.no_grad():
+                    ten_xy_touse = tfm_affinexy.forward(ten_xy=ten_xy_absolute).detach()
 
             self.module_genmodel.clamp_thetanegbins()
 
