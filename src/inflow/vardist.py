@@ -226,7 +226,8 @@ class InFlowVarDist(nn.Module):
             tensorboard_stepsize_save:int,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
-            coef_loss_zzcloseness:float=0.0
+            coef_loss_zzcloseness:float=0.0,
+            prob_applytfm_affinexy: float = 0.5
     ):
         '''
         One epoch of the training.
@@ -240,8 +241,19 @@ class InFlowVarDist(nn.Module):
         :param itrcount_wandbstep_input
         :param list_flag_elboloss_imputationloss
         :param coef_loss_zzcloseness
+        :param prob_applytfm_affinexy: with this probability the [xy] positions go throug an affined transformation.
         :return:
         '''
+
+        # make the affine xy augmenter
+        tfm_affinexy = utils_imputer.RandomGeometricTfm(
+            prob_applytfm=prob_applytfm_affinexy,
+            rng_00=[1.0, 2.0],
+            rng_01=[1.0, 2.0],
+            rng_10=[1.0, 2.0],
+            rng_11=[1.0, 2.0]
+        )  # TODO: maybe tune the ranges?
+
 
         if itrcount_wandbstep_input is not None:
             itrcount_wandb = itrcount_wandbstep_input + 0
@@ -251,6 +263,8 @@ class InFlowVarDist(nn.Module):
 
         for batch in tqdm(dl):
 
+            ten_xy_touse = tfm_affinexy.forward(ten_xy=ten_xy_absolute)
+
             self.module_genmodel.clamp_thetanegbins()
 
             optim_training.zero_grad()
@@ -259,7 +273,7 @@ class InFlowVarDist(nn.Module):
             dict_q_sample = self.rsample(
                 batch=batch,
                 prob_maskknowngenes=prob_maskknowngenes,
-                ten_xy_absolute=ten_xy_absolute
+                ten_xy_absolute=ten_xy_touse
             )
             dict_logq = self.log_prob(dict_q_sample)
             dict_logp = self.module_genmodel.log_prob(
