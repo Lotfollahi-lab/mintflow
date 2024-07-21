@@ -78,6 +78,13 @@ class ConstMLP(torch.nn.Module):
         self.dim_output = dim_output
         self.constval = constval
 
+        self._check_args()
+
+    def _check_args(self):
+        assert (
+            isinstance(self.constval, float)
+        )
+
     def forward(self, x:torch.Tensor):
         return self.constval + 0.0  # torch.tensor([self.constval + 0.0], device=x.device, requires_grad=False)
 
