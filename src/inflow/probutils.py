@@ -71,7 +71,13 @@ class ExtenededNormal:
         else:
             assert(self.scale == 0.0)
             if not self.flag_unweighted:
-                return torch.inf  #scale=0 and flag_unweight=False means it's deterministic.
+                assert Exception(
+                    "scale and flag_unweighted are set to {} and {} ---> loglik becomes infinity.".format(
+                        self.scale,
+                        self.flag_unweighted
+                    )
+                )
+                # return torch.inf  #scale=0 and flag_unweight=False means it's deterministic.
             # Note: the below term is necessary, because the samples that go through
             # the loglikP(.) are not generated from P(.) itself.
             return -(ten_in-self.loc.unsqueeze(0))**2

@@ -289,7 +289,6 @@ class InFlowVarDist(nn.Module):
             loss = 0.0
             if list_flag_elboloss_imputationloss[0]:
                 for k in dict_logp.keys():
-                    print(k)
                     loss = loss - dict_logp[k].sum(1).mean()
                     if flag_tensorboardsave:
                         with torch.no_grad():
