@@ -7,6 +7,7 @@ from .generativemodel import InFlowGenerativeModel
 from .modules.impanddisentgl import ImputerAndDisentangler
 from .modules.disentonly import Disentangler
 from .modules.cond4flow import Cond4FlowVarphi0
+from .modules.disentonly_twosep import DisentanglerTwoSep
 from . import probutils
 from . import utils_imputer
 from . predadjmat import ListAdjMatPredLoss
@@ -557,22 +558,23 @@ class InFlowVarDist(nn.Module):
 
     def _check_args(self):
 
-        self.module_impanddisentgl:Disentangler
-        if self.module_impanddisentgl.str_mode_headxint_headxspl_headboth == 'headboth':
-            if self.module_genmodel.dict_pname_to_scaleandunweighted['x'] == [None, None]:
-                raise Exception(
-                    "Disentangler.str_mode_headxint_headxspl_headboth is set to 'headboth' and dict_pname_to_scaleandunweighted['x'] is set to [None, None]." +\
-                    "Doing this is problematic because nothing ensures that x = x_int + x_spl."
+        if isinstance(self.module_impanddisentgl, Disentangler):
+            self.module_impanddisentgl:Disentangler
+            if self.module_impanddisentgl.str_mode_headxint_headxspl_headboth == 'headboth':
+                if self.module_genmodel.dict_pname_to_scaleandunweighted['x'] == [None, None]:
+                    raise Exception(
+                        "Disentangler.str_mode_headxint_headxspl_headboth is set to 'headboth' and dict_pname_to_scaleandunweighted['x'] is set to [None, None]." +\
+                        "Doing this is problematic because nothing ensures that x = x_int + x_spl."
+                    )
+            else:
+                assert (
+                    self.module_impanddisentgl.str_mode_headxint_headxspl_headboth in ['headxint', 'headxspl']
                 )
-        else:
-            assert (
-                self.module_impanddisentgl.str_mode_headxint_headxspl_headboth in ['headxint', 'headxspl']
-            )
-            if self.module_genmodel.dict_pname_to_scaleandunweighted['x'] != [None, None]:
-                raise Exception(
-                    "Disentangler.str_mode_headxint_headxspl_headboth is set to {} and dict_pname_to_scaleandunweighted['x'] is not set to [None, None]." +\
-                    "Doing this is problematic because x = x_int + x_spl is enforced by design, so it shouldn't be enforced by p(x | x_int, x_spl)."
-                )
+                if self.module_genmodel.dict_pname_to_scaleandunweighted['x'] != [None, None]:
+                    raise Exception(
+                        "Disentangler.str_mode_headxint_headxspl_headboth is set to {} and dict_pname_to_scaleandunweighted['x'] is not set to [None, None]." +\
+                        "Doing this is problematic because x = x_int + x_spl is enforced by design, so it shouldn't be enforced by p(x | x_int, x_spl)."
+                    )
 
         # check dict_qname_to_scaleandunweighted
         assert(
@@ -588,7 +590,7 @@ class InFlowVarDist(nn.Module):
                 {'scale', 'flag_unweighted'}
             )
         assert(
-            isinstance(self.module_impanddisentgl, Disentangler)
+            isinstance(self.module_impanddisentgl, Disentangler) or isinstance(self.module_impanddisentgl, DisentanglerTwoSep)
         )
 
 
