@@ -148,8 +148,10 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
         list_em_final = [xe + pe, em_iscentralnode]
         if self.flag_use_int_u:
             list_em_final.append(ten_u_int)
+            print("ten_u_int was added.")
         if self.flag_use_spl_u:
             list_em_final.append(ten_u_spl)
+            print("ten_u_spl was added.")
 
         em_final = torch.cat(
             list_em_final,
