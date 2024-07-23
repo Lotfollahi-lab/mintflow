@@ -558,6 +558,28 @@ class InFlowVarDist(nn.Module):
 
     def _check_args(self):
 
+        # check if the passed flag_use_int_u and flag_use_spl_u are consistent in vardist and disentangler
+        assert (
+            self.module_genmodel.flag_use_int_u == self.module_impanddisentgl.flag_use_int_u
+        )
+        assert (
+            self.module_genmodel.flag_use_spl_u == self.module_impanddisentgl.flag_use_spl_u
+        )
+        assert (
+            self.module_genmodel.flag_use_int_u in [True, False]
+        )
+        assert (
+            self.module_genmodel.flag_use_spl_u in [True, False]
+        )
+        assert (
+            self.module_impanddisentgl.flag_use_int_u in [True, False]
+        )
+        assert (
+            self.module_impanddisentgl.flag_use_spl_u in [True, False]
+        )
+
+
+
         if isinstance(self.module_impanddisentgl, Disentangler):
             self.module_impanddisentgl:Disentangler
             if self.module_impanddisentgl.str_mode_headxint_headxspl_headboth == 'headboth':

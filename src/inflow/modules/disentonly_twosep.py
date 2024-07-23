@@ -14,16 +14,20 @@ from .impanddisentgl import MaskLabel
 
 
 class SubgraphEmbeddingDisentTwoSep(nn.Module):
-    def __init__(self, num_genes, dim_embedding, dim_em_iscentralnode, dim_em_blankorobserved):
+    def __init__(self, num_genes, dim_embedding, dim_em_iscentralnode, num_celltypes, flag_use_int_u, flag_use_spl_u):
         '''
         :param num_genes: .
         :param dim_embedding: The dim of embedding for each cell, must be a multiple of 4.
+        :param num_celltypes: dimension of the cell type vector (same as the niche vector).
         '''
         super(SubgraphEmbeddingDisentTwoSep, self).__init__()
         # grab args
         self.dim_embedding = dim_embedding
         self.dim_em_iscentralnode = dim_em_iscentralnode
-        self.dim_em_blankorobserved = dim_em_blankorobserved
+        self.num_celltypes = num_celltypes
+        self.flag_use_int_u = flag_use_int_u
+        self.flag_use_spl_u = flag_use_spl_u
+
         assert(self.dim_embedding%4 == 0)
         # make internals
         self.encoder_x = nn.Linear(
@@ -35,10 +39,12 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
             num_embeddings=2,
             embedding_dim=self.dim_em_iscentralnode
         )  # This emebedding tells whether the cell is among the central nodes returned by the Neighloader.
+        '''
         self.embedding_blankorobserved = nn.Embedding(
             num_embeddings=2,
             embedding_dim=self.dim_em_blankorobserved
         )
+        '''
 
     @torch.no_grad()
     def _position_encoding(self, batch, ten_xy_absolute:torch.Tensor):
@@ -104,6 +110,13 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
                 ).to(ten_xy_absolute.device)
             ).detach()  # [N, 10]
 
+            assert (
+                batch.y.size()[1] == (2*self.num_celltypes)
+            )
+            ten_u_int = batch.y[:, 0:self.num_celltypes].to(ten_xy_absolute.device) if (self.flag_use_int_u) else None
+            ten_u_spl = batch.y[:, self.num_celltypes::].to(ten_xy_absolute.device) if (self.flag_use_spl_u) else None
+
+
             # define the masking token
             '''
             Note: Gene expression vectors are unknown in two cases
@@ -139,8 +152,14 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
         print("em_iscentralnode.shape = {}".format(em_iscentralnode.shape))
         print("em_blankorobserved.shape = {}".format(em_blankorobserved.shape))
         '''
+        list_em_final = [xe+pe, em_iscentralnode]
+        if self.flag_use_int_u:
+            list_em_final.append(ten_u_int)
+        if self.flag_use_spl_u:
+            list_em_final.append(ten_u_spl)
+
         em_final = torch.cat(
-            [xe+pe, em_iscentralnode, em_blankorobserved],
+            list_em_final,
             1
         )
 
@@ -159,9 +178,19 @@ class DisentanglerTwoSep(nn.Module):
         '''
         super(DisentanglerTwoSep, self).__init__()
 
+        # num_celltypes, flag_use_int_u, flag_use_spl_u
+
+        self.num_celltypes = kwargs_em_intandspl['num_celltypes']
+        self.flag_use_int_u = kwargs_em_intandspl['flag_use_int_u']
+        self.flag_use_spl_u = kwargs_em_intandspl['flag_use_spl_u']
 
         # tfm_int
-        dim_tf_int = kwargs_em_intandspl['dim_embedding'] + kwargs_em_intandspl['dim_em_iscentralnode'] + kwargs_em_intandspl['dim_em_blankorobserved']
+        dim_tf_int = kwargs_em_intandspl['dim_embedding'] + kwargs_em_intandspl['dim_em_iscentralnode']
+        if self.flag_use_int_u:
+            dim_tf_int += self.num_celltypes
+        if self.flag_use_spl_u:
+            dim_tf_int += self.num_celltypes
+
         self.module_em_intandspl = SubgraphEmbeddingDisentTwoSep(**kwargs_em_intandspl)
         self.module_tf_int = Padder(
             Linformer(**{
