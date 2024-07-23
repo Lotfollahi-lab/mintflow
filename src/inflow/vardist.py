@@ -557,6 +557,20 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+        # check if the passed flag_use_int_u and flag_use_spl_u are consistent in vardist and cond4flow
+        assert (
+            self.module_cond4flowvarphi0.kwargs_genmodel['flag_use_int_u'] == self.module_genmodel.flag_use_int_u
+        )
+        assert (
+            self.module_cond4flowvarphi0.kwargs_genmodel['flag_use_spl_u'] == self.module_genmodel.flag_use_spl_u
+        )
+        assert (
+            self.module_cond4flowvarphi0.kwargs_genmodel['flag_use_int_u'] in [True, False]
+        )
+        assert (
+            self.module_cond4flowvarphi0.kwargs_genmodel['flag_use_spl_u'] in [True, False]
+        )
+        
 
         # check if the passed flag_use_int_u and flag_use_spl_u are consistent in vardist and disentangler
         assert (

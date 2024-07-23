@@ -150,7 +150,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             list_em_final.append(ten_u_int)
         if self.flag_use_spl_u:
             list_em_final.append(ten_u_spl)
-        
+
         em_final = torch.cat(
             list_em_final,
             1
