@@ -135,9 +135,11 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
                     [np.random.rand() > prob_maskknowngenes for _ in range(torch.sum(a == True).tolist())]
                 ).to(ten_xy_absolute.device)
             assert (torch.all(a))  # assert all expvects are available.
+            '''
             em_blankorobserved = self.embedding_blankorobserved(
                 a+0
             )  # [N, 10]
+            '''
             ten_manually_masked = (~ten_masked_c1) & (~a)
 
             #mask xe
