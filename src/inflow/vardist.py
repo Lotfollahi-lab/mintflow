@@ -341,6 +341,9 @@ class InFlowVarDist(nn.Module):
                     dict_q_sample=dict_q_sample,
                     pyg_batch=batch
                 )
+                for varname in dict_varname_to_adjpredloss.keys():
+                    loss = loss + dict_varname_to_adjpredloss[varname]
+
                 if flag_tensorboardsave:
                     with torch.no_grad():
                         for varname in dict_varname_to_adjpredloss.keys():
@@ -354,8 +357,27 @@ class InFlowVarDist(nn.Module):
 
             # add the flow-matching loss ===
             if coef_flowmatchingloss > 0.0:
-                pass
-                
+                fm_loss = self.module_conditionalflowmatcher.get_fmloss(
+                    module_v=self.module_genmodel.module_Vflow_unwrapped,
+                    x1=torch.cat(
+                    [dict_qsamples['xbar_int'][:batch.batch_size], dict_qsamples['xbar_spl'][:batch.batch_size]],
+                    1
+                    ),
+                    x0_frominflow=torch.cat(
+                    [dict_qsamples['z'][:batch.batch_size], dict_qsamples['s_in'][:batch.batch_size]],
+                    1
+                    )
+                )
+                loss = loss + fm_loss
+
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        wandb.log(
+                            {"Loss/FMloss": fm_loss},
+                            step=itrcount_wandb
+                        )
+
+
 
             # add the z-z closeness loss ===
             num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']

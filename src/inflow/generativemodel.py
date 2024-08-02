@@ -94,15 +94,16 @@ class InFlowGenerativeModel(nn.Module):
                 **kwargs_theta_aggr
             }
         ) #TODO: add note about requiring the `dim_input` and `dim_output` arguments.
+        self.module_Vflow_unwrapped = type_moduleflow(
+            **{**{
+                'dim_input': self.dict_varname_to_dim['s'] + self.dict_varname_to_dim['z'],
+                'dim_output': self.dict_varname_to_dim['s'] + self.dict_varname_to_dim['z']},
+               **kwargs_moduleflow
+            }
+        )
         self.module_flow = NeuralODE(
             torch_wrapper(
-                type_moduleflow(
-                    **{**{
-                        'dim_input': self.dict_varname_to_dim['s'] + self.dict_varname_to_dim['z'],
-                        'dim_output': self.dict_varname_to_dim['s'] + self.dict_varname_to_dim['z']},
-                       **kwargs_moduleflow
-                    }
-                )
+                self.module_Vflow_unwrapped
             ),
             solver="dopri5",
             sensitivity="adjoint",

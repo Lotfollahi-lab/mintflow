@@ -9,8 +9,10 @@ from torchcfm.optimal_transport import OTPlanSampler
 from .modules import neuralODE
 from enum import Enum
 
+
 class ModeSampleX0(Enum):
-    RANDOM = 1
+    RANDOM = 1  # X0 is not determined by inflow --> **Only** to be used in debug mode and for ablation study.
+    FROMINFLOW = 2  # X0  (i.e. [Z0, S0] with the notation of inflow) comes from inflow itself.
 
 class ModeMinibatchPerm(Enum):
     RANDOM = 1  # no matching
@@ -66,9 +68,11 @@ class ConditionalFlowMatcher:
 
 
     @torch.no_grad()
-    def _sample_x0(self, x1):
+    def _sample_x0(self, x1, x0_frominflow):
         if self.mode_samplex0 == ModeSampleX0.RANDOM:
             return torch.randn_like(x1)
+        elif self.mode_samplex0 == ModeSampleX0.FROMINFLOW:
+            return x0_frominflow
         else:
             raise NotImplementedError("ddd")
 
@@ -104,17 +108,18 @@ class ConditionalFlowMatcher:
         vt = module_v(torch.cat([xt, t.flatten()[:, None]], dim=-1))
         return torch.mean((vt - ut) ** 2)
 
-    def get_fmloss(self, module_v:neuralODE.MLP, x1:torch.Tensor):
+    def get_fmloss(self, module_v:neuralODE.MLP, x1:torch.Tensor, x0_frominflow:torch.Tensor):
         '''
         :param module_v: the V(.) module.
         :param x1: a mini-batch of samples from p_1(.).
+        :param x0_frominflow: inflow decides x0, but **only** for ablation study x0 could be generated compltely randomly.
         :return:
         '''
         assert (isinstance(module_v, neuralODE.MLP))
 
         # sample xt
         with torch.no_grad():  # TODO: should it be here? The sample notebooks don't put no_grad().
-            x0 = self._sample_x0() # [N, D].
+            x0 = self._sample_x0(x0_frominflow=x0_frominflow) # [N, D].
             x0, x1 = self._perm_batches(x0, x1)  # [N, D], [N, D]
             t = self._gen_t(batch_size=x1.size()[0]).unsqueeze(-1).to(x1.device)  # [N, 1]
             xt = t * x1 + (1 - t) * x0 + self.sigma * torch.randn_like(x1)
