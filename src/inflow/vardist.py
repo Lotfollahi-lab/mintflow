@@ -353,18 +353,16 @@ class InFlowVarDist(nn.Module):
                             )
 
 
-
-
             # add the flow-matching loss ===
             if coef_flowmatchingloss > 0.0:
                 fm_loss = self.module_conditionalflowmatcher.get_fmloss(
                     module_v=self.module_genmodel.module_Vflow_unwrapped,
                     x1=torch.cat(
-                    [dict_qsamples['xbar_int'][:batch.batch_size], dict_qsamples['xbar_spl'][:batch.batch_size]],
+                    [dict_q_sample['xbar_int'][:batch.batch_size], dict_q_sample['xbar_spl'][:batch.batch_size]],
                     1
                     ),
                     x0_frominflow=torch.cat(
-                    [dict_qsamples['z'][:batch.batch_size], dict_qsamples['s_in'][:batch.batch_size]],
+                    [dict_q_sample['z'][:batch.batch_size], dict_q_sample['s_in'][:batch.batch_size]],
                     1
                     )
                 )
