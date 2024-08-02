@@ -119,7 +119,10 @@ class ConditionalFlowMatcher:
 
         # sample xt
         with torch.no_grad():  # TODO: should it be here? The sample notebooks don't put no_grad().
-            x0 = self._sample_x0(x0_frominflow=x0_frominflow) # [N, D].
+            x0 = self._sample_x0(
+                x1=x1,
+                x0_frominflow=x0_frominflow
+            ) # [N, D].
             x0, x1 = self._perm_batches(x0, x1)  # [N, D], [N, D]
             t = self._gen_t(batch_size=x1.size()[0]).unsqueeze(-1).to(x1.device)  # [N, 1]
             xt = t * x1 + (1 - t) * x0 + self.sigma * torch.randn_like(x1)
