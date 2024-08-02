@@ -11,6 +11,7 @@ from .modules.disentonly_twosep import DisentanglerTwoSep
 from . import probutils
 from . import utils_imputer
 from . predadjmat import ListAdjMatPredLoss
+from . import utils_flowmatching
 #from tqdm.auto import tqdm
 from tqdm.notebook import tqdm, trange
 import wandb
@@ -30,7 +31,8 @@ class InFlowVarDist(nn.Module):
             module_varphi_enc_spl:nn.Module,
             kwargs_cond4flowvarphi0:dict,
             dict_qname_to_scaleandunweighted:dict,
-            list_ajdmatpredloss:ListAdjMatPredLoss
+            list_ajdmatpredloss:ListAdjMatPredLoss,
+            module_conditionalflowmatcher:utils_flowmatching.ConditionalFlowMatcher
     ):
         '''
 
@@ -71,6 +73,7 @@ class InFlowVarDist(nn.Module):
         self.kwargs_cond4flowvarphi0 = kwargs_cond4flowvarphi0
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
+        self.module_conditionalflowmatcher = module_conditionalflowmatcher
 
 
         # make internals
@@ -228,7 +231,8 @@ class InFlowVarDist(nn.Module):
             prob_applytfm_affinexy:float,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
-            coef_loss_zzcloseness:float=0.0
+            coef_loss_zzcloseness:float=0.0,
+            coef_flowmatchingloss:float=0.0
     ):
         '''
         One epoch of the training.
@@ -243,6 +247,7 @@ class InFlowVarDist(nn.Module):
         :param list_flag_elboloss_imputationloss
         :param coef_loss_zzcloseness
         :param prob_applytfm_affinexy: with this probability the [xy] positions go throug an affined transformation.
+        :param coef_flowmatchingloss: the coefficient for flow-matching loss.
         :return:
         '''
 
@@ -346,6 +351,11 @@ class InFlowVarDist(nn.Module):
 
 
 
+
+            # add the flow-matching loss ===
+            if coef_flowmatchingloss > 0.0:
+                pass
+                
 
             # add the z-z closeness loss ===
             num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
@@ -557,6 +567,11 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        assert (
+            isinstance(self.module_conditionalflowmatcher, utils_flowmatching.ConditionalFlowMatcher)
+        )
+
         # check if the passed flag_use_int_u and flag_use_spl_u are consistent in vardist and cond4flow
         assert (
             self.module_cond4flowvarphi0.kwargs_genmodel['flag_use_int_u'] == self.module_genmodel.flag_use_int_u
@@ -570,7 +585,7 @@ class InFlowVarDist(nn.Module):
         assert (
             self.module_cond4flowvarphi0.kwargs_genmodel['flag_use_spl_u'] in [True, False]
         )
-        
+
 
         # check if the passed flag_use_int_u and flag_use_spl_u are consistent in vardist and disentangler
         assert (
