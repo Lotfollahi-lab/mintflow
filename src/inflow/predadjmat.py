@@ -125,8 +125,8 @@ class AdjMatPredLoss(nn.Module):
         # compute the dense adjecancy matrix to build the adjpred loss.
         with torch.no_grad():
             dense_adj = pyg.utils.to_dense_adj(
-                pyg_batch.edge_index,
-                batch=torch.Tensor([0 for u in range(pyg_batch.x.shape[0])]).long()
+                pyg_batch.edge_index.to(dict_q_sample['xbar_int'].device),
+                batch=torch.Tensor([0 for u in range(pyg_batch.x.shape[0])]).long().to(dict_q_sample['xbar_int'].device)
             )[0, :, :]  # [bsize, bsize]
             dense_adj = dense_adj.to(dict_q_sample['xbar_int'].device)
             '''
