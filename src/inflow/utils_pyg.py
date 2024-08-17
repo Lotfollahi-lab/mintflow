@@ -8,16 +8,18 @@ class PygSTDataGridBatchSampler(Sampler):
     '''
     Creates a grid (with random offset) given the xy positions.
     '''
-    def __init__(self, ten_xy :torch.Tensor, width_window :int, min_numpoints_ingrid :int):
+    def __init__(self, ten_xy :torch.Tensor, width_window :int, min_numpoints_ingrid :int, flag_disable_randoffset:bool):
         '''
         Inputs args.
         :param ten_xy:
         :param width_window: the window size of the grid.
         :param min_numpoints_ingrid: if a grid contains less than `min_numpoints_ingrid` points, no batch will be created.
+        :param flag_disable_randoffset: if set to True, no random offset is applied. To be used for, e.g., evaluation phase.
         '''
         self.width_window = width_window
         self.ten_xy = ten_xy.detach().clone()
         self.min_numpoints_ingrid = min_numpoints_ingrid
+        self.flag_disable_randoffset = flag_disable_randoffset
 
         # the grid gets a random offset --> __len__ changes --> a typical len is takes and is kept fixed ===
         self.typical_num_batches = np.max(
@@ -49,7 +51,11 @@ class PygSTDataGridBatchSampler(Sampler):
         Places a grid on the xy position with a random offset.
         If the window is non-empty, it creates a batch for it.
         '''
-        offset_x, offset_y = int(np.random.rand() * self.width_window), int(np.random.rand() * self.width_window)
+        if not self.flag_disable_randoffset:
+            offset_x, offset_y = int(np.random.rand() * self.width_window), int(np.random.rand() * self.width_window)
+        else:
+            offset_x, offset_y = 0, 0
+
         list_x = list(
             np.arange(
                 self.ten_xy[: ,0].min().detach().cpu().numpy().tolist() - offset_x,

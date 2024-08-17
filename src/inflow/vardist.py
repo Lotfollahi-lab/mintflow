@@ -578,6 +578,13 @@ class InFlowVarDist(nn.Module):
             if (k == 'output_imputer') and (np_out_imputer is None):
                 dict_varname_to_output[k] = None
             else:
+
+                print("k={}".format(k))
+                print(" ----- list of node indices with no value.")
+                for n in range(ten_xy_absolute.size()[0]):
+                    if n not in dict_var_to_dict_nglobal_to_value[k].keys():
+                        print(" ------------- {}".format(n))
+
                 dict_varname_to_output[k] = np.stack(
                     [dict_var_to_dict_nglobal_to_value[k][n] for n in range(ten_xy_absolute.size()[0])],
                     0
