@@ -26,11 +26,11 @@ class PygSTDataGridBatchSampler(Sampler):
             [len(self._get_batchlist()) for _ in range(3)]
         )
 
+
     def __len__(self):
         return self.typical_num_batches
 
     def __iter__(self):
-        print(">>>>>>>>>>>>> DDDD ***********")
         list_batch = self._get_batchlist()
 
         # adjust lenth of list_batch
@@ -71,23 +71,23 @@ class PygSTDataGridBatchSampler(Sampler):
             )
         )
         list_batch = []
-        for x, y in zip(list_x, list_y):
-            # compute numpoints within the window
-            x_begin, x_end = x, x + self.width_window
-            y_begin, y_end = y, y + self.width_window
-            x_begin, x_end = x_begin - eps_dilatewin, x_end + eps_dilatewin
-            y_begin, y_end = y_begin - eps_dilatewin, y_end + eps_dilatewin
-            filter_x = ((self.ten_xy[:, 0] >= x_begin) * (self.ten_xy[:, 0] <= x_end))
-            filter_y = ((self.ten_xy[:, 1] >= y_begin) * (self.ten_xy[:, 1] <= y_end))
-            filter_xy = filter_x * filter_y
-            numpoints = torch.sum(
-                filter_xy
-            ).detach().cpu().numpy().tolist()
-            print("numpoints = {}".format(numpoints))
-            if numpoints >= self.min_numpoints_ingrid:  # enough points within the grid ==> create a batch
-                list_batch.append(
-                    torch.where(filter_xy)[0].detach().cpu().numpy().tolist()
-                )
+        for x in list_x:
+            for y in list_y:
+                # compute numpoints within the window
+                x_begin, x_end = x, x + self.width_window
+                y_begin, y_end = y, y + self.width_window
+                x_begin, x_end = x_begin - eps_dilatewin, x_end + eps_dilatewin
+                y_begin, y_end = y_begin - eps_dilatewin, y_end + eps_dilatewin
+                filter_x = ((self.ten_xy[:, 0] >= x_begin) * (self.ten_xy[:, 0] <= x_end))
+                filter_y = ((self.ten_xy[:, 1] >= y_begin) * (self.ten_xy[:, 1] <= y_end))
+                filter_xy = filter_x * filter_y
+                numpoints = torch.sum(
+                    filter_xy
+                ).detach().cpu().numpy().tolist()
+                if numpoints >= self.min_numpoints_ingrid:  # enough points within the grid ==> create a batch
+                    list_batch.append(
+                        torch.where(filter_xy)[0].detach().cpu().numpy().tolist()
+                    )
         return list_batch
 
     @torch.no_grad()
