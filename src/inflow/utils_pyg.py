@@ -58,22 +58,22 @@ class PygSTDataGridBatchSampler(Sampler):
 
         list_x = list(
             np.arange(
-                self.ten_xy[: ,0].min().detach().cpu().numpy().tolist() - offset_x,
-                self.ten_xy[: ,0].max().detach().cpu().numpy().tolist(),
+                self.ten_xy[:,0].min().detach().cpu().numpy().tolist() - offset_x,
+                self.ten_xy[:,0].max().detach().cpu().numpy().tolist(),
                 self.width_window
             )
         )
         list_y = list(
             np.arange(
-                self.ten_xy[: ,1].min().detach().cpu().numpy().tolist() - offset_y,
-                self.ten_xy[: ,1].max().detach().cpu().numpy().tolist(),
+                self.ten_xy[:,1].min().detach().cpu().numpy().tolist() - offset_y,
+                self.ten_xy[:,1].max().detach().cpu().numpy().tolist(),
                 self.width_window
             )
         )
         list_batch = []
         for x, y in zip(list_x, list_y):
             # compute numpoints within the window
-            x_begin, x_end = x , x+ self.width_window
+            x_begin, x_end = x, x + self.width_window
             y_begin, y_end = y, y + self.width_window
             x_begin, x_end = x_begin - eps_dilatewin, x_end + eps_dilatewin
             y_begin, y_end = y_begin - eps_dilatewin, y_end + eps_dilatewin
@@ -83,7 +83,7 @@ class PygSTDataGridBatchSampler(Sampler):
             numpoints = torch.sum(
                 filter_xy
             ).detach().cpu().numpy().tolist()
-
+            print("numpoints = {}".format(numpoints))
             if numpoints >= self.min_numpoints_ingrid:  # enough points within the grid ==> create a batch
                 list_batch.append(
                     torch.where(filter_xy)[0].detach().cpu().numpy().tolist()
