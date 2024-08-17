@@ -571,8 +571,9 @@ class InFlowVarDist(nn.Module):
             if(
                 set(dict_var_to_dict_nglobal_to_value[k].keys()) != set(range(ten_xy_absolute.size()[0]))
             ):
-                assert (k == 'output_imputer')
-                assert (np_out_imputer is None)
+                if dl.batch_sampler is None:  # i.e., if the cusotimized batch_sampler is not used.
+                    assert (k == 'output_imputer')
+                    assert (np_out_imputer is None)
 
             if (k == 'output_imputer') and (np_out_imputer is None):
                 dict_varname_to_output[k] = None
