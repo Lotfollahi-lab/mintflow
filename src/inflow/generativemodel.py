@@ -474,13 +474,13 @@ class InFlowGenerativeModel(nn.Module):
         )
         return dict_toret
 
-    def log_prob(self, dict_qsamples, batch, t_num_steps:int, ten_size_factor:torch.Tensor):
+    def log_prob(self, dict_qsamples, batch, t_num_steps:int, np_size_factor:np.ndarray):
         '''
 
         :param dict_qsamples: samples from q.
         :param batch: the batch returned by pyg's neighborloader.
         :param t_num_steps: the number of time-steps to be used by the NeuralODE module.
-        :param ten_size_factor: size factor for each cell, a tensor of size [num_cells]
+        :param np_size_factor: size factor for each cell, a tensor of size [num_cells]
         :return:
         '''
         device = dict_qsamples['z'].device
@@ -574,14 +574,14 @@ class InFlowGenerativeModel(nn.Module):
 
         # x_int
         logp_x_int = ZeroInflatedNegativeBinomial(
-            **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]) * (0.0+ten_size_factor.detach()[[batch.input_id]].unsqueeze(1)).detach(),
+            **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
                   'theta': self.theta_negbin_int},
                   **self.kwargs_negbin_int}
         ).log_prob(dict_qsamples['x_int'][:batch.batch_size])  # [b, num_genes]
 
         # x_spl
         logp_x_spl = ZeroInflatedNegativeBinomial(
-            **{**{'mu': self.module_w_dec_spl(dict_qsamples['xbar_spl'][:batch.batch_size]) * (0.0+ten_size_factor.detach()[[batch.input_id]].unsqueeze(1)).detach(),
+            **{**{'mu': self.module_w_dec_spl(dict_qsamples['xbar_spl'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
                   'theta': self.theta_negbin_spl},
                **self.kwargs_negbin_spl}
         ).log_prob(dict_qsamples['x_spl'][:batch.batch_size])  # [b, num_genes]

@@ -229,7 +229,7 @@ class InFlowVarDist(nn.Module):
             optim_training:torch.optim.Optimizer,
             tensorboard_stepsize_save:int,
             prob_applytfm_affinexy:float,
-            ten_size_factor: torch.Tensor,
+            np_size_factor: np.ndarray,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
             coef_loss_zzcloseness:float=0.0,
@@ -249,7 +249,7 @@ class InFlowVarDist(nn.Module):
         :param coef_loss_zzcloseness
         :param prob_applytfm_affinexy: with this probability the [xy] positions go throug an affined transformation.
         :param coef_flowmatchingloss: the coefficient for flow-matching loss.
-        :param ten_size_factor: a tensor of shape [num_cells], containing the size factors.
+        :param np_size_factor: a tensor of shape [num_cells], containing the size factors.
         :return:
         '''
 
@@ -291,7 +291,7 @@ class InFlowVarDist(nn.Module):
                 dict_qsamples=dict_q_sample,
                 batch=batch,
                 t_num_steps=t_num_steps,
-                ten_size_factor=ten_size_factor
+                np_size_factor=np_size_factor
             )
 
             # make the loss
