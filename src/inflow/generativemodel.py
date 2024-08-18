@@ -574,14 +574,14 @@ class InFlowGenerativeModel(nn.Module):
 
         # x_int
         logp_x_int = ZeroInflatedNegativeBinomial(
-            **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]) * ten_size_factor[[batch.input_id]].unsqueeze(1),
+            **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]) * (0.0+ten_size_factor.detach()[[batch.input_id]].unsqueeze(1)).detach(),
                   'theta': self.theta_negbin_int},
                   **self.kwargs_negbin_int}
         ).log_prob(dict_qsamples['x_int'][:batch.batch_size])  # [b, num_genes]
 
         # x_spl
         logp_x_spl = ZeroInflatedNegativeBinomial(
-            **{**{'mu': self.module_w_dec_spl(dict_qsamples['xbar_spl'][:batch.batch_size]) * ten_size_factor[[batch.input_id]].unsqueeze(1),
+            **{**{'mu': self.module_w_dec_spl(dict_qsamples['xbar_spl'][:batch.batch_size]) * (0.0+ten_size_factor.detach()[[batch.input_id]].unsqueeze(1)).detach(),
                   'theta': self.theta_negbin_spl},
                **self.kwargs_negbin_spl}
         ).log_prob(dict_qsamples['x_spl'][:batch.batch_size])  # [b, num_genes]
