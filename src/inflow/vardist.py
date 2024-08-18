@@ -285,7 +285,7 @@ class InFlowVarDist(nn.Module):
                 ten_xy_absolute=ten_xy_touse
             )
             dict_logq = self.log_prob(dict_q_sample)
-            dict_logp = self.module_genmodel.log_prob(
+            dict_logp, dict_otherinf = self.module_genmodel.log_prob(
                 dict_qsamples=dict_q_sample,
                 batch=batch,
                 t_num_steps=t_num_steps
@@ -374,6 +374,52 @@ class InFlowVarDist(nn.Module):
                             {"Loss/FMloss": fm_loss},
                             step=itrcount_wandb
                         )
+
+            # log int_cov_u and spl_cov_u ===
+            if flag_tensorboardsave:
+                with torch.no_grad():
+                    # int_cov_u
+                    if dict_otherinf['int_cov_u'] is not None:
+                        if isinstance(dict_otherinf['int_cov_u'], float):
+                            min_int_cov_u = dict_otherinf['int_cov_u']
+                            max_int_cov_u = dict_otherinf['int_cov_u']
+                            mean_int_cov_u = dict_otherinf['int_cov_u']
+                        elif isinstance(dict_otherinf['int_cov_u'], torch.Tensor):
+                            min_int_cov_u = dict_otherinf['int_cov_u'].min()
+                            max_int_cov_u = dict_otherinf['int_cov_u'].max()
+                            mean_int_cov_u = dict_otherinf['int_cov_u'].mean()
+                        else:
+                            raise Exception("Unknown type {} for int_cov_u".format(type(
+                                dict_otherinf['int_cov_u']
+                            )))
+                        wandb.log(
+                            {"InspectVals/int_cov_u.min":  min_int_cov_u,
+                             "InspectVals/int_cov_u.max":  max_int_cov_u,
+                             "InspectVals/int_cov_u.mean": mean_int_cov_u},
+                            step=itrcount_wandb
+                        )
+
+                    # spl_cov_u
+                    if dict_otherinf['spl_cov_u'] is not None:
+                        if isinstance(dict_otherinf['spl_cov_u'], float):
+                            min_spl_cov_u = dict_otherinf['spl_cov_u']
+                            max_spl_cov_u = dict_otherinf['spl_cov_u']
+                            mean_spl_cov_u = dict_otherinf['spl_cov_u']
+                        elif isinstance(dict_otherinf['spl_cov_u'], torch.Tensor):
+                            min_spl_cov_u = dict_otherinf['spl_cov_u'].min()
+                            max_spl_cov_u = dict_otherinf['spl_cov_u'].max()
+                            mean_spl_cov_u = dict_otherinf['spl_cov_u'].mean()
+                        else:
+                            raise Exception("Unknown type {} for spl_cov_u".format(type(
+                                dict_otherinf['spl_cov_u']
+                            )))
+                        wandb.log(
+                            {"InspectVals/spl_cov_u.min": min_spl_cov_u,
+                             "InspectVals/spl_cov_u.max": max_spl_cov_u,
+                             "InspectVals/spl_cov_u.mean": mean_spl_cov_u},
+                            step=itrcount_wandb
+                        )
+                        
 
 
 

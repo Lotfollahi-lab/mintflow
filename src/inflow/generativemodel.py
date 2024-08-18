@@ -491,6 +491,7 @@ class InFlowGenerativeModel(nn.Module):
                 scale=self.dict_pname_to_scaleandunweighted['sout'][0],
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).log_prob(dict_qsamples['s_out'])  # [num_cells, dim_s]
+            spl_cov_u = None
         else:
             spl_cov_u = self.module_spl_cov_u(dict_qsamples['ten_u_spl'])
 
@@ -524,6 +525,7 @@ class InFlowGenerativeModel(nn.Module):
                 scale=self.dict_pname_to_scaleandunweighted['z'][0],
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
             ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
+            int_cov_u = None
         else:
 
             int_cov_u = self.module_int_cov_u(dict_qsamples['ten_u_int'])
@@ -595,7 +597,7 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['x'][1]
             ).log_prob(batch.x.to_dense()[:batch.batch_size].to(device))  # [b, num_genes]
 
-        return dict(
+        dict_logp = dict(
             logp_s_out=logp_s_out,
             logp_z=logp_z,
             logp_s_in=logp_s_in,
@@ -605,6 +607,11 @@ class InFlowGenerativeModel(nn.Module):
             logp_x_spl=logp_x_spl,
             logp_x=logp_x
         )
+        dict_otherinf = dict(
+            int_cov_u=int_cov_u,
+            spl_cov_u=spl_cov_u
+        )
+        return dict_logp, dict_otherinf
 
 
 
