@@ -3,6 +3,8 @@ import random
 import numpy as np
 import torch
 from torch.utils.data.sampler import Sampler
+from tqdm.notebook import tqdm, trange
+
 
 class PygSTDataGridBatchSampler(Sampler):
     '''
@@ -97,7 +99,7 @@ class PygSTDataGridBatchSampler(Sampler):
         The idea is that it puts the corner of a window on each cell position and reports the maximum number.
         '''
         max_numpoints = -np.inf
-        for n in range(self.ten_xy.size()[0]):
+        for n in tqdm(range(self.ten_xy.size()[0])):
             x, y = self.ten_xy[n, 0].detach().cpu().numpy().tolist(), self.ten_xy[
                 n, 1].detach().cpu().numpy().tolist()
 
