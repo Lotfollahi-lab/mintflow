@@ -101,7 +101,7 @@ def cluster_optimal_resolution(
 
         # call clustering function
         print(f"Cluster for {resolution_key} with {cluster_function.__name__}")
-        cluster_function(adata, resolution=res, key_added=resolution_key, method='rapid', **kwargs)
+        cluster_function(adata, resolution=res, key_added=resolution_key, flavor='rapids', **kwargs)
 
     if cluster_function is None:
         cluster_function = sc.tl.leiden
@@ -124,8 +124,8 @@ def cluster_optimal_resolution(
     clustering = None
     score_all = []
 
-    #assert ('method' not in kwargs.keys())  # beacuse method is to be set to 'rapids'.
-    #kwargs['method'] = 'rapids'
+    assert ('flavor' not in kwargs.keys())  # beacuse flavour is to be set to 'rapids'.
+    # kwargs['flavour'] = 'rapids'
 
     for res in resolutions:
         resolution_key = f"{cluster_key}_{res}"
