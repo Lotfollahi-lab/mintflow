@@ -101,10 +101,14 @@ def cluster_optimal_resolution(
 
         # call clustering function
         print(f"Cluster for {resolution_key} with {cluster_function.__name__}")
-        cluster_function(adata, resolution=res, key_added=resolution_key, flavor='rapids', **kwargs)
+        cluster_function(adata, resolution=res, key_added=resolution_key, **kwargs)
 
-    if cluster_function is None:
-        cluster_function = sc.tl.louvain  #  TODO: double check if scale parameter should be changed. 
+    #if cluster_function is None:
+        #cluster_function = sc.tl.louvain  #  TODO: double check if scale parameter should be changed for louvain
+
+    assert (cluster_function is not None)
+    assert (cluster_function in [sc.tl.louvain, sc.tl.leiden] ) # louvain --> rapids, leiden --> no rapids.
+
 
     if cluster_key is None:
         cluster_key = cluster_function.__name__
@@ -125,7 +129,12 @@ def cluster_optimal_resolution(
     score_all = []
 
     assert ('flavor' not in kwargs.keys())  # beacuse flavour is to be set to 'rapids'.
-    # kwargs['flavour'] = 'rapids'
+    if cluster_function == sc.tl.louvain:
+        kwargs['flavor'] = 'rapids'
+        print("dddddddd ******")
+
+
+    # kwargs['flavor'] = 'rapids'
 
     for res in resolutions:
         resolution_key = f"{cluster_key}_{res}"
