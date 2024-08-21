@@ -104,7 +104,7 @@ def cluster_optimal_resolution(
         cluster_function(adata, resolution=res, key_added=resolution_key, flavor='rapids', **kwargs)
 
     if cluster_function is None:
-        cluster_function = sc.tl.leiden
+        cluster_function = sc.tl.louvain  #  TODO: double check if scale parameter should be changed. 
 
     if cluster_key is None:
         cluster_key = cluster_function.__name__
