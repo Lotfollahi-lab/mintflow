@@ -131,7 +131,7 @@ def cluster_optimal_resolution(
     assert ('flavor' not in kwargs.keys())  # beacuse flavour is to be set to 'rapids'.
     if cluster_function == sc.tl.louvain:
         kwargs['flavor'] = 'rapids'
-        print("dddddddd ******")
+
 
 
     # kwargs['flavor'] = 'rapids'

@@ -219,6 +219,90 @@ class InFlowVarDist(nn.Module):
             logq_s_out=logq_s_out
         )
 
+    def train_separately_encdec(self, adata, train_fraction:float, val_fraction:float, lr_optim:float, num_epochs:int, str_mode_x:str):
+        '''
+        Trains the encoder and decoder (i.e. \theta_{dec} and \varphi_{enc} in the paper), as done in latent diffusion.
+        :param str_mode_x: a string in ['raw', 'log1p']
+            - raw: no transformation on x.
+            - log1p: log(1+x) is fed to end/dec
+        :return:
+        '''
+        # get x
+        x = torch.sparse_coo_tensor(
+            indices=adata.X.nonzero(),
+            values=adata.X.data,
+            size=adata.X.shape
+        )  # TODO: could vary based on type(adata.X)?
+
+        if adata.X.shape[0] * adata.X.shape[1] < 1e9:
+            assert (
+                torch.all(
+                    x.to_dense() == torch.tensor(adata.X.toarray())
+                )
+            )
+            print("assertion was passed.")
+
+        if str_mode_x == 'raw':
+            pass
+        elif str_mode_x == 'log1p':
+            x = torch.log(1+x)
+
+        # split the ds to train/val/test
+        assert (isinstance(train_fraction, float) and (train_fraction > 0.0) and (train_fraction < 1.0))
+        assert (isinstance(val_fraction, float) and (val_fraction > 0.0) and (val_fraction < 1.0))
+        N_train = int(train_fraction * adata.X.shape[0])
+        N_val   = int(val_fraction * adata.X.shape[0])
+        N_test  = adata.X.shape[0] - N_val - N_train
+        idx_rnd_perm = np.random.permutation(adata.X.shape[0]).tolist()
+        list_idx_train = idx_rnd_perm[0:N_train] + []
+        list_idx_val   = idx_rnd_perm[N_train:N_train+N_val]
+        list_idx_test  = idx_rnd_perm[N_train+N_val::]
+        assert (
+            set(list_idx_train).intersection(set(list_idx_val)) == set([])
+        )
+        assert (
+            set(list_idx_train).intersection(set(list_idx_test)) == set([])
+        )
+        assert (
+            set(list_idx_val).intersection(set(list_idx_test)) == set([])
+        )
+        assert (
+            set(list_idx_train).union(set(list_idx_val)).union(set(list_idx_test)) == set(range(adata.X.shape[0]))
+        )
+        ds_train = torch.utils.data.TensorDataset(x[list_idx_train, :] + 0.0)
+        ds_val   = torch.utils.data.TensorDataset(x[list_idx_val, :] + 0.0)
+        ds_test  = torch.utils.data.TensorDataset(x[list_idx_test, :] + 0.0)
+        dl_train = torch.utils.data.DataLoader(ds=ds_train, batch_size=100, num_workers=4)
+        dl_val   = torch.utils.data.DataLoader(ds=ds_val, batch_size=100,  num_workers=4, shuffle=False)
+        dl_test  = torch.utils.data.DataLoader(ds=ds_test, batch_size=100, num_workers=4, shuffle=False)
+
+
+        # check if `module_varphi_enc_int` and `module_varphi_enc_spl` are two separate modules, are the same module
+        flag_varphiint_sameas_varphispl = list(self.module_varphi_enc_int.parameters())[0].data_ptr() == list(self.module_varphi_enc_spl.parameters())[0].data_ptr()
+        flag_thetaint_sameas_thetaspl = list(self.module_genmodel.module_w_dec_int.paramters())[0].data_ptr() == list(self.module_genmodel.module_w_dec_spl.parameters())[0].data_ptr()
+        if not flag_thetaint_sameas_thetaspl:
+            raise NotImplementedError('"At least in this function" w_dec_int and w_dec_spl are assumed the same.')
+
+
+
+        optimizer = torch.optim.Adam(
+            self.module_varphi_enc_int.parameters() if(flag_varphiint_sameas_varphispl) else list(self.module_varphi_enc_int.parameters()) + list(self.module_varphi_enc_spl.parameters()),
+            lr=lr_optim
+        )
+
+
+        for idx_epoch in range(num_epochs):
+            for _, data in tqdm(enumerate(dl_train)):
+                optimizer.zero_grad()
+                if flag_varphiint_sameas_varphispl:
+                    netout = self.module_varphi_enc_int(data)
+
+
+
+
+
+
+
 
     def training_epoch(
             self,
