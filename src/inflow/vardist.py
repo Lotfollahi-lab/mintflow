@@ -280,22 +280,67 @@ class InFlowVarDist(nn.Module):
         # check if `module_varphi_enc_int` and `module_varphi_enc_spl` are two separate modules, are the same module
         flag_varphiint_sameas_varphispl = list(self.module_varphi_enc_int.parameters())[0].data_ptr() == list(self.module_varphi_enc_spl.parameters())[0].data_ptr()
         flag_thetaint_sameas_thetaspl = list(self.module_genmodel.module_w_dec_int.paramters())[0].data_ptr() == list(self.module_genmodel.module_w_dec_spl.parameters())[0].data_ptr()
+
+        if not flag_varphiint_sameas_varphispl:
+            raise NotImplementedError('"At least in this function" module_varphi_enc_int and module_varphi_enc_int are assumed the same.')
+
         if not flag_thetaint_sameas_thetaspl:
             raise NotImplementedError('"At least in this function" w_dec_int and w_dec_spl are assumed the same.')
 
 
-
+        criterion = torch.nn.MSELoss()
         optimizer = torch.optim.Adam(
             self.module_varphi_enc_int.parameters() if(flag_varphiint_sameas_varphispl) else list(self.module_varphi_enc_int.parameters()) + list(self.module_varphi_enc_spl.parameters()),
             lr=lr_optim
         )
 
-
+        hist_loss_train, hist_loss_validation, hist_loss_test =[], [], []
         for idx_epoch in range(num_epochs):
+            # train
             for _, data in tqdm(enumerate(dl_train)):
                 optimizer.zero_grad()
-                if flag_varphiint_sameas_varphispl:
-                    netout = self.module_varphi_enc_int(data)
+                netout = self.module_genmodel.module_w_dec_int(
+                    self.module_varphi_enc_int(data)
+                )
+                loss = criterion(netout, data)
+                loss.backward()
+                optimizer.step()
+                hist_loss_train.append(loss.detach().cpu().numpy().tolist())
+
+            # validation
+            list_tmp = []
+            with torch.no_grad():
+                for _, data in tqdm(enumerate(dl_val)):
+                    list_tmp.append(
+                        criterion(
+                            self.module_genmodel.module_w_dec_int(
+                                self.module_varphi_enc_int(data)
+                            ),
+                            data
+                        ).detach().cpu().numpy().tolist()
+                    )
+            hist_loss_validation.append(
+                [len(hist_loss_train), np.mean(list_tmp)]
+            )
+
+            # test
+            list_tmp = []
+            with torch.no_grad():
+                for _, data in tqdm(enumerate(dl_test)):
+                    list_tmp.append(
+                        criterion(
+                            self.module_genmodel.module_w_dec_int(
+                                self.module_varphi_enc_int(data)
+                            ),
+                            data
+                        ).detach().cpu().numpy().tolist()
+                    )
+            hist_loss_test.append(
+                [len(hist_loss_train), np.mean(list_tmp)]
+            )
+        
+
+
 
 
 
