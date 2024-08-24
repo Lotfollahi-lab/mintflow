@@ -43,15 +43,23 @@ class Evaluator(ABC):
         pass
 
 class EvaluatorKmeans(Evaluator):
+
     def eval(self, dict_varname_to_var, adata):
         assert (self.str_varname in dict_varname_to_var.keys())
         dict_output_raw = scib_metrics.nmi_ari_cluster_labels_kmeans(
             X=dict_varname_to_var[self.str_varname],
             labels=np.array(self._get_list_labels(adata=adata))
         )
-        return {
+        dict_output = {
             "{}_{}_{}".format(self.str_varname, self.obskey_labels, k):dict_output_raw[k] for k in dict_output_raw.keys()
         }
+        assert (
+            set(dict_output.keys()) == set(self.get_output_keys())
+        )
+        return dict_output
+
+    def _get_output_keys(self):
+        return ['nmi', 'ari']
 
 
 
