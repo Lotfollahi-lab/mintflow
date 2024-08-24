@@ -34,6 +34,14 @@ class Evaluator(ABC):
     def eval(self, dict_varname_to_var, adata):
         pass
 
+    def get_output_keys(self):
+        raw_keys = self._get_output_keys()  # like ['nmi', 'ari'], if the output contains these keys.
+        return ["{}_{}_{}".format(self.str_varname, self.obskey_labels, k) for k in raw_keys]
+
+    @abstractmethod
+    def _get_output_keys(self):
+        pass
+
 class EvaluatorKmeans(Evaluator):
     def eval(self, dict_varname_to_var, adata):
         assert (self.str_varname in dict_varname_to_var.keys())
