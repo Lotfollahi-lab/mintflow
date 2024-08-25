@@ -77,7 +77,7 @@ class EvaluatorLeiden(Evaluator):
     def eval(self, dict_varname_to_var, adata):
         X = dict_varname_to_var[self.str_varname]
         # code grabbed from https://github.com/YosefLab/scib-metrics/blob/ec7c55b20ac823615906c544eadf81bd65314e2c/tests/utils/data.py#L17
-        dist_mat = csr_matrix(scib_metrics.utils.cdist(X, X))
+        dist_mat = scib_metrics.utils.cdist(X, X)  # csr_matrix(scib_metrics.utils.cdist(X, X))
         nbrs = NearestNeighbors(
             n_neighbors=self.nearestneigh_n_neighbors,
             metric='precomputed',  # because the distance matrix is fed to the fit function
