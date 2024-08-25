@@ -222,6 +222,7 @@ class InFlowVarDist(nn.Module):
     def train_separately_encdec(self, adata, train_fraction:float, val_fraction:float, lr_optim:float, num_epochs:int, str_mode_x:str):
         '''
         Trains the encoder and decoder (i.e. \theta_{dec} and \varphi_{enc} in the paper), as done in latent diffusion.
+        :param adata:
         :param str_mode_x: a string in ['raw', 'log1p']
             - raw: no transformation on x.
             - log1p: log(1+x) is fed to end/dec
@@ -339,6 +340,8 @@ class InFlowVarDist(nn.Module):
                 [len(hist_loss_train), np.mean(list_tmp)]
             )
         
+        return hist_loss_train, hist_loss_validation, hist_loss_test
+
 
 
 
