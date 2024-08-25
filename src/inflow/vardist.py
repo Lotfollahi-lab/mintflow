@@ -368,6 +368,7 @@ class InFlowVarDist(nn.Module):
             tensorboard_stepsize_save:int,
             prob_applytfm_affinexy:float,
             np_size_factor: np.ndarray,
+            flag_lockencdec_duringtraining,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
             coef_loss_zzcloseness:float=0.0,
@@ -375,6 +376,8 @@ class InFlowVarDist(nn.Module):
     ):
         '''
         One epoch of the training.
+        :param flag_lockencdec_duringtraining: if set to True, the encoder/decoder moduels are kept frozen. Because they are assumed to be trained separately (as done in latent diffusion).
+            Since the optimizer if fed as an arg, `flag_lockencdec_duringtraining` is only used to check if the frozen parameters are not in optimizer's list.
         :param dl: pyg's neighborloader.
         :param prob_maskknowngenes: probability of masking some known gene expressions (per-cell)
             to define the self-supervised loss.
@@ -390,6 +393,9 @@ class InFlowVarDist(nn.Module):
         :param np_size_factor: a tensor of shape [num_cells], containing the size factors.
         :return:
         '''
+
+        if flag_lockencdec_duringtraining:
+            assert (optim_training.flag_freezeencdec)  # TODO: make the check differently
 
         # make the affine xy augmenter
         tfm_affinexy = utils_imputer.RandomGeometricTfm(
