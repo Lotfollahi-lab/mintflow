@@ -304,9 +304,9 @@ class InFlowVarDist(nn.Module):
             for _, data in tqdm(enumerate(dl_train)):
                 optimizer.zero_grad()
                 netout = self.module_genmodel.module_w_dec_int(
-                    self.module_varphi_enc_int(data)
+                    self.module_varphi_enc_int(data[0])
                 )
-                loss = criterion(netout, data)
+                loss = criterion(netout, data[0])
                 loss.backward()
                 optimizer.step()
                 hist_loss_train.append(loss.detach().cpu().numpy().tolist())
@@ -318,9 +318,9 @@ class InFlowVarDist(nn.Module):
                     list_tmp.append(
                         criterion(
                             self.module_genmodel.module_w_dec_int(
-                                self.module_varphi_enc_int(data)
+                                self.module_varphi_enc_int(data[0])
                             ),
-                            data
+                            data[0]
                         ).detach().cpu().numpy().tolist()
                     )
             hist_loss_validation.append(
@@ -334,9 +334,9 @@ class InFlowVarDist(nn.Module):
                     list_tmp.append(
                         criterion(
                             self.module_genmodel.module_w_dec_int(
-                                self.module_varphi_enc_int(data)
+                                self.module_varphi_enc_int(data[0])
                             ),
-                            data
+                            data[0]
                         ).detach().cpu().numpy().tolist()
                     )
             hist_loss_test.append(
