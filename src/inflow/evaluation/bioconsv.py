@@ -39,7 +39,7 @@ class Evaluator(ABC):
 
     def get_output_keys(self):
         raw_keys = self._get_output_keys()  # like ['nmi', 'ari'], if the output contains these keys.
-        return ["{}_{}_{}".format(self.str_varname, self.obskey_labels, k) for k in raw_keys]
+        return ["{}_{}_{}_{}".format(self.__class__.__name__, self.str_varname, self.obskey_labels, k) for k in raw_keys]
 
     @abstractmethod
     def _get_output_keys(self):
@@ -54,7 +54,7 @@ class EvaluatorKmeans(Evaluator):
             labels=np.array(self._get_list_labels(adata=adata))
         )
         dict_output = {
-            "{}_{}_{}".format(self.str_varname, self.obskey_labels, k):dict_output_raw[k] for k in dict_output_raw.keys()
+            "{}_{}_{}_{}".format(self.__class__.__name__, self.str_varname, self.obskey_labels, k):dict_output_raw[k] for k in dict_output_raw.keys()
         }
         assert (
             set(dict_output.keys()) == set(self.get_output_keys())
@@ -89,7 +89,7 @@ class EvaluatorLeiden(Evaluator):
             n_jobs=-1  # so all cpus are used.
         )
         dict_output = {
-            "{}_{}_{}".format(self.str_varname, self.obskey_labels, k): dict_output_raw[k] for k in dict_output_raw.keys()
+            "{}_{}_{}_{}".format(self.__class__.__name__, self.str_varname, self.obskey_labels, k): dict_output_raw[k] for k in dict_output_raw.keys()
         }
         assert (
             set(dict_output.keys()) == set(self.get_output_keys())
