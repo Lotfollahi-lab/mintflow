@@ -235,6 +235,8 @@ class InFlowVarDist(nn.Module):
             size=adata.X.shape
         )  # TODO: could vary based on type(adata.X)?
 
+        x = x.to_dense()  # since TensorDataset couldn't handle sparse_coo_tensor
+
         if adata.X.shape[0] * adata.X.shape[1] < 1e9:
             assert (
                 torch.all(
@@ -339,7 +341,7 @@ class InFlowVarDist(nn.Module):
             hist_loss_test.append(
                 [len(hist_loss_train), np.mean(list_tmp)]
             )
-        
+
         return hist_loss_train, hist_loss_validation, hist_loss_test
 
 
