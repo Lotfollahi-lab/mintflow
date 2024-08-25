@@ -65,6 +65,17 @@ class EvaluatorKmeans(Evaluator):
         return ['nmi', 'ari']
 
 
+class TorchNearestNeighs:
+    def __init__(self):
+        pass
+
+    def get_NNs(self, x):
+        '''
+        :param x: of shape [N,D]
+        :return:
+        '''
+
+
 class EvaluatorLeiden(Evaluator):
     def __init__(self, nearestneigh_n_neighbors, nearestneigh_metric, *args, **kwargs):
         super(EvaluatorLeiden, self).__init__(*args, **kwargs)
@@ -77,7 +88,7 @@ class EvaluatorLeiden(Evaluator):
         dist_mat = csr_matrix(scib_metrics.utils.cdist(X, X))
         nbrs = NearestNeighbors(
             n_neighbors=self.nearestneigh_n_neighbors,
-            metric=self.nearestneigh_metric,
+            metric='precomputed',
             n_jobs=-1
         ).fit(dist_mat)
         dist, ind = nbrs.kneighbors(dist_mat)
