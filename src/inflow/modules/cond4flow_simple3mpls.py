@@ -52,7 +52,7 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
                 ten_xbar_spl
             )  # [N, dim_s]
         else:
-            mu_sout = self.module_head_mus_sout(
+            mu_sout = self.module_xbarspl2sout(
                 torch.cat(
                     [ten_xbar_spl, ten_us],
                     1
