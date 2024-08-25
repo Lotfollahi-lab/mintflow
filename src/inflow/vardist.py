@@ -237,7 +237,7 @@ class InFlowVarDist(nn.Module):
             indices=adata.X.tocoo().nonzero(),
             values=adata.X.tocoo().data,
             size=adata.X.tocoo().shape
-        )  # TODO: could vary based on type(adata.X)? specially the .tocoo part?
+        ).float()  # TODO: could vary based on type(adata.X)? specially the .tocoo part?
 
 
         if adata.X.shape[0] * adata.X.shape[1] < 1e9:
