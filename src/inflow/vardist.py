@@ -219,7 +219,7 @@ class InFlowVarDist(nn.Module):
             logq_s_out=logq_s_out
         )
 
-    def train_separately_encdec(self, adata, train_fraction:float, val_fraction:float, lr_optim:float, num_epochs:int, str_mode_x:str):
+    def train_separately_encdec(self, adata, device, train_fraction:float, val_fraction:float, lr_optim:float, num_epochs:int, str_mode_x:str):
         '''
         Trains the encoder and decoder (i.e. \theta_{dec} and \varphi_{enc} in the paper), as done in latent diffusion.
         :param adata:
@@ -302,11 +302,12 @@ class InFlowVarDist(nn.Module):
         for idx_epoch in range(num_epochs):
             # train
             for _, data in tqdm(enumerate(dl_train)):
+                assert (len(data) == 1)
                 optimizer.zero_grad()
                 netout = self.module_genmodel.module_w_dec_int(
-                    self.module_varphi_enc_int(data[0])
+                    self.module_varphi_enc_int(data[0].to(device))
                 )
-                loss = criterion(netout, data[0])
+                loss = criterion(netout, data[0].to(device))
                 loss.backward()
                 optimizer.step()
                 hist_loss_train.append(loss.detach().cpu().numpy().tolist())
@@ -315,12 +316,13 @@ class InFlowVarDist(nn.Module):
             list_tmp = []
             with torch.no_grad():
                 for _, data in tqdm(enumerate(dl_val)):
+                    assert (len(data) == 1)
                     list_tmp.append(
                         criterion(
                             self.module_genmodel.module_w_dec_int(
-                                self.module_varphi_enc_int(data[0])
+                                self.module_varphi_enc_int(data[0].to(device))
                             ),
-                            data[0]
+                            data[0].to(device)
                         ).detach().cpu().numpy().tolist()
                     )
             hist_loss_validation.append(
@@ -331,12 +333,13 @@ class InFlowVarDist(nn.Module):
             list_tmp = []
             with torch.no_grad():
                 for _, data in tqdm(enumerate(dl_test)):
+                    assert (len(data) == 1)
                     list_tmp.append(
                         criterion(
                             self.module_genmodel.module_w_dec_int(
-                                self.module_varphi_enc_int(data[0])
+                                self.module_varphi_enc_int(data[0].to(device))
                             ),
-                            data[0]
+                            data[0].to(device)
                         ).detach().cpu().numpy().tolist()
                     )
             hist_loss_test.append(
