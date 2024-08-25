@@ -299,9 +299,9 @@ class InFlowVarDist(nn.Module):
         )
 
         hist_loss_train, hist_loss_validation, hist_loss_test =[], [], []
-        for idx_epoch in range(num_epochs):
+        for idx_epoch in tqdm(range(num_epochs)):
             # train
-            for _, data in tqdm(enumerate(dl_train)):
+            for _, data in enumerate(dl_train):
                 assert (len(data) == 1)
                 optimizer.zero_grad()
                 netout = self.module_genmodel.module_w_dec_int(
@@ -315,7 +315,7 @@ class InFlowVarDist(nn.Module):
             # validation
             list_tmp = []
             with torch.no_grad():
-                for _, data in tqdm(enumerate(dl_val)):
+                for _, data in enumerate(dl_val):
                     assert (len(data) == 1)
                     list_tmp.append(
                         criterion(
@@ -332,7 +332,7 @@ class InFlowVarDist(nn.Module):
             # test
             list_tmp = []
             with torch.no_grad():
-                for _, data in tqdm(enumerate(dl_test)):
+                for _, data in enumerate(dl_test):
                     assert (len(data) == 1)
                     list_tmp.append(
                         criterion(
