@@ -77,7 +77,8 @@ class EvaluatorLeiden(Evaluator):
         dist_mat = csr_matrix(scib_metrics.utils.cdist(X, X))
         nbrs = NearestNeighbors(
             n_neighbors=self.nearestneigh_n_neighbors,
-            metric=self.nearestneigh_metric
+            metric=self.nearestneigh_metric,
+            n_jobs=-1
         ).fit(dist_mat)
         dist, ind = nbrs.kneighbors(dist_mat)
         X_neigh_results = NeighborsResults(indices=ind, distances=dist)  # =====
