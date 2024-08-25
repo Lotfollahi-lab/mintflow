@@ -283,7 +283,7 @@ class InFlowVarDist(nn.Module):
 
         # check if `module_varphi_enc_int` and `module_varphi_enc_spl` are two separate modules, are the same module
         flag_varphiint_sameas_varphispl = list(self.module_varphi_enc_int.parameters())[0].data_ptr() == list(self.module_varphi_enc_spl.parameters())[0].data_ptr()
-        flag_thetaint_sameas_thetaspl = list(self.module_genmodel.module_w_dec_int.paramters())[0].data_ptr() == list(self.module_genmodel.module_w_dec_spl.parameters())[0].data_ptr()
+        flag_thetaint_sameas_thetaspl = list(self.module_genmodel.module_w_dec_int.parameters())[0].data_ptr() == list(self.module_genmodel.module_w_dec_spl.parameters())[0].data_ptr()
 
         if not flag_varphiint_sameas_varphispl:
             raise NotImplementedError('"At least in this function" module_varphi_enc_int and module_varphi_enc_int are assumed the same.')
