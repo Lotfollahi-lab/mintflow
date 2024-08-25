@@ -234,10 +234,10 @@ class InFlowVarDist(nn.Module):
         '''
         # get x
         x = torch.sparse_coo_tensor(
-            indices=adata.X.nonzero(),
-            values=adata.X.data,
-            size=adata.X.shape
-        )  # TODO: could vary based on type(adata.X)?
+            indices=adata.X.tocoo().nonzero(),
+            values=adata.X.tocoo().data,
+            size=adata.X.tocoo().shape
+        )  # TODO: could vary based on type(adata.X)? specially the .tocoo part?
 
 
         if adata.X.shape[0] * adata.X.shape[1] < 1e9:
