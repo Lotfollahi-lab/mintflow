@@ -235,7 +235,6 @@ class InFlowVarDist(nn.Module):
             size=adata.X.shape
         )  # TODO: could vary based on type(adata.X)?
 
-        x = x.to_dense()  # since TensorDataset couldn't handle sparse_coo_tensor
 
         if adata.X.shape[0] * adata.X.shape[1] < 1e9:
             assert (
@@ -244,6 +243,8 @@ class InFlowVarDist(nn.Module):
                 )
             )
             print("assertion was passed.")
+
+        x = x.to_dense()  # since TensorDataset couldn't handle sparse_coo_tensor
 
         if str_mode_x == 'raw':
             pass
