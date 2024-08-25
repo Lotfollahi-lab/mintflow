@@ -7,6 +7,7 @@ from .generativemodel import InFlowGenerativeModel
 from .modules.impanddisentgl import ImputerAndDisentangler
 from .modules.disentonly import Disentangler
 from .modules.cond4flow import Cond4FlowVarphi0
+from .modules.cond4flow_simple3mpls import Cond4FlowVarphi0SimpleMLPs
 from .modules.disentonly_twosep import DisentanglerTwoSep
 from . import probutils
 from . import utils_imputer
@@ -29,6 +30,7 @@ class InFlowVarDist(nn.Module):
             kwargs_impanddisentgl:dict,
             module_varphi_enc_int:nn.Module,
             module_varphi_enc_spl:nn.Module,
+            type_cond4flowvarphi0,
             kwargs_cond4flowvarphi0:dict,
             dict_qname_to_scaleandunweighted:dict,
             list_ajdmatpredloss:ListAdjMatPredLoss,
@@ -67,6 +69,7 @@ class InFlowVarDist(nn.Module):
         # grab args ===
         self.module_genmodel = module_genmodel
         self.type_impanddisentgl = type_impanddisentgl
+        self.type_cond4flowvarphi0 = type_cond4flowvarphi0
         self.kwargs_impanddisentgl = kwargs_impanddisentgl
         self.module_varphi_enc_int = module_varphi_enc_int
         self.module_varphi_enc_spl = module_varphi_enc_spl
@@ -78,7 +81,8 @@ class InFlowVarDist(nn.Module):
 
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
-        self.module_cond4flowvarphi0 = Cond4FlowVarphi0(**kwargs_cond4flowvarphi0)
+        self.module_cond4flowvarphi0 = type_cond4flowvarphi0(**kwargs_cond4flowvarphi0)
+
 
         self._check_args()
 
@@ -788,6 +792,10 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        assert (
+            isinstance(self.module_cond4flowvarphi0, Cond4FlowVarphi0) or isinstance(self.module_cond4flowvarphi0, Cond4FlowVarphi0SimpleMLPs)
+        )
 
         assert (
             isinstance(self.module_conditionalflowmatcher, utils_flowmatching.ConditionalFlowMatcher)
