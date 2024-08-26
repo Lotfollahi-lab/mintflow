@@ -36,6 +36,7 @@ class EvalXsplpred:
             except:
                 np_pred = np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
 
+        np_pred = np_pred * np_xobs
         np_gt = np_xspl_gt[mask_nonzero_exp].flatten() + 0.0
 
         dict_toret = {}
