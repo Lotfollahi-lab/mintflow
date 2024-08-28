@@ -225,7 +225,7 @@ class InFlowVarDist(nn.Module):
             logq_s_out=logq_s_out
         )
 
-    def train_separately_encdec(self, adata, device, train_fraction:float, val_fraction:float, lr_optim:float, num_epochs:int, str_mode_x:str):
+    def train_separately_encdec(self, adata, device, train_fraction:float, val_fraction:float, lr_optim:float, num_epochs:int, str_mode_x:str, batch_size:int):
         '''
         Trains the encoder and decoder (i.e. \theta_{dec} and \varphi_{enc} in the paper), as done in latent diffusion.
         :param adata:
@@ -282,9 +282,9 @@ class InFlowVarDist(nn.Module):
         ds_train = torch.utils.data.TensorDataset(x[list_idx_train, :] + 0.0)
         ds_val   = torch.utils.data.TensorDataset(x[list_idx_val, :] + 0.0)
         ds_test  = torch.utils.data.TensorDataset(x[list_idx_test, :] + 0.0)
-        dl_train = torch.utils.data.DataLoader(ds_train, batch_size=100, num_workers=4)
-        dl_val   = torch.utils.data.DataLoader(ds_val, batch_size=100,  num_workers=4, shuffle=False)
-        dl_test  = torch.utils.data.DataLoader(ds_test, batch_size=100, num_workers=4, shuffle=False)
+        dl_train = torch.utils.data.DataLoader(ds_train, batch_size=batch_size, num_workers=4)
+        dl_val   = torch.utils.data.DataLoader(ds_val, batch_size=batch_size,  num_workers=4, shuffle=False)
+        dl_test  = torch.utils.data.DataLoader(ds_test, batch_size=batch_size, num_workers=4, shuffle=False)
 
 
         # check if `module_varphi_enc_int` and `module_varphi_enc_spl` are two separate modules, are the same module
