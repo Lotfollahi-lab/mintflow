@@ -418,7 +418,7 @@ class InFlowVarDist(nn.Module):
 
 
         for batch in tqdm(dl):
-
+            batch.INFLOWMETAINF = {"ddd": 10, 'ccc': 16}  # to test
             ten_xy_touse = ten_xy_absolute + 0.0
             if prob_applytfm_affinexy > 0.0:
                 with torch.no_grad():
