@@ -110,11 +110,12 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
                 ).to(ten_xy_absolute.device)
             ).detach()  # [N, 10]
 
+
             assert (
-                batch.y.size()[1] == (2*self.num_celltypes)
+                batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'])
             )
-            ten_u_int = batch.y[:, 0:self.num_celltypes].to(ten_xy_absolute.device) if (self.flag_use_int_u) else None
-            ten_u_spl = batch.y[:, self.num_celltypes::].to(ten_xy_absolute.device) if (self.flag_use_spl_u) else None
+            ten_u_int = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.flag_use_int_u) else None
+            ten_u_spl = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.flag_use_spl_u) else None
 
 
             # define the masking token
@@ -146,14 +147,6 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
             if torch.any(~a):
                 xe[~a, :] = xe[~a, :] * 0
 
-        '''
-        print("batch.x.shape = {}".format(batch.x.shape))
-        print("batch.y.shape = {}".format(batch.y.shape))
-        print("xe.shape = {}".format(xe.shape))
-        print("pe.shape = {}".format(pe.shape))
-        print("em_iscentralnode.shape = {}".format(em_iscentralnode.shape))
-        print("em_blankorobserved.shape = {}".format(em_blankorobserved.shape))
-        '''
         list_em_final = [xe+pe, em_iscentralnode]
         if self.flag_use_int_u:
             list_em_final.append(ten_u_int)
@@ -170,7 +163,7 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
 
 
 class DisentanglerTwoSep(nn.Module):
-    def __init__(self, maxsize_subgraph, kwargs_em_intandspl, kwargs_tformer_int, kwargs_tformer_spl):
+    def __init__(self, kwargs_genmodel, maxsize_subgraph, kwargs_em_intandspl, kwargs_tformer_int, kwargs_tformer_spl):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
         :param kwargs_em_intandspl: A single token embedding is used for both int and spl transformers.
@@ -189,9 +182,9 @@ class DisentanglerTwoSep(nn.Module):
         # tfm_int
         dim_tf_int = kwargs_em_intandspl['dim_embedding'] + kwargs_em_intandspl['dim_em_iscentralnode']
         if self.flag_use_int_u:
-            dim_tf_int += self.num_celltypes
+            dim_tf_int += kwargs_genmodel['dict_varname_to_dim']['dim_u_int']
         if self.flag_use_spl_u:
-            dim_tf_int += self.num_celltypes
+            dim_tf_int += kwargs_genmodel['dict_varname_to_dim']['dim_u_spl']
 
         self.module_em_intandspl = SubgraphEmbeddingDisentTwoSep(**kwargs_em_intandspl)
         self.module_tf_int = Padder(
@@ -224,41 +217,6 @@ class DisentanglerTwoSep(nn.Module):
             nn.Linear(dim_tf_spl, kwargs_em_intandspl['num_genes'])
         )  # TODO: maybe add more layers to this head?
 
-        '''
-        if self.str_mode_headxint_headxspl_headboth == 'headxint':
-            self.module_linearhead_muxint = nn.Sequential(
-                nn.LeakyReLU(),
-                nn.Linear(dim_tf1, dim_tf1),
-                nn.LeakyReLU(),
-                nn.Linear(dim_tf1, kwargs_em1['num_genes'])
-            )  # TODO: maybe add more layers to this head?
-            self.module_linearhead_muxspl = None
-        elif self.str_mode_headxint_headxspl_headboth == 'headxspl':
-            self.module_linearhead_muxspl = nn.Sequential(
-                nn.LeakyReLU(),
-                nn.Linear(dim_tf1, dim_tf1),
-                nn.LeakyReLU(),
-                nn.Linear(dim_tf1, kwargs_em1['num_genes'])
-            )  # TODO: maybe add more layers to this head?
-            self.module_linearhead_muxint = None
-        elif self.str_mode_headxint_headxspl_headboth == 'headboth':
-            self.module_linearhead_muxint = nn.Sequential(
-                nn.LeakyReLU(),
-                nn.Linear(dim_tf1, dim_tf1),
-                nn.LeakyReLU(),
-                nn.Linear(dim_tf1, kwargs_em1['num_genes'])
-            )  # TODO: maybe add more layers to this head?
-            self.module_linearhead_muxspl = nn.Sequential(
-                nn.LeakyReLU(),
-                nn.Linear(dim_tf1, dim_tf1),
-                nn.LeakyReLU(),
-                nn.Linear(dim_tf1, kwargs_em1['num_genes'])
-            )  # TODO: maybe add more layers to this head?
-        else:
-            raise Exception(
-                "Uknown value {} for str_mode_headxint_headxspl_headboth.".format(self.str_mode_headxint_headxspl_headboth)
-            )
-        '''
 
         self.module_linearhead_sigmaxint = nn.Sequential(
             nn.LeakyReLU(),

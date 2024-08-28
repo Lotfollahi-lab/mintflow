@@ -106,10 +106,10 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
             ).detach()  # [N, 10]
 
             assert (
-                batch.y.size()[1] == (2 * self.num_celltypes)
+                batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'])
             )
-            ten_u_int = batch.y[:, 0:self.num_celltypes].to(ten_xy_absolute.device) if (self.flag_use_int_u) else None
-            ten_u_spl = batch.y[:, self.num_celltypes::].to(ten_xy_absolute.device) if (self.flag_use_spl_u) else None
+            ten_u_int = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.flag_use_int_u) else None
+            ten_u_spl = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.flag_use_spl_u) else None
 
             # define the masking token
             '''
@@ -161,7 +161,7 @@ class SubgraphEmbeddingImpAndDisengl(nn.Module):
 
 
 class Disentangler(nn.Module):
-    def __init__(self, maxsize_subgraph, kwargs_em1, kwargs_tformer1, str_mode_headxint_headxspl_headboth):
+    def __init__(self, kwargs_genmodel, maxsize_subgraph, kwargs_em1, kwargs_tformer1, str_mode_headxint_headxspl_headboth):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
         :param kwargs_em1:
@@ -181,9 +181,9 @@ class Disentangler(nn.Module):
 
         dim_tf1 = kwargs_em1['dim_embedding'] + kwargs_em1['dim_em_iscentralnode']
         if self.flag_use_int_u:
-            dim_tf1 += self.num_celltypes
+            dim_tf1 += kwargs_genmodel['dict_varname_to_dim']['dim_u_int']
         if self.flag_use_spl_u:
-            dim_tf1 += self.num_celltypes
+            dim_tf1 += kwargs_genmodel['dict_varname_to_dim']['dim_u_spl']
 
 
         self.module_em1 = SubgraphEmbeddingImpAndDisengl(**kwargs_em1)

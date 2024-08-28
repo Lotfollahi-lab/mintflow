@@ -142,9 +142,11 @@ class InFlowVarDist(nn.Module):
         ).rsample()  # [N, dim_s]
 
         #set ten_u_int and ten_u_spl ===
-        num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
-        ten_u_int = batch.y[:, 0:num_celltypes].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
-        ten_u_spl = batch.y[:, num_celltypes::].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_spl_u) else None
+        assert (
+            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'])
+        )
+        ten_u_int = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
+        ten_u_spl = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_spl_u) else None
 
 
         # ret
@@ -418,7 +420,11 @@ class InFlowVarDist(nn.Module):
 
 
         for batch in tqdm(dl):
-            batch.INFLOWMETAINF = {"ddd": 10, 'ccc': 16}  # to test
+            batch.INFLOWMETAINF = {
+                "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
+                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl']
+            }  # how batch.y is split between u_int, u_spl
+
             ten_xy_touse = ten_xy_absolute + 0.0
             if prob_applytfm_affinexy > 0.0:
                 with torch.no_grad():
