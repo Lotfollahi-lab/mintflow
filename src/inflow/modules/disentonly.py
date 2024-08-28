@@ -181,9 +181,9 @@ class Disentangler(nn.Module):
 
         dim_tf1 = kwargs_em1['dim_embedding'] + kwargs_em1['dim_em_iscentralnode']
         if self.flag_use_int_u:
-            dim_tf1 += kwargs_genmodel['dict_varname_to_dim']['dim_u_int']
+            dim_tf1 += kwargs_genmodel['dict_varname_to_dim']['u_int']
         if self.flag_use_spl_u:
-            dim_tf1 += kwargs_genmodel['dict_varname_to_dim']['dim_u_spl']
+            dim_tf1 += kwargs_genmodel['dict_varname_to_dim']['u_spl']
 
 
         self.module_em1 = SubgraphEmbeddingImpAndDisengl(**kwargs_em1)

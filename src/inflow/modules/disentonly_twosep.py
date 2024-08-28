@@ -182,9 +182,9 @@ class DisentanglerTwoSep(nn.Module):
         # tfm_int
         dim_tf_int = kwargs_em_intandspl['dim_embedding'] + kwargs_em_intandspl['dim_em_iscentralnode']
         if self.flag_use_int_u:
-            dim_tf_int += kwargs_genmodel['dict_varname_to_dim']['dim_u_int']
+            dim_tf_int += kwargs_genmodel['dict_varname_to_dim']['u_int']
         if self.flag_use_spl_u:
-            dim_tf_int += kwargs_genmodel['dict_varname_to_dim']['dim_u_spl']
+            dim_tf_int += kwargs_genmodel['dict_varname_to_dim']['u_spl']
 
         self.module_em_intandspl = SubgraphEmbeddingDisentTwoSep(**kwargs_em_intandspl)
         self.module_tf_int = Padder(
