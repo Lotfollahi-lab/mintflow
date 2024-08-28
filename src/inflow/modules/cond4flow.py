@@ -178,10 +178,8 @@ class Cond4FlowVarphi0(nn.Module):
         assert (
             batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'])
         )
-        ten_uz = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (
-            self.module_genmodel.flag_use_int_u) else None
-        ten_us = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (
-            self.module_genmodel.flag_use_spl_u) else None
+        ten_uz = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_int_u']) else None
+        ten_us = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_spl_u']) else None
 
 
         in_tf = self.module_em_spl(
