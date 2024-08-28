@@ -5,15 +5,19 @@ import numpy as np
 import torch
 
 class SimpleMLP(torch.nn.Module):
-    def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool):
+    def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool, flag_startswithReLU:bool):
         super(SimpleMLP, self).__init__()
         #grab args ===
         self.dim_input = dim_input
         self.list_dim = [dim_input] + list_dim_hidden + [dim_output]
         self.dim_output = dim_output
         self.flag_endwithReLU = flag_endwithReLU
+        self.flag_startswithReLU = flag_startswithReLU
         #make internals ==
         list_module = []
+        if flag_startswithReLU:
+            list_module.append(torch.nn.ReLU())
+        
         for l in range(len(self.list_dim)-1):
             list_module.append(
                 torch.nn.Linear(self.list_dim[l], self.list_dim[l+1], bias=bias)
@@ -22,6 +26,7 @@ class SimpleMLP(torch.nn.Module):
                 list_module.append(torch.nn.ReLU())
         if flag_endwithReLU:
             list_module.append(torch.nn.ReLU())
+
         self.module = torch.nn.Sequential(*list_module)
 
     def forward(self, x):
