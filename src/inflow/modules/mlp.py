@@ -17,7 +17,7 @@ class SimpleMLP(torch.nn.Module):
         list_module = []
         if flag_startswithReLU:
             list_module.append(torch.nn.ReLU())
-        
+
         for l in range(len(self.list_dim)-1):
             list_module.append(
                 torch.nn.Linear(self.list_dim[l], self.list_dim[l+1], bias=bias)
@@ -47,7 +47,8 @@ class SimpleMLPandExp(torch.nn.Module):
             list_dim_hidden=list_dim_hidden,
             dim_output=dim_output,
             bias=bias,
-            flag_endwithReLU=False
+            flag_endwithReLU=False,
+            flag_startswithReLU=False
         )
 
     def forward(self, x):
