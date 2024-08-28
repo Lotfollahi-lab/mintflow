@@ -738,6 +738,12 @@ class InFlowVarDist(nn.Module):
         }  # TODO: add other variables.
         cnt_tqdm = 1
         for batch in tqdm(dl, desc='Epoch {}'.format(cnt_tqdm), position=0, leave=False):
+
+            batch.INFLOWMETAINF = {
+                "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
+                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl']
+            }  # how batch.y is split between u_int, u_spl
+
             cnt_tqdm += 1
             curr_dict_qsample = self.rsample(
                 batch=batch,
