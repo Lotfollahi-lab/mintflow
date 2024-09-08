@@ -105,6 +105,15 @@ class InFlowVarDist(nn.Module):
                 loc=params_q_impanddisentgl['muxspl'],
                 scale=params_q_impanddisentgl['sigmaxspl']
             ).rsample()  # [N, num_genes]
+
+            if torch.any(torch.isnan(x_int)):
+                x_int = torch.nan_to_num(x_int)
+                print("Nan Occured in x_int")
+
+            if torch.any(torch.isnan(x_spl)):
+                x_spl = torch.nan_to_num(x_spl)
+                print("Nan Occured in x_int")
+
         else:
             x_int = probutils.ExtenededNormal(
                 loc=params_q_impanddisentgl['muxint'],
