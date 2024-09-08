@@ -45,13 +45,13 @@ class GNNDisentangler(nn.Module):
         )
         '''
 
+        self.module_gnn_backbone = gnn.SAGE(
+            dim_input=dim_gnnin,
+            dim_output=100,  # TODO:TUNE 100
+            list_dim_hidden=self.gnn_list_dim_hidden,
+            kwargs_sageconv=self.kwargs_sageconv
+        )
         if self.str_mode_headxint_headxspl_headboth == 'headxint':
-            self.module_gnn_backbone = gnn.SAGE(
-                dim_input=dim_gnnin,
-                dim_output=100,  # TODO:TUNE 100
-                list_dim_hidden=self.gnn_list_dim_hidden,
-                kwargs_sageconv=self.kwargs_sageconv
-            )
             self.module_linearhead_muxint = nn.Sequential(
                 nn.ReLU(),
                 nn.Linear(
@@ -61,12 +61,6 @@ class GNNDisentangler(nn.Module):
             )
             self.module_linearhead_muxspl = None
         elif self.str_mode_headxint_headxspl_headboth == 'headxspl':
-            self.module_gnn_backbone = gnn.SAGE(
-                dim_input=dim_gnnin,
-                dim_output=kwargs_genmodel['dict_varname_to_dim']['x'],
-                list_dim_hidden=self.gnn_list_dim_hidden,
-                kwargs_sageconv=self.kwargs_sageconv
-            )
             self.module_linearhead_muxint = None
             self.module_linearhead_muxspl = nn.Sequential(
                 nn.ReLU(),
@@ -76,12 +70,6 @@ class GNNDisentangler(nn.Module):
                 )
             )
         elif self.str_mode_headxint_headxspl_headboth == 'headboth':
-            self.module_gnn_backbone = gnn.SAGE(
-                dim_input=dim_gnnin,
-                dim_output=kwargs_genmodel['dict_varname_to_dim']['x'],
-                list_dim_hidden=self.gnn_list_dim_hidden,
-                kwargs_sageconv=self.kwargs_sageconv
-            )
             self.module_linearhead_muxint = nn.Sequential(
                 nn.ReLU(),
                 nn.Linear(
