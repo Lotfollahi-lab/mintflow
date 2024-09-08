@@ -95,16 +95,29 @@ class InFlowVarDist(nn.Module):
             prob_maskknowngenes=prob_maskknowngenes,
             ten_xy_absolute=ten_xy_absolute
         )  # so it's not repeated in compgraph.
-        x_int = probutils.ExtenededNormal(
-            loc=params_q_impanddisentgl['muxint'],
-            scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['scale'],
-            flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['flag_unweighted']
-        ).rsample()  # [N, num_genes]
-        x_spl = probutils.ExtenededNormal(
-            loc=params_q_impanddisentgl['muxspl'],
-            scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['scale'],
-            flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['flag_unweighted']
-        ).rsample()  # [N, num_genes]
+
+        if isinstance(self.module_impanddisentgl, GNNDisentangler): # with GNN disentagler, the encoder's varaice is used.
+            x_int = probutils.ExtenededNormal(
+                loc=params_q_impanddisentgl['muxint'],
+                scale=params_q_impanddisentgl['sigmaxint'],
+                flag_unweighted=False
+            ).rsample()  # [N, num_genes]
+            x_spl = probutils.ExtenededNormal(
+                loc=params_q_impanddisentgl['muxspl'],
+                scale=params_q_impanddisentgl['sigmaxspl'],
+                flag_unweighted=False
+            ).rsample()  # [N, num_genes]
+        else:
+            x_int = probutils.ExtenededNormal(
+                loc=params_q_impanddisentgl['muxint'],
+                scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['scale'],
+                flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['flag_unweighted']
+            ).rsample()  # [N, num_genes]
+            x_spl = probutils.ExtenededNormal(
+                loc=params_q_impanddisentgl['muxspl'],
+                scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['scale'],
+                flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['flag_unweighted']
+            ).rsample()  # [N, num_genes]
 
         # step 2, rsample from encoders to the low-dim embedding space.
         param_q_xbarint = self.module_varphi_enc_int(x_int)  # [N, dim_latent]
@@ -171,19 +184,35 @@ class InFlowVarDist(nn.Module):
         )
 
     def log_prob(self, dict_retvalrsample):
-        # xint
-        logq_xint = probutils.ExtenededNormal(
-            loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
-            scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['scale'],
-            flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['flag_unweighted']
-        ).log_prob(dict_retvalrsample['x_int'])  # [N, num_genes]
 
-        # xspl
-        logq_xspl = probutils.ExtenededNormal(
-            loc=dict_retvalrsample['params_q_impanddisentgl']['muxspl'],
-            scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['scale'],
-            flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['flag_unweighted']
-        ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
+        if isinstance(self.module_impanddisentgl, GNNDisentangler):
+            # xint
+            logq_xint = probutils.ExtenededNormal(
+                loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
+                scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxint'],
+                flag_unweighted=False
+            ).log_prob(dict_retvalrsample['x_int'])  # [N, num_genes]
+
+            # xspl
+            logq_xspl = probutils.ExtenededNormal(
+                loc=dict_retvalrsample['params_q_impanddisentgl']['muxspl'],
+                scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxspl'],
+                flag_unweighted=False
+            ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
+        else:
+            # xint
+            logq_xint = probutils.ExtenededNormal(
+                loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
+                scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['scale'],
+                flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['flag_unweighted']
+            ).log_prob(dict_retvalrsample['x_int'])  # [N, num_genes]
+
+            # xspl
+            logq_xspl = probutils.ExtenededNormal(
+                loc=dict_retvalrsample['params_q_impanddisentgl']['muxspl'],
+                scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['scale'],
+                flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['flag_unweighted']
+            ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
 
         # xbarint
         logq_xbarint = probutils.ExtenededNormal(

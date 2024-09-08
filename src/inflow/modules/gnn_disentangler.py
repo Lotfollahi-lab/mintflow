@@ -60,7 +60,7 @@ class GNNDisentangler(nn.Module):
         for ch in self.module_gnn_backbone.list_modules:
             if isinstance(ch, pyg.nn.SAGEConv) or isinstance(ch, gnn.SageConvAndActivation):
                 cnt_sage_conv += 1
-        
+
         assert (
             cnt_sage_conv == self.kwargs_genmodel['kwargs_theta_aggr']['num_hops']
         )
