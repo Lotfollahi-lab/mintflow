@@ -97,7 +97,6 @@ class InFlowVarDist(nn.Module):
         )  # so it's not repeated in compgraph.
 
         if isinstance(self.module_impanddisentgl, GNNDisentangler): # with GNN disentagler, the encoder's varaice is used.
-            print("()()()()()")
             x_int = Normal(
                 loc=params_q_impanddisentgl['muxint'],
                 scale=params_q_impanddisentgl['sigmaxint']
@@ -185,7 +184,6 @@ class InFlowVarDist(nn.Module):
     def log_prob(self, dict_retvalrsample):
 
         if isinstance(self.module_impanddisentgl, GNNDisentangler):
-            print("<><><><><><><>")
             # xint
             logq_xint = Normal(
                 loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
@@ -607,7 +605,15 @@ class InFlowVarDist(nn.Module):
                         )
 
 
-
+            # log params_q_impanddisentgl['sigmaxint'] and params_q_impanddisentgl['sigmaxint']
+            if flag_tensorboardsave and isinstance(self.module_impanddisentgl, GNNDisentangler):
+                with torch.no_grad():
+                    wandb.log(
+                        {"InspectVals/q_disentangler.min": dict_q_sample['params_q_impanddisentgl']['sigmaxint'].min(),
+                         "InspectVals/q_disentangler.max": dict_q_sample['params_q_impanddisentgl']['sigmaxint'].max(),
+                         "InspectVals/q_disentangler.mean": dict_q_sample['params_q_impanddisentgl']['sigmaxint'].mean()},
+                        step=itrcount_wandb
+                    )
 
             # add the z-z closeness loss ===
             num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
