@@ -9,6 +9,8 @@ from .modules.disentonly import Disentangler
 from .modules.cond4flow import Cond4FlowVarphi0
 from .modules.cond4flow_simple3mpls import Cond4FlowVarphi0SimpleMLPs
 from .modules.disentonly_twosep import DisentanglerTwoSep
+from .modules.gnn_disentangler import GNNDisentangler
+
 from . import probutils
 from . import utils_imputer
 from . predadjmat import ListAdjMatPredLoss
@@ -850,7 +852,7 @@ class InFlowVarDist(nn.Module):
 
 
 
-        if isinstance(self.module_impanddisentgl, Disentangler):
+        if isinstance(self.module_impanddisentgl, Disentangler) or isinstance(self.module_impanddisentgl, GNNDisentangler):
             self.module_impanddisentgl:Disentangler
             if self.module_impanddisentgl.str_mode_headxint_headxspl_headboth == 'headboth':
                 if self.module_genmodel.dict_pname_to_scaleandunweighted['x'] == [None, None]:
@@ -891,7 +893,7 @@ class InFlowVarDist(nn.Module):
                 {'scale', 'flag_unweighted'}
             )
         assert(
-            isinstance(self.module_impanddisentgl, Disentangler) or isinstance(self.module_impanddisentgl, DisentanglerTwoSep)
+            isinstance(self.module_impanddisentgl, Disentangler) or isinstance(self.module_impanddisentgl, DisentanglerTwoSep) or isinstance(self.module_impanddisentgl, GNNDisentangler)
         )
 
 
