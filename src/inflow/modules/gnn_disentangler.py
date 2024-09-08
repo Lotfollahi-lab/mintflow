@@ -155,8 +155,16 @@ class GNNDisentangler(nn.Module):
             batch.edge_index.to(ten_xy_absolute.device)
         )
 
+
         if torch.any(torch.isnan(output_gnn_backbone)):
+            assert (
+                not torch.any(
+                    torch.isnan(output_gnn_backbone[0:batch.batch_size])
+                )
+            )
             print("NAN was found in GNN's output, probably because a cell didn't have a neighbour in mini-batch???")
+            output_gnn_backbone = torch.nan_to_num(output_gnn_backbone)
+            
 
 
         # assert (not torch.any(ten_manually_masked))
