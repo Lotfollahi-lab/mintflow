@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from . import gnn
+import torch_geometric as pyg
 
 class GNNDisentangler(nn.Module):
     def __init__(self, kwargs_genmodel, str_mode_normalizex:str, maxsize_subgraph, dict_general_args, str_mode_headxint_headxspl_headboth, gnn_list_dim_hidden, kwargs_sageconv):
@@ -21,7 +22,7 @@ class GNNDisentangler(nn.Module):
             - headboth: means muxint and muxspl are create by two different heads, in which case p(x|x_int+x_spl) must be included in logp(.)
         '''
         super(GNNDisentangler, self).__init__()
-
+        self.kwargs_genmodel = kwargs_genmodel
         self.num_celltypes = dict_general_args['num_celltypes']
         self.flag_use_int_u = dict_general_args['flag_use_int_u']
         self.flag_use_spl_u = dict_general_args['flag_use_spl_u']
@@ -53,6 +54,17 @@ class GNNDisentangler(nn.Module):
             list_dim_hidden=self.gnn_list_dim_hidden,
             kwargs_sageconv=self.kwargs_sageconv
         )
+
+        # assert that the GNN backbone has as many hops as the generative model
+        cnt_sage_conv = 0
+        for ch in self.module_gnn_backbone.children():
+            if isinstance(ch, pyg.nn.conv.sage_conv.SAGEConv):
+                cnt_sage_conv += 1
+        assert (
+            cnt_sage_conv == self.kwargs_genmodel['kwargs_theta_aggr']['num_hops']
+        )
+
+
         if self.str_mode_headxint_headxspl_headboth == 'headxint':
             self.module_linearhead_muxint = nn.Sequential(
                 nn.ReLU(),
@@ -140,12 +152,6 @@ class GNNDisentangler(nn.Module):
             batch.edge_index.to(ten_xy_absolute.device)
         )
 
-        # ten_in_tf1, ten_manually_masked = self.module_em1(
-        #     batch=batch,
-        #     prob_maskknowngenes=0.0,
-        #     ten_xy_absolute=ten_xy_absolute
-        # )  # [N, dim_tf1], [N]
-        # ten_out_tf1 = self.module_tf1(ten_in_tf1.unsqueeze(0))[0, :, :]  # [N, dim_tf1] in [-inf, inf]
 
         # assert (not torch.any(ten_manually_masked))
         loss_imputex = None
