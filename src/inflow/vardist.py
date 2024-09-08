@@ -10,7 +10,7 @@ from .modules.cond4flow import Cond4FlowVarphi0
 from .modules.cond4flow_simple3mpls import Cond4FlowVarphi0SimpleMLPs
 from .modules.disentonly_twosep import DisentanglerTwoSep
 from .modules.gnn_disentangler import GNNDisentangler
-
+from torch.distributions.normal import Normal
 from . import probutils
 from . import utils_imputer
 from . predadjmat import ListAdjMatPredLoss
@@ -98,15 +98,13 @@ class InFlowVarDist(nn.Module):
 
         if isinstance(self.module_impanddisentgl, GNNDisentangler): # with GNN disentagler, the encoder's varaice is used.
             print("()()()()()")
-            x_int = probutils.ExtenededNormal(
+            x_int = Normal(
                 loc=params_q_impanddisentgl['muxint'],
-                scale=params_q_impanddisentgl['sigmaxint'],
-                flag_unweighted=False
+                scale=params_q_impanddisentgl['sigmaxint']
             ).rsample()  # [N, num_genes]
-            x_spl = probutils.ExtenededNormal(
+            x_spl = probutils.Normal(
                 loc=params_q_impanddisentgl['muxspl'],
-                scale=params_q_impanddisentgl['sigmaxspl'],
-                flag_unweighted=False
+                scale=params_q_impanddisentgl['sigmaxspl']
             ).rsample()  # [N, num_genes]
         else:
             x_int = probutils.ExtenededNormal(
@@ -189,17 +187,15 @@ class InFlowVarDist(nn.Module):
         if isinstance(self.module_impanddisentgl, GNNDisentangler):
             print("<><><><><><><>")
             # xint
-            logq_xint = probutils.ExtenededNormal(
+            logq_xint = Normal(
                 loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
-                scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxint'],
-                flag_unweighted=False
+                scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxint']
             ).log_prob(dict_retvalrsample['x_int'])  # [N, num_genes]
 
             # xspl
-            logq_xspl = probutils.ExtenededNormal(
+            logq_xspl = Normal(
                 loc=dict_retvalrsample['params_q_impanddisentgl']['muxspl'],
-                scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxspl'],
-                flag_unweighted=False
+                scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxspl']
             ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
         else:
             # xint
