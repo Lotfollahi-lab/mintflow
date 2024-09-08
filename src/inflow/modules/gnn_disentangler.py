@@ -116,14 +116,27 @@ class GNNDisentangler(nn.Module):
         :param ten_xy_absolute:
         :return:
         '''
-        assert(prob_maskknowngenes == 0.0)
-        x_log1p = torch.log(
-            1.0 + batch.x.to_dense()  # TODO: how to make sure that batch.x contains the count data ???
-        ).to(ten_xy_absolute.device)
-        x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
+
+        with torch.no_grad():
+            assert(prob_maskknowngenes == 0.0)
+            x_log1p = torch.log(
+                1.0 + batch.x.to_dense()  # TODO: how to make sure that batch.x contains the count data ???
+            ).to(ten_xy_absolute.device)
+            x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
+
+            # make GNN's input ===
+            ten_u_int = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.flag_use_int_u) else None
+            ten_u_spl = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.flag_use_spl_u) else None
+
+            x_gnn_input = x_cnt if (self.str_mode_normalizex == 'counts') else x_log1p
+            if ten_u_int is not None:
+                x_gnn_input = torch.cat([x_gnn_input, ten_u_int], 1)
+            if ten_u_spl is not None:
+                x_gnn_input = torch.cat([x_gnn_input, ten_u_spl], 1)
+
 
         output_gnn_backbone = self.module_gnn_backbone(
-            x_cnt if(self.str_mode_normalizex == 'counts') else x_log1p,
+            x_gnn_input,
             batch.edge_index.to(ten_xy_absolute.device)
         )
 
