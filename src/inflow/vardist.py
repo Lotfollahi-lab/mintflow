@@ -97,6 +97,7 @@ class InFlowVarDist(nn.Module):
         )  # so it's not repeated in compgraph.
 
         if isinstance(self.module_impanddisentgl, GNNDisentangler): # with GNN disentagler, the encoder's varaice is used.
+            print("()()()()()")
             x_int = probutils.ExtenededNormal(
                 loc=params_q_impanddisentgl['muxint'],
                 scale=params_q_impanddisentgl['sigmaxint'],
@@ -186,6 +187,7 @@ class InFlowVarDist(nn.Module):
     def log_prob(self, dict_retvalrsample):
 
         if isinstance(self.module_impanddisentgl, GNNDisentangler):
+            print("<><><><><><><>")
             # xint
             logq_xint = probutils.ExtenededNormal(
                 loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
