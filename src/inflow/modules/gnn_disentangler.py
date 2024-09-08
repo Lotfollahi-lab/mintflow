@@ -156,16 +156,18 @@ class GNNDisentangler(nn.Module):
         )
 
 
-        '''
+
         if torch.any(torch.isnan(output_gnn_backbone)):
-            assert (
-                torch.all(
-                    ~ torch.isnan(output_gnn_backbone[0:batch.batch_size])
+            print(
+                "Does it happen on central nodes? {}".format(
+                    torch.any(
+                        torch.isnan(output_gnn_backbone[0:batch.batch_size])
+                    )
                 )
             )
             print("NAN was found in GNN's output, probably because a cell didn't have a neighbour in mini-batch???")
             output_gnn_backbone = torch.nan_to_num(output_gnn_backbone)
-        '''
+
 
 
         # assert (not torch.any(ten_manually_masked))
@@ -215,14 +217,14 @@ class GNNDisentangler(nn.Module):
                 self.module_linearhead_sigmaxint(output_gnn_backbone)
             ),
             min=0.001,  # TODO: maybe tune?
-            max=10.0
+            max=4.0
         )  # [N, num_genes]
         sigmaxspl_raw = torch.clamp(
             torch.exp(
                 self.module_linearhead_sigmaxspl(output_gnn_backbone)
             ),
             min=0.001,  # TODO: maybe tune?
-            max=10.0
+            max=4.0
         )  # [N, num_genes]
 
         '''
@@ -230,11 +232,11 @@ class GNNDisentangler(nn.Module):
         This is done to solve the conceptual issue of getting GNN output on non-central nodes.
         '''
         sigmaxint = torch.concat(
-            [sigmaxint_raw[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint_raw[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=10.0)],
+            [sigmaxint_raw[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint_raw[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
             1
         ).sqrt()
         sigmaxspl = torch.concat(
-            [sigmaxspl_raw[:, 0:batch.batch_size]+0.0, torch.clamp(sigmaxspl_raw[:, batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=10.0)],
+            [sigmaxspl_raw[:, 0:batch.batch_size]+0.0, torch.clamp(sigmaxspl_raw[:, batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
             1
         ).sqrt()
 
