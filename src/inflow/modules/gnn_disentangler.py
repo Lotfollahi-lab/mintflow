@@ -58,8 +58,11 @@ class GNNDisentangler(nn.Module):
         # assert that the GNN backbone has as many hops as the generative model
         cnt_sage_conv = 0
         for ch in self.module_gnn_backbone.children():
-            if isinstance(ch, pyg.nn.conv.sage_conv.SAGEConv):
+            print(ch)
+            print(type(ch))
+            if isinstance(ch, pyg.nn.SAGEConv):
                 cnt_sage_conv += 1
+
         print(self.kwargs_genmodel['kwargs_theta_aggr']['num_hops'])
         print(cnt_sage_conv)
         assert (
