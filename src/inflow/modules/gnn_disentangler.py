@@ -48,7 +48,7 @@ class GNNDisentangler(nn.Module):
         if self.str_mode_headxint_headxspl_headboth == 'headxint':
             self.module_gnn_backbone = gnn.SAGE(
                 dim_input=dim_gnnin,
-                dim_output=self.gnn_list_dim_hidden[-1] if(len(self.gnn_list_dim_hidden) > 1) else 100,  # TODO:TUNE 100
+                dim_output=100,  # TODO:TUNE 100
                 list_dim_hidden=self.gnn_list_dim_hidden,
                 kwargs_sageconv=self.kwargs_sageconv
             )
