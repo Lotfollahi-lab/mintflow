@@ -214,14 +214,14 @@ class GNNDisentangler(nn.Module):
             torch.exp(
                 self.module_linearhead_sigmaxint(output_gnn_backbone)
             ),
-            min=0.01,  # TODO: maybe tune?
+            min=0.001,  # TODO: maybe tune?
             max=10.0
         )  # [N, num_genes]
         sigmaxspl_raw = torch.clamp(
             torch.exp(
                 self.module_linearhead_sigmaxspl(output_gnn_backbone)
             ),
-            min=0.01,  # TODO: maybe tune?
+            min=0.001,  # TODO: maybe tune?
             max=10.0
         )  # [N, num_genes]
 
@@ -232,11 +232,13 @@ class GNNDisentangler(nn.Module):
         sigmaxint = torch.concat(
             [sigmaxint_raw[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint_raw[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=10.0)],
             1
-        )
+        ).sqrt()
         sigmaxspl = torch.concat(
             [sigmaxspl_raw[:, 0:batch.batch_size]+0.0, torch.clamp(sigmaxspl_raw[:, batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=10.0)],
             1
-        )
+        ).sqrt()
+
+
 
         return dict(
             muxint=muxint,

@@ -109,10 +109,22 @@ class InFlowVarDist(nn.Module):
             if torch.any(torch.isnan(x_int)):
                 x_int = torch.nan_to_num(x_int)
                 print("Nan Occured in x_int")
+                print("     is nan in muxint?: {}".format(
+                    torch.any(torch.isnan(params_q_impanddisentgl['muxint']))
+                ))
+                print("     is nan in sigmaxint?: {}".format(
+                    torch.any(torch.isnan(params_q_impanddisentgl['muxint']))
+                ))
 
             if torch.any(torch.isnan(x_spl)):
                 x_spl = torch.nan_to_num(x_spl)
-                print("Nan Occured in x_int")
+                print("Nan Occured in x_spl")
+                print("     is nan in muxspl?: {}".format(
+                    torch.any(torch.isnan(params_q_impanddisentgl['muxspl']))
+                ))
+                print("     is nan in sigmaxspl?: {}".format(
+                    torch.any(torch.isnan(params_q_impanddisentgl['muxspl']))
+                ))
 
         else:
             x_int = probutils.ExtenededNormal(
