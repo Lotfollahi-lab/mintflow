@@ -113,7 +113,7 @@ class InFlowVarDist(nn.Module):
                     torch.any(torch.isnan(params_q_impanddisentgl['muxint']))
                 ))
                 print("     is nan in sigmaxint?: {}".format(
-                    torch.any(torch.isnan(params_q_impanddisentgl['muxint']))
+                    torch.any(torch.isnan(params_q_impanddisentgl['sigmaxint']))
                 ))
 
             if torch.any(torch.isnan(x_spl)):
@@ -123,7 +123,7 @@ class InFlowVarDist(nn.Module):
                     torch.any(torch.isnan(params_q_impanddisentgl['muxspl']))
                 ))
                 print("     is nan in sigmaxspl?: {}".format(
-                    torch.any(torch.isnan(params_q_impanddisentgl['muxspl']))
+                    torch.any(torch.isnan(params_q_impanddisentgl['sigmaxspl']))
                 ))
 
         else:
