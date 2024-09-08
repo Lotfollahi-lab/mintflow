@@ -229,11 +229,11 @@ class GNNDisentangler(nn.Module):
         This is done to solve the conceptual issue of getting GNN output on non-central nodes.
         '''
         sigmaxint = torch.concat(
-            [sigmaxint_raw[:,0:batch.batch_size], torch.clamp(sigmaxint_raw[:,batch.batch_size::], min=self.clipval_cov_noncentralnodes, max=10.0)],
+            [sigmaxint_raw[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint_raw[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=10.0)],
             1
         )
         sigmaxspl = torch.concat(
-            [sigmaxspl_raw[:, 0:batch.batch_size], torch.clamp(sigmaxspl_raw[:, batch.batch_size::], min=self.clipval_cov_noncentralnodes, max=10.0)],
+            [sigmaxspl_raw[:, 0:batch.batch_size]+0.0, torch.clamp(sigmaxspl_raw[:, batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=10.0)],
             1
         )
 
