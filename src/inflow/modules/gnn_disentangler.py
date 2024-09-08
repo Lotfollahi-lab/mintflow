@@ -169,26 +169,26 @@ class GNNDisentangler(nn.Module):
         if self.str_mode_headxint_headxspl_headboth == 'headxint':
             muxint = torch.clamp(
                 self.module_linearhead_muxint(output_gnn_backbone) * oneon_x_nonzero,
-                min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
+                min=0.0,  # TODO: maybe tune?
                 max=x_cnt
             )  # [N, num_genes]
             muxspl = x_cnt - muxint  # [N, num_genes]
         elif self.str_mode_headxint_headxspl_headboth == 'headxspl':
             muxspl = torch.clamp(
                 self.module_linearhead_muxspl(output_gnn_backbone) * oneon_x_nonzero,
-                min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
+                min=0.0,  # TODO: maybe tune?
                 max=x_cnt
             )  # [N, num_genes]
             muxint = x_cnt - muxspl  # [N, num_genes]
         elif self.str_mode_headxint_headxspl_headboth == 'headboth':
             muxint = torch.clamp(
                 self.module_linearhead_muxint(output_gnn_backbone) * oneon_x_nonzero,
-                min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
+                min=0.0,  # TODO: maybe tune?
                 max=x_cnt
             )  # [N, num_genes]
             muxspl = torch.clamp(
                 self.module_linearhead_muxspl(output_gnn_backbone) * oneon_x_nonzero,
-                min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
+                min=0.0,  # TODO: maybe tune?
                 max=x_cnt
             )  # [N, num_genes]
         else:
@@ -218,11 +218,11 @@ class GNNDisentangler(nn.Module):
         This is done to solve the conceptual issue of getting GNN output on non-central nodes.
         '''
         sigmaxint = torch.concat(
-            [sigmaxint_raw[:,0:batch.batch_size], torch.clamp(sigmaxint_raw[:,batch.batch_size::], min=self.clipval_cov_noncentralnodes, max=torch.inf)],
+            [sigmaxint_raw[:,0:batch.batch_size], torch.clamp(sigmaxint_raw[:,batch.batch_size::], min=self.clipval_cov_noncentralnodes, max=10.0)],
             1
         )
         sigmaxspl = torch.concat(
-            [sigmaxspl_raw[:, 0:batch.batch_size], torch.clamp(sigmaxspl_raw[:, batch.batch_size::], min=self.clipval_cov_noncentralnodes, max=torch.inf)],
+            [sigmaxspl_raw[:, 0:batch.batch_size], torch.clamp(sigmaxspl_raw[:, batch.batch_size::], min=self.clipval_cov_noncentralnodes, max=10.0)],
             1
         )
 
