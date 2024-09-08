@@ -7,9 +7,10 @@ import torch.nn as nn
 from . import gnn
 
 class GNNDisentangler(nn.Module):
-    def __init__(self, kwargs_genmodel, maxsize_subgraph, dict_general_args, str_mode_headxint_headxspl_headboth, gnn_list_dim_hidden, kwargs_sageconv):
+    def __init__(self, kwargs_genmodel, str_mode_normalizex:str, maxsize_subgraph, dict_general_args, str_mode_headxint_headxspl_headboth, gnn_list_dim_hidden, kwargs_sageconv):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
+        :param str_mode_normalizex: in ['counts', 'logp1'], whether the GNN works on counts or log1p
         :param dict_general_args: a dict containint
             - num_celltypes
             - flag_use_int_u
@@ -27,6 +28,7 @@ class GNNDisentangler(nn.Module):
         self.str_mode_headxint_headxspl_headboth = str_mode_headxint_headxspl_headboth
         self.gnn_list_dim_hidden = gnn_list_dim_hidden
         self.kwargs_sageconv = kwargs_sageconv
+        self.str_mode_normalizex = str_mode_normalizex
 
         dim_gnnin = kwargs_genmodel['dict_varname_to_dim']['x']
 
@@ -103,6 +105,9 @@ class GNNDisentangler(nn.Module):
         assert (
             self.str_mode_headxint_headxspl_headboth in ['headxint', 'headxspl', 'headboth']
         )
+        assert (
+            self.str_mode_normalizex in ['counts', 'log1p']
+        )
 
     def forward(self, batch, prob_maskknowngenes:float, ten_xy_absolute:torch.Tensor):
         '''
@@ -118,7 +123,7 @@ class GNNDisentangler(nn.Module):
         x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
 
         output_gnn_backbone = self.module_gnn_backbone(
-            batch.x,
+            x_cnt if(self.str_mode_normalizex == 'counts') else x_log1p,
             batch.edge_index.to(ten_xy_absolute.device)
         )
 
