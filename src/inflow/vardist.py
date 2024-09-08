@@ -96,7 +96,7 @@ class InFlowVarDist(nn.Module):
             ten_xy_absolute=ten_xy_absolute
         )  # so it's not repeated in compgraph.
 
-        if isinstance(self.module_impanddisentgl, GNNDisentangler): # with GNN disentagler, the encoder's varaice is used.
+        if False: #TODO:revert isinstance(self.module_impanddisentgl, GNNDisentangler): # with GNN disentagler, the encoder's varaice is used.
             x_int = Normal(
                 loc=params_q_impanddisentgl['muxint'],
                 scale=params_q_impanddisentgl['sigmaxint']
@@ -204,7 +204,7 @@ class InFlowVarDist(nn.Module):
 
     def log_prob(self, dict_retvalrsample):
 
-        if isinstance(self.module_impanddisentgl, GNNDisentangler):
+        if False: #TODO:revert isinstance(self.module_impanddisentgl, GNNDisentangler):
             # xint
             logq_xint = Normal(
                 loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
