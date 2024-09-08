@@ -165,6 +165,11 @@ class GNNDisentangler(nn.Module):
                     )
                 )
             )
+            print(
+                "Are any of GNN parameters NaN? {}".format(
+                    torch.stack([torch.isnan(p).any() for p in self.module_gnn_backbone.parameters()]).any()
+                )
+            )
             print("NAN was found in GNN's output, probably because a cell didn't have a neighbour in mini-batch???")
             output_gnn_backbone = torch.nan_to_num(output_gnn_backbone)
 
