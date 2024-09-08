@@ -180,26 +180,26 @@ class GNNDisentangler(nn.Module):
         if self.str_mode_headxint_headxspl_headboth == 'headxint':
             muxint = torch.clamp(
                 self.module_linearhead_muxint(output_gnn_backbone) * oneon_x_nonzero,
-                min=torch.tensor([0.0], device=ten_xy_absolute.device),  # TODO: maybe tune?
+                min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
                 max=x_cnt
             )  # [N, num_genes]
             muxspl = x_cnt - muxint  # [N, num_genes]
         elif self.str_mode_headxint_headxspl_headboth == 'headxspl':
             muxspl = torch.clamp(
                 self.module_linearhead_muxspl(output_gnn_backbone) * oneon_x_nonzero,
-                min=torch.tensor([0.0], device=ten_xy_absolute.device),  # TODO: maybe tune?
+                min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
                 max=x_cnt
             )  # [N, num_genes]
             muxint = x_cnt - muxspl  # [N, num_genes]
         elif self.str_mode_headxint_headxspl_headboth == 'headboth':
             muxint = torch.clamp(
                 self.module_linearhead_muxint(output_gnn_backbone) * oneon_x_nonzero,
-                min=torch.tensor([0.0], device=ten_xy_absolute.device),  # TODO: maybe tune?
+                min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
                 max=x_cnt
             )  # [N, num_genes]
             muxspl = torch.clamp(
                 self.module_linearhead_muxspl(output_gnn_backbone) * oneon_x_nonzero,
-                min=torch.tensor([0.0], device=ten_xy_absolute.device),  # TODO: maybe tune?
+                min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
                 max=x_cnt
             )  # [N, num_genes]
         else:
