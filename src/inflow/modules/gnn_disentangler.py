@@ -202,15 +202,15 @@ class GNNDisentangler(nn.Module):
             torch.exp(
                 self.module_linearhead_sigmaxint(output_gnn_backbone)
             ),
-            min=0.00001,  # TODO: maybe tune?
-            max=torch.inf
+            min=0.001,  # TODO: maybe tune?
+            max=10.0
         )  # [N, num_genes]
         sigmaxspl_raw = torch.clamp(
             torch.exp(
                 self.module_linearhead_sigmaxspl(output_gnn_backbone)
             ),
-            min=0.00001,  # TODO: maybe tune?
-            max=torch.inf
+            min=0.001,  # TODO: maybe tune?
+            max=10.0
         )  # [N, num_genes]
 
         '''
