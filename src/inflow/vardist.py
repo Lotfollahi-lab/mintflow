@@ -111,7 +111,7 @@ class InFlowVarDist(nn.Module):
                 min=torch.zeros_like(params_q_impanddisentgl['x_cnt']),
                 max=params_q_impanddisentgl['x_cnt']
             )  # [N, num_genes]
-            
+
             if torch.any(torch.isnan(x_int)):
                 x_int = torch.nan_to_num(x_int)
                 print("Nan Occured in x_int")
@@ -210,7 +210,7 @@ class InFlowVarDist(nn.Module):
 
     def log_prob(self, dict_retvalrsample):
 
-        if False: #TODO:revert isinstance(self.module_impanddisentgl, GNNDisentangler):
+        if isinstance(self.module_impanddisentgl, GNNDisentangler):
             # xint
             logq_xint = Normal(
                 loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
