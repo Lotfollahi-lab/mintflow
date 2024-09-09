@@ -96,16 +96,22 @@ class InFlowVarDist(nn.Module):
             ten_xy_absolute=ten_xy_absolute
         )  # so it's not repeated in compgraph.
 
-        if False: #TODO:revert isinstance(self.module_impanddisentgl, GNNDisentangler): # with GNN disentagler, the encoder's varaice is used.
+        if isinstance(self.module_impanddisentgl, GNNDisentangler): # with GNN disentagler, the encoder's varaice is used.
             x_int = Normal(
                 loc=params_q_impanddisentgl['muxint'],
                 scale=params_q_impanddisentgl['sigmaxint']
-            ).rsample()  # [N, num_genes]
+            ).rsample().clamp(
+                min=torch.zeros_like(params_q_impanddisentgl['x_cnt']),
+                max=params_q_impanddisentgl['x_cnt']
+            )  # [N, num_genes]
             x_spl = probutils.Normal(
                 loc=params_q_impanddisentgl['muxspl'],
                 scale=params_q_impanddisentgl['sigmaxspl']
-            ).rsample()  # [N, num_genes]
-
+            ).rsample().clamp(
+                min=torch.zeros_like(params_q_impanddisentgl['x_cnt']),
+                max=params_q_impanddisentgl['x_cnt']
+            )  # [N, num_genes]
+            
             if torch.any(torch.isnan(x_int)):
                 x_int = torch.nan_to_num(x_int)
                 print("Nan Occured in x_int")

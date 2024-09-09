@@ -248,6 +248,7 @@ class GNNDisentangler(nn.Module):
 
 
         return dict(
+            x_cnt=x_cnt,
             muxint=muxint,
             muxspl=muxspl,
             sigmaxint=sigmaxint,
