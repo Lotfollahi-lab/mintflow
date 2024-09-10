@@ -77,8 +77,8 @@ class GNNDisentangler(nn.Module):
             ModeArch.HEADXSPL:'headxspl',
             ModeArch.HEADBOTH:'headboth',
             ModeArch.TWOSEP:'twosep'
-        }[self.mode_headxint_headxspl_headboth_twosep]  # backward comtblity
-        
+        }[self.mode_headxint_headxspl_headboth_twosep]  # backward comtblity (to be used only by the outer modules)
+
 
 
 
@@ -270,7 +270,7 @@ class GNNDisentangler(nn.Module):
 
         else:
             raise Exception(
-                "Uknown value {} for str_mode_headxint_headxspl_headboth.".format(self.str_mode_headxint_headxspl_headboth)
+                "Uknown value {} for str_mode_headxint_headxspl_headboth.".format(self.mode_headxint_headxspl_headboth_twosep)
             )
 
 
