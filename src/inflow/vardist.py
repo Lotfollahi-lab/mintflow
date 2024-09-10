@@ -479,7 +479,7 @@ class InFlowVarDist(nn.Module):
                 "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
                 "dim_CT":self.module_genmodel.dict_varname_to_dim['CT'],
                 "dim_NCC":self.module_genmodel.dict_varname_to_dim['NCC']
-            }  # how batch.y is split between u_int, u_spl
+            }  # how batch.y is split between u_int, u_spl, CT, and NCC
 
             ten_xy_touse = ten_xy_absolute + 0.0
             if prob_applytfm_affinexy > 0.0:
