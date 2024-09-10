@@ -137,12 +137,18 @@ class InFlowVarDist(nn.Module):
                 loc=params_q_impanddisentgl['muxint'],
                 scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['scale'],
                 flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['flag_unweighted']
-            ).rsample()  # [N, num_genes]
+            ).rsample().clamp(
+                min=torch.zeros_like(params_q_impanddisentgl['x_cnt']),
+                max=params_q_impanddisentgl['x_cnt']
+            )  # [N, num_genes]  # [N, num_genes]
             x_spl = probutils.ExtenededNormal(
                 loc=params_q_impanddisentgl['muxspl'],
                 scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['scale'],
                 flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['flag_unweighted']
-            ).rsample()  # [N, num_genes]
+            ).rsample().clamp(
+                min=torch.zeros_like(params_q_impanddisentgl['x_cnt']),
+                max=params_q_impanddisentgl['x_cnt']
+            )  # [N, num_genes]  # [N, num_genes]
 
         # step 2, rsample from encoders to the low-dim embedding space.
         param_q_xbarint = self.module_varphi_enc_int(x_int)  # [N, dim_latent]
@@ -803,8 +809,10 @@ class InFlowVarDist(nn.Module):
 
             batch.INFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
-                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl']
-            }  # how batch.y is split between u_int, u_spl
+                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
+                "dim_CT": self.module_genmodel.dict_varname_to_dim['CT'],
+                "dim_NCC": self.module_genmodel.dict_varname_to_dim['NCC']
+            }  # how batch.y is split between u_int, u_spl, CT, and NCC
 
             cnt_tqdm += 1
             curr_dict_qsample = self.rsample(
