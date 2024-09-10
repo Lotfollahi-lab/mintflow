@@ -610,7 +610,7 @@ class InFlowVarDist(nn.Module):
                 P1loss = self.crit_P1loss(
                     self.module_classifier_P1loss(dict_q_sample['z']),
                     torch.argmax(
-                        batch.y[:, rng_CT[0]:rng_CT[1]].to(device),
+                        batch.y[:, rng_CT[0]:rng_CT[1]].to(ten_xy_absolute.device),
                         1
                     )
                 )
