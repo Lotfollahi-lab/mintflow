@@ -413,11 +413,6 @@ class InFlowVarDist(nn.Module):
 
 
 
-
-
-
-
-
     def training_epoch(
             self,
             dl:NeighborLoader,

@@ -477,7 +477,7 @@ class GNNDisentangler(nn.Module):
 
         # create output in modes other than TWOSEP ===
         if self.mode_headxint_headxspl_headboth_twosep != ModeArch.TWOSEP:
-            EPS_COV = 1e-4
+            EPS_COV = torch.tensor([1e-4]).to(ten_xy_absolute.device)
             muxint, covint = self._feed_to_head(
                 str_int_or_spl='int',
                 output_gnn=output_gnn,
