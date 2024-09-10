@@ -475,6 +475,10 @@ class GNNDisentangler(nn.Module):
             device=ten_xy_absolute.device
         )
 
+        # the non-zero mask
+        with torch.no_grad():
+            oneon_x_nonzero = (x_cnt > 0.0) + 0  # [N, num_genes]
+
         # create output in modes other than TWOSEP ===
         if self.mode_headxint_headxspl_headboth_twosep != ModeArch.TWOSEP:
             EPS_COV = 1e-4 * torch.ones(
@@ -489,20 +493,37 @@ class GNNDisentangler(nn.Module):
                 batch=batch,
                 device=ten_xy_absolute.device
             )
+
             muxspl, covspl = self._feed_to_head(
                 str_int_or_spl='spl',
                 output_gnn=output_gnn,
                 batch=batch,
                 device=ten_xy_absolute.device
             )
+
+            if muxint is not None:
+                muxint = torch.clamp(
+                    muxint * oneon_x_nonzero,
+                    min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
+                    max=x_cnt
+                )  # [N, num_genes]
+
+            if muxspl is not None:
+                muxspl = torch.clamp(
+                    muxspl * oneon_x_nonzero,
+                    min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
+                    max=x_cnt
+                )  # [N, num_genes]
+
             if muxint is None:
                 assert covint is None
                 muxint = x_cnt - muxspl
-                covint = EPS_COV
+                covint = covspl # EPS_COV #TODO: choose between covspl or EPS_COV?
+
             if muxspl is None:
                 assert covspl is None
                 muxspl = x_cnt - muxint
-                covspl = EPS_COV
+                covspl = covint # EPS_COV #TODO: choose between covspl or EPS_COV?
         else:
             assert self.mode_headxint_headxspl_headboth_twosep == ModeArch.TWOSEP
             muxint, covint = self._feed_to_heads_twosep(
@@ -526,11 +547,6 @@ class GNNDisentangler(nn.Module):
         loss_imputex = None
         ten_out_imputer = 0.0
 
-
-
-        # compute muxint, muxspl
-        with torch.no_grad():
-            oneon_x_nonzero = (x_cnt > 0.0) + 0  # [N, num_genes]
 
 
         # compute sigmaxint, sigmaxspl
