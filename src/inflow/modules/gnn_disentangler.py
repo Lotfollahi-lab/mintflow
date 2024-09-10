@@ -278,7 +278,7 @@ class GNNDisentangler(nn.Module):
         )
         for k in self.dict_CTNNC_usage:
             assert (
-                dict_CTNNC_usage[k] in [ArchInsertionPoint.NONE, ArchInsertionPoint.BACKBONE, ArchInsertionPoint.HEADINT, ArchInsertionPoint.HEADSPL]
+                self.dict_CTNNC_usage[k] in [ArchInsertionPoint.NONE, ArchInsertionPoint.BACKBONE, ArchInsertionPoint.HEADINT, ArchInsertionPoint.HEADSPL]
             )
 
         # logic of the dict ====
