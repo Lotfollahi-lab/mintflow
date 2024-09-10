@@ -476,7 +476,9 @@ class InFlowVarDist(nn.Module):
         for batch in tqdm(dl):
             batch.INFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
-                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl']
+                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
+                "dim_CT":self.module_genmodel.dict_varname_to_dim['CT'],
+                "dim_NCC":self.module_genmodel.dict_varname_to_dim['NCC']
             }  # how batch.y is split between u_int, u_spl
 
             ten_xy_touse = ten_xy_absolute + 0.0
