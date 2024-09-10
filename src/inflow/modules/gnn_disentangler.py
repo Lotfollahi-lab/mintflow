@@ -72,6 +72,16 @@ class GNNDisentangler(nn.Module):
             if self.dict_CTNNC_usage['NCC'] == ArchInsertionPoint.HEADSPL:
                 dim_gnnin += kwargs_genmodel['dict_varname_to_dim']['NCC']
 
+        self.str_mode_headxint_headxspl_headboth = {
+            ModeArch.HEADXINT:'headxint',
+            ModeArch.HEADXSPL:'headxspl',
+            ModeArch.HEADBOTH:'headboth',
+            ModeArch.TWOSEP:'twosep'
+        }[self.mode_headxint_headxspl_headboth_twosep]  # backward comtblity
+        
+
+
+
         self.module_gnn = gnn.SAGE(
             dim_input=dim_gnnin,
             dim_output=100,  # TODO:TUNE 100
