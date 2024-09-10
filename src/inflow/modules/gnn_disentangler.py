@@ -428,7 +428,7 @@ class GNNDisentangler(nn.Module):
         if self.dict_CTNNC_usage['CT'] == key_inspoint:
             rng_CT = [
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
-                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['CT']
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
             ]
             output.append(
                 batch.y[
@@ -438,7 +438,7 @@ class GNNDisentangler(nn.Module):
             )
 
         if self.dict_CTNNC_usage['NCC'] == key_inspoint:
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['CT']
+            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
             output.append(
                 batch.y[
                     :,
