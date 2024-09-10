@@ -81,7 +81,7 @@ class GNNDisentangler(nn.Module):
 
         # assert that the GNN backbone has as many hops as the generative model
         cnt_sage_conv = 0
-        for ch in self.module_gnn_backbone.list_modules:
+        for ch in self.module_gnn.list_modules:
             if isinstance(ch, pyg.nn.SAGEConv) or isinstance(ch, gnn.SageConvAndActivation):
                 cnt_sage_conv += 1
 
