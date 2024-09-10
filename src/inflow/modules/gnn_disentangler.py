@@ -278,7 +278,7 @@ class GNNDisentangler(nn.Module):
         )
         for k in self.dict_CTNNC_usage:
             assert (
-                k in [ArchInsertionPoint.NONE, ArchInsertionPoint.BACKBONE, ArchInsertionPoint.HEADINT, ArchInsertionPoint.HEADSPL]
+                dict_CTNNC_usage[k] in [ArchInsertionPoint.NONE, ArchInsertionPoint.BACKBONE, ArchInsertionPoint.HEADINT, ArchInsertionPoint.HEADSPL]
             )
 
         # logic of the dict ====
@@ -507,9 +507,6 @@ class GNNDisentangler(nn.Module):
 
 
 
-
-
-
         # assert (not torch.any(ten_manually_masked))
         loss_imputex = None
         ten_out_imputer = 0.0
@@ -519,7 +516,7 @@ class GNNDisentangler(nn.Module):
         # compute muxint, muxspl
         with torch.no_grad():
             oneon_x_nonzero = (x_cnt > 0.0) + 0  # [N, num_genes]
-        
+
 
         # compute sigmaxint, sigmaxspl
         sigmaxint_raw = torch.clamp(
