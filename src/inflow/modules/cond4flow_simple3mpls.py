@@ -36,7 +36,7 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
         num_celltypes = self.kwargs_genmodel['dict_varname_to_dim']['cell-types']
 
         assert (
-            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'])
+            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'])
         )
         ten_uz = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_int_u']) else None
         ten_us = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_spl_u']) else None
