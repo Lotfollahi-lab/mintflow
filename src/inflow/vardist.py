@@ -598,7 +598,7 @@ class InFlowVarDist(nn.Module):
                 if flag_tensorboardsave:
                     with torch.no_grad():
                         wandb.log(
-                            {"Loss/FMloss": coef_flowmatchingloss*fm_loss},
+                            {"Loss/FMloss (after mult by coef={})".format(coef_flowmatchingloss): coef_flowmatchingloss*fm_loss},
                             step=itrcount_wandb
                         )
             # add P1 loss ===
@@ -608,7 +608,9 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ]
                 P1loss = self.crit_P1loss(
-                    self.module_classifier_P1loss(dict_q_sample['z']),
+                    self.module_classifier_P1loss(
+                        dict_q_sample['param_q_cond4flow']['mu_z']
+                    ),
                     torch.argmax(
                         batch.y[:, rng_CT[0]:rng_CT[1]].to(ten_xy_absolute.device),
                         1
@@ -618,7 +620,7 @@ class InFlowVarDist(nn.Module):
                 if flag_tensorboardsave:
                     with torch.no_grad():
                         wandb.log(
-                            {"Loss/P1Loss": self.coef_P1loss * P1loss},
+                            {"Loss/P1Loss (after mult by coef={})".format(self.coef_P1loss): self.coef_P1loss * P1loss},
                             step=itrcount_wandb
                         )
 
