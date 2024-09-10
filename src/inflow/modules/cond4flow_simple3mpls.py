@@ -39,7 +39,10 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
             batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'])
         )
         ten_uz = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_int_u']) else None
-        ten_us = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_spl_u']) else None
+        ten_us = batch.y[
+             :,
+             batch.INFLOWMETAINF['dim_u_int']:batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']
+        ].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_spl_u']) else None
 
         if ten_uz is None:
             mu_z = self.module_xbarint2z(ten_xbar_int)  # [N, dim_z]
