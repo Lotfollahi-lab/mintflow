@@ -183,10 +183,13 @@ class InFlowVarDist(nn.Module):
 
         #set ten_u_int and ten_u_spl ===
         assert (
-            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'])
+            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']  + batch.INFLOWMETAINF['dim_NCC'])
         )
         ten_u_int = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
-        ten_u_spl = batch.y[:, batch.INFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_spl_u) else None
+        ten_u_spl = batch.y[
+            :,
+            batch.INFLOWMETAINF['dim_u_int']:batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']
+        ].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_spl_u) else None
 
 
         # ret
