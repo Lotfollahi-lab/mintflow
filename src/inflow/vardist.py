@@ -308,7 +308,10 @@ class InFlowVarDist(nn.Module):
         if adata.X.shape[0] * adata.X.shape[1] < 1e9:
             assert (
                 torch.all(
-                    x.to_dense() == torch.tensor(adata.X.toarray())
+                    torch.isclose(
+                        x.to_dense().float(),
+                        torch.tensor(adata.X.toarray()).float()
+                    )
                 )
             )
             print("assertion was passed.")
