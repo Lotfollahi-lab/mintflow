@@ -36,7 +36,9 @@ class InFlowVarDist(nn.Module):
             kwargs_cond4flowvarphi0:dict,
             dict_qname_to_scaleandunweighted:dict,
             list_ajdmatpredloss:ListAdjMatPredLoss,
-            module_conditionalflowmatcher:utils_flowmatching.ConditionalFlowMatcher
+            module_conditionalflowmatcher:utils_flowmatching.ConditionalFlowMatcher,
+            coef_P1loss:float,
+            module_classifier_P1loss:nn.Module
     ):
         '''
 
@@ -65,6 +67,8 @@ class InFlowVarDist(nn.Module):
                 - z: with keys scale, flag_unweighted
                 - sin: with keys scale, flag_unweighted
                 - sout: with keys scale, flag_unweighted
+        :param coef_P1loss
+
 
         '''
         super(InFlowVarDist, self).__init__()
@@ -79,7 +83,10 @@ class InFlowVarDist(nn.Module):
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
         self.module_conditionalflowmatcher = module_conditionalflowmatcher
-
+        # args related to P1P2etc losses
+        self.coef_P1loss = coef_P1loss
+        self.module_classifier_P1loss = module_classifier_P1loss
+        self.crit_P1loss = nn.CrossEntropyLoss()
 
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
@@ -586,14 +593,35 @@ class InFlowVarDist(nn.Module):
                     1
                     )
                 )
-                loss = loss + fm_loss
+                loss = loss + coef_flowmatchingloss*fm_loss
 
                 if flag_tensorboardsave:
                     with torch.no_grad():
                         wandb.log(
-                            {"Loss/FMloss": fm_loss},
+                            {"Loss/FMloss": coef_flowmatchingloss*fm_loss},
                             step=itrcount_wandb
                         )
+            # add P1 loss ===
+            if self.coef_P1loss > 0.0:
+                rng_CT = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                ]
+                P1loss = self.crit_P1loss(
+                    self.module_classifier_P1loss(dict_q_sample['z']),
+                    torch.argmax(
+                        batch.y[:, rng_CT[0]:rng_CT[1]].to(device),
+                        1
+                    )
+                )
+                loss = loss + self.coef_P1loss * P1loss
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        wandb.log(
+                            {"Loss/P1Loss": self.coef_P1loss * P1loss},
+                            step=itrcount_wandb
+                        )
+
 
             # log int_cov_u and spl_cov_u ===
             if flag_tensorboardsave:
