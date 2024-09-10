@@ -75,7 +75,7 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
                 batch.y[
                     :,
                     rng_CT[0]:rng_CT[1]
-                ]
+                ].to(x.device)
             )
 
         if self.dict_varname_to_takeCT_takeNCC[varname][1]:
@@ -84,7 +84,7 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
                 batch.y[
                     :,
                     rng_NCC:
-                ]
+                ].to(x.device)
             )
 
         if len(output) > 1:
