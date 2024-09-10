@@ -113,8 +113,8 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
         )
         for varname in ['z', 'sin', 'sout']:
             assert isinstance(self.dict_varname_to_takeCT_takeNCC[varname], list)
-            assert isinstance(self.dict_varname_to_takeCT_takeNCC[varname][0] in [True, False])
-            assert isinstance(self.dict_varname_to_takeCT_takeNCC[varname][1] in [True, False])
+            assert (self.dict_varname_to_takeCT_takeNCC[varname][0] in [True, False])
+            assert (self.dict_varname_to_takeCT_takeNCC[varname][1] in [True, False])
 
     def forward(self, ten_xbar_int, batch, ten_xbar_spl, ten_xy_absolute: torch.Tensor):
         '''
