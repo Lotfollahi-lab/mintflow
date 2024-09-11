@@ -645,7 +645,7 @@ class InFlowVarDist(nn.Module):
                 ].to(ten_xy_absolute.device).float()
 
                 if self.str_modeP3loss_regorcls == 'cls':
-                    ten_NCC = ((ten_NCC > 0) + 0).long()
+                    ten_NCC = ((ten_NCC > 0) + 0).float()
                 else:
                     assert (self.str_modeP3loss_regorcls == 'reg')
 
