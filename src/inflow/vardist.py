@@ -38,7 +38,10 @@ class InFlowVarDist(nn.Module):
             list_ajdmatpredloss:ListAdjMatPredLoss,
             module_conditionalflowmatcher:utils_flowmatching.ConditionalFlowMatcher,
             coef_P1loss:float,
-            module_classifier_P1loss:nn.Module
+            module_classifier_P1loss:nn.Module,
+            coef_P3loss:float,
+            module_predictor_P3loss:nn.Module,
+            str_modeP3loss_regorcls:str
     ):
         '''
 
@@ -83,10 +86,18 @@ class InFlowVarDist(nn.Module):
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
         self.module_conditionalflowmatcher = module_conditionalflowmatcher
-        # args related to P1P2etc losses
+
+        # args related to P1 loss
         self.coef_P1loss = coef_P1loss
         self.module_classifier_P1loss = module_classifier_P1loss
         self.crit_P1loss = nn.CrossEntropyLoss()
+
+        # args related to P3 loss
+        self.coef_P3loss = coef_P3loss
+        self.module_predictor_P3loss = module_predictor_P3loss
+        self.str_modeP3loss_regorcls = str_modeP3loss_regorcls
+        assert (self.str_modeP3loss_regorcls in ['reg', 'cls'])
+        self.crit_P3loss = nn.MSELoss() if(self.str_modeP3loss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
 
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
@@ -625,6 +636,32 @@ class InFlowVarDist(nn.Module):
                         )
 
 
+            # add P3 loss ===
+            if self.coef_P3loss > 0.0:
+                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                ten_NCC = batch.y[
+                    :,
+                    rng_NCC:
+                ].to(ten_xy_absolute.device)
+
+                if self.str_modeP3loss_regorcls == 'cls':
+                    ten_NCC = (ten_NCC > 0) + 0
+                else:
+                    assert (self.str_modeP3loss_regorcls == 'reg')
+
+                P3loss = self.crit_P3loss(
+                    self.module_predictor_P3loss(dict_q_sample['param_q_cond4flow']['mu_sin']),
+                    ten_NCC
+                )
+                loss = loss + self.coef_P3loss * P3loss
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        wandb.log(
+                            {"Loss/P3loss (after mult by coef={})".format(self.coef_P3loss): self.coef_P3loss * P3loss},
+                            step=itrcount_wandb
+                        )
+
+
             # log int_cov_u and spl_cov_u ===
             if flag_tensorboardsave:
                 with torch.no_grad():
@@ -907,6 +944,10 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        assert (
+            self.str_modeP3loss_regorcls in ['reg', 'cls']
+        )
 
         assert (
             isinstance(self.module_cond4flowvarphi0, Cond4FlowVarphi0) or isinstance(self.module_cond4flowvarphi0, Cond4FlowVarphi0SimpleMLPs)
