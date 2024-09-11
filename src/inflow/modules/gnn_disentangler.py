@@ -402,7 +402,7 @@ class GNNDisentangler(nn.Module):
         assert module_mu is not None
         assert module_cov is not None
 
-        input_head = self.extend_input(
+        input_head = self._extend_input(
             ten_input=x if(str_int_or_spl == 'int') else output_gnn,
             key_inspoint=ArchInsertionPoint.HEADINT if (str_int_or_spl == 'int') else ArchInsertionPoint.HEADSPL,
             batch=batch,
