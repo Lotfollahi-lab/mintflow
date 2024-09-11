@@ -642,10 +642,10 @@ class InFlowVarDist(nn.Module):
                 ten_NCC = batch.y[
                     :,
                     rng_NCC:
-                ].to(ten_xy_absolute.device)
+                ].to(ten_xy_absolute.device).float()
 
                 if self.str_modeP3loss_regorcls == 'cls':
-                    ten_NCC = (ten_NCC > 0) + 0
+                    ten_NCC = ((ten_NCC > 0) + 0).long()
                 else:
                     assert (self.str_modeP3loss_regorcls == 'reg')
 
