@@ -541,6 +541,21 @@ class GNNDisentangler(nn.Module):
                 device=ten_xy_absolute.device
             )
 
+            if muxint is not None:
+                muxint = torch.clamp(
+                    muxint * oneon_x_nonzero,
+                    min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
+                    max=x_cnt
+                )  # [N, num_genes]
+
+            if muxspl is not None:
+                muxspl = torch.clamp(
+                    muxspl * oneon_x_nonzero,
+                    min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
+                    max=x_cnt
+                )  # [N, num_genes]
+
+
 
 
         # assert (not torch.any(ten_manually_masked))
