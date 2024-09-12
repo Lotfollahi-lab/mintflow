@@ -66,11 +66,13 @@ class GNNDisentangler(nn.Module):
             # assert self.mode_headxint_headxspl_headboth_twosep != ModeArch.TWOSEP  # twosep --> backbone not defined
             dim_gnnin += kwargs_genmodel['dict_varname_to_dim']['NCC']
 
+        '''
         if self.mode_headxint_headxspl_headboth_twosep == ModeArch.TWOSEP:
             if self.dict_CTNNC_usage['CT'] == ArchInsertionPoint.HEADSPL:
                 dim_gnnin += kwargs_genmodel['dict_varname_to_dim']['CT']
             if self.dict_CTNNC_usage['NCC'] == ArchInsertionPoint.HEADSPL:
                 dim_gnnin += kwargs_genmodel['dict_varname_to_dim']['NCC']
+        '''
 
         self.str_mode_headxint_headxspl_headboth = {
             ModeArch.HEADXINT:'headxint',
