@@ -15,6 +15,7 @@ from . import probutils
 from . import utils_imputer
 from . predadjmat import ListAdjMatPredLoss
 from . import utils_flowmatching
+from . import kl_annealing
 #from tqdm.auto import tqdm
 from tqdm.notebook import tqdm, trange
 import wandb
@@ -41,7 +42,8 @@ class InFlowVarDist(nn.Module):
             module_classifier_P1loss:nn.Module,
             coef_P3loss:float,
             module_predictor_P3loss:nn.Module,
-            str_modeP3loss_regorcls:str
+            str_modeP3loss_regorcls:str,
+            module_annealing:kl_annealing.AnnealingSchedule
     ):
         '''
 
@@ -86,6 +88,10 @@ class InFlowVarDist(nn.Module):
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
         self.module_conditionalflowmatcher = module_conditionalflowmatcher
+        self.module_annealing = module_annealing
+        assert (
+            isinstance(self.module_annealing, kl_annealing.AnnealingSchedule) or (self.module_annealing is None)
+        )
 
         # args related to P1 loss
         self.coef_P1loss = coef_P1loss
@@ -526,7 +532,8 @@ class InFlowVarDist(nn.Module):
                 dict_qsamples=dict_q_sample,
                 batch=batch,
                 t_num_steps=t_num_steps,
-                np_size_factor=np_size_factor
+                np_size_factor=np_size_factor,
+                module_annealing=self.module_annealing
             )
 
             # make the loss

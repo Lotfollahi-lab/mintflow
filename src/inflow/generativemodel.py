@@ -478,7 +478,7 @@ class InFlowGenerativeModel(nn.Module):
         )
         return dict_toret
 
-    def log_prob(self, dict_qsamples, batch, t_num_steps:int, np_size_factor:np.ndarray):
+    def log_prob(self, dict_qsamples, batch, t_num_steps:int, np_size_factor:np.ndarray, module_annealing):
         '''
 
         :param dict_qsamples: samples from q.
@@ -488,6 +488,7 @@ class InFlowGenerativeModel(nn.Module):
         :return:
         '''
         device = dict_qsamples['z'].device
+
 
         # s_out
         if not self.flag_use_spl_u:
@@ -512,6 +513,7 @@ class InFlowGenerativeModel(nn.Module):
                     loc=self.module_spl_mu_u(dict_qsamples['ten_u_spl']),
                     scale=spl_cov_u.sqrt()
                 ).log_prob(dict_qsamples['s_out'])  # [num_cell, dim_s]
+
 
         # s_in
         logp_s_in = probutils.ExtenededNormal(
@@ -548,6 +550,12 @@ class InFlowGenerativeModel(nn.Module):
                     scale=int_cov_u.sqrt()
                 ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
 
+        # annealing
+        if module_annealing is not None:
+            coef_anneal = next(module_annealing)
+            logp_s_out = logp_s_out * coef_anneal
+            logp_z = logp_z * coef_anneal
+            
 
         # xbar_int, xbar_spl
         output_neuralODE = self.module_flow(
