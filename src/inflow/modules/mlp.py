@@ -5,7 +5,7 @@ import numpy as np
 import torch
 
 class SimpleMLP(torch.nn.Module):
-    def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool, flag_startswithReLU:bool):
+    def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool, flag_startswithReLU:bool, flag_endswithSoftmax:bool=False):
         super(SimpleMLP, self).__init__()
         #grab args ===
         self.dim_input = dim_input
@@ -13,6 +13,9 @@ class SimpleMLP(torch.nn.Module):
         self.dim_output = dim_output
         self.flag_endwithReLU = flag_endwithReLU
         self.flag_startswithReLU = flag_startswithReLU
+        self.flag_endswithSoftmax = flag_endswithSoftmax
+        self._check_args()
+
         #make internals ==
         list_module = []
         if flag_startswithReLU:
@@ -26,8 +29,17 @@ class SimpleMLP(torch.nn.Module):
                 list_module.append(torch.nn.ReLU())
         if flag_endwithReLU:
             list_module.append(torch.nn.ReLU())
+        if flag_endswithSoftmax:
+            list_module.append(torch.nn.Softmax(1))
+
 
         self.module = torch.nn.Sequential(*list_module)
+
+    def _check_args(self):
+        if self.flag_endswithSoftmax:
+            assert not self.flag_endwithReLU
+        if self.flag_endwithReLU:
+            assert not self.flag_endswithSoftmax
 
     def forward(self, x):
         out = self.module(x)
