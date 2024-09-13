@@ -572,6 +572,7 @@ class GNNDisentangler(nn.Module):
                 covint
             ),
             min=0.0001,  # TODO: maybe tune?
+            max=0.1
         )  # [N, num_genes]
         sigmaxspl_raw = torch.clamp(
             torch.exp(
