@@ -4,7 +4,9 @@ import numpy as np
 import torch
 from torch.utils.data.sampler import Sampler
 from tqdm.notebook import tqdm, trange
+from datetime import datetime
 
+from random import shuffle
 
 class PygSTDataGridBatchSampler(Sampler):
     '''
@@ -33,6 +35,7 @@ class PygSTDataGridBatchSampler(Sampler):
         return self.typical_num_batches
 
     def __iter__(self):
+        random.seed(datetime.now().timestamp())
         list_batch = self._get_batchlist()
 
         # adjust lenth of list_batch
@@ -90,6 +93,10 @@ class PygSTDataGridBatchSampler(Sampler):
                     list_batch.append(
                         torch.where(filter_xy)[0].detach().cpu().numpy().tolist()
                     )
+
+        # randshufflelist_batch
+        shuffle(list_batch)
+
         return list_batch
 
     @torch.no_grad()
