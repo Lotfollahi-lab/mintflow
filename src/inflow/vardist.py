@@ -88,7 +88,7 @@ class InFlowVarDist(nn.Module):
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
         self.module_conditionalflowmatcher = module_conditionalflowmatcher
-        self.module_annealing = module_annealing
+        self.module_annealing = iter(module_annealing)
         assert (
             isinstance(self.module_annealing, kl_annealing.AnnealingSchedule) or (self.module_annealing is None)
         )
