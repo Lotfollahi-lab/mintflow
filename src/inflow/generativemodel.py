@@ -481,6 +481,7 @@ class InFlowGenerativeModel(nn.Module):
     def log_prob(self, dict_qsamples, batch, t_num_steps:int, np_size_factor:np.ndarray, coef_anneal):
         '''
 
+        :param coef_anneal:
         :param dict_qsamples: samples from q.
         :param batch: the batch returned by pyg's neighborloader.
         :param t_num_steps: the number of time-steps to be used by the NeuralODE module.
