@@ -88,10 +88,14 @@ class InFlowVarDist(nn.Module):
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
         self.module_conditionalflowmatcher = module_conditionalflowmatcher
-        self.module_annealing = iter(module_annealing)
         assert (
-            isinstance(self.module_annealing, kl_annealing.AnnealingSchedule) or (self.module_annealing is None)
+            isinstance(module_annealing, kl_annealing.AnnealingSchedule) or (module_annealing is None)
         )
+        if module_annealing is not None:
+            self.module_annealing = iter(module_annealing)
+        else:
+            self.module_annealing = None
+
 
         # args related to P1 loss
         self.coef_P1loss = coef_P1loss
