@@ -503,7 +503,7 @@ class InFlowVarDist(nn.Module):
         else:
             itrcount_wandb = 0
 
-
+        list_coef_anneal = []
         for batch in tqdm(dl):
             batch.INFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
@@ -535,6 +535,7 @@ class InFlowVarDist(nn.Module):
                 np_size_factor=np_size_factor,
                 module_annealing=self.module_annealing
             )
+            list_coef_anneal.append(dict_otherinf['coef_anneal'])
 
             # make the loss
             loss = 0.0
@@ -773,7 +774,7 @@ class InFlowVarDist(nn.Module):
                 optim_training.step()
             itrcount_wandb += 1
 
-        return itrcount_wandb
+        return itrcount_wandb, list_coef_anneal
 
     def train_imputer(
         self,

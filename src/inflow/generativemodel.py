@@ -555,7 +555,9 @@ class InFlowGenerativeModel(nn.Module):
             coef_anneal = next(module_annealing)
             logp_s_out = logp_s_out * coef_anneal
             logp_z = logp_z * coef_anneal
-            
+        else:
+            coef_anneal = None
+
 
         # xbar_int, xbar_spl
         output_neuralODE = self.module_flow(
@@ -622,7 +624,8 @@ class InFlowGenerativeModel(nn.Module):
         )
         dict_otherinf = dict(
             int_cov_u=int_cov_u,
-            spl_cov_u=spl_cov_u
+            spl_cov_u=spl_cov_u,
+            coef_anneal=coef_anneal
         )
         return dict_logp, dict_otherinf
 
