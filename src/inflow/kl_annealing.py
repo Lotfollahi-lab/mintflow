@@ -29,9 +29,15 @@ class AnnealingSchedule(ABC):
         coef_minmax_onecycle = (coef01_one_cycle * (self.coef_max - self.coef_min + 0.0)) + self.coef_min
 
         # the cycles
-        for _ in range(self.num_cyles):
-            for n in range(self.numepochs_in_cycle):
-                yield coef_minmax_onecycle[n]
+        if self.num_cyles == np.inf:
+            while True:
+                for n in range(self.numepochs_in_cycle):
+                    yield coef_minmax_onecycle[n]
+        else:
+            for _ in range(self.num_cyles):
+                for n in range(self.numepochs_in_cycle):
+                    yield coef_minmax_onecycle[n]
+
 
         # coefs kept at coef_max
         while True:
