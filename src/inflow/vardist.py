@@ -489,6 +489,12 @@ class InFlowVarDist(nn.Module):
         :return:
         '''
 
+
+        if self.module_annealing is not None:
+            self.coef_anneal = next(self.module_annealing)
+        else:
+            self.coef_anneal = None
+
         if flag_lockencdec_duringtraining:
             assert (optim_training.flag_freezeencdec)  # TODO: make the check differently
 
@@ -537,7 +543,7 @@ class InFlowVarDist(nn.Module):
                 batch=batch,
                 t_num_steps=t_num_steps,
                 np_size_factor=np_size_factor,
-                module_annealing=self.module_annealing
+                coef_anneal=self.coef_anneal
             )
             list_coef_anneal.append(dict_otherinf['coef_anneal'])
 

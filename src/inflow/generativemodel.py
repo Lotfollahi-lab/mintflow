@@ -478,7 +478,7 @@ class InFlowGenerativeModel(nn.Module):
         )
         return dict_toret
 
-    def log_prob(self, dict_qsamples, batch, t_num_steps:int, np_size_factor:np.ndarray, module_annealing):
+    def log_prob(self, dict_qsamples, batch, t_num_steps:int, np_size_factor:np.ndarray, coef_anneal):
         '''
 
         :param dict_qsamples: samples from q.
@@ -551,12 +551,10 @@ class InFlowGenerativeModel(nn.Module):
                 ).log_prob(dict_qsamples['z'])  # [num_cells, dim_z]
 
         # annealing
-        if module_annealing is not None:
-            coef_anneal = next(module_annealing)
+        if coef_anneal is not None:
             logp_s_out = logp_s_out * coef_anneal
             logp_z = logp_z * coef_anneal
-        else:
-            coef_anneal = None
+
 
 
         # xbar_int, xbar_spl
