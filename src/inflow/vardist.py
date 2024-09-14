@@ -560,13 +560,18 @@ class InFlowVarDist(nn.Module):
                         loss = loss - lossterm_logp
                     else:
                         assert (k in ['logp_x_int', 'logp_x_spl'])
-                        print("   {} was treated differently.".format(k))
-                        x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach()[:batch.batch_size] + 0.0
-                        lossterm_logp_pos = dict_logp[k][x_cnt > 0]
-                        lossterm_logp_zero = dict_logp[k][x_cnt == 0]
-                        lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos.sum() + self.weight_logprob_zinbzero*lossterm_logp_zero.sum()
-                        lossterm_logp = lossterm_logp/((x_cnt.size()[0] + 0.0) * (self.weight_logprob_zinbpos + self.weight_logprob_zinbzero))
-                        loss = loss - lossterm_logp
+
+                        if self.weight_logprob_zinbpos == -1:  # do as usual
+                            assert (self.weight_logprob_zinbzero == -1)
+                            lossterm_logp = dict_logp[k].sum(1).mean()
+                            loss = loss - lossterm_logp
+                        else:
+                            x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach()[:batch.batch_size] + 0.0
+                            lossterm_logp_pos = dict_logp[k][x_cnt > 0]
+                            lossterm_logp_zero = dict_logp[k][x_cnt == 0]
+                            lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos.sum() + self.weight_logprob_zinbzero*lossterm_logp_zero.sum()
+                            lossterm_logp = lossterm_logp/((x_cnt.size()[0] + 0.0) * (self.weight_logprob_zinbpos + self.weight_logprob_zinbzero))
+                            loss = loss - lossterm_logp
 
 
                     if flag_tensorboardsave:
@@ -935,6 +940,9 @@ class InFlowVarDist(nn.Module):
                 dict_var_to_dict_nglobal_to_value['mu_sin'][n_global] = np_mu_sin[n_local, :]
                 dict_var_to_dict_nglobal_to_value['mu_sout'][n_global] = np_mu_sout[n_local, :]
                 dict_var_to_dict_nglobal_to_value['mu_z'][n_global] = np_mu_z[n_local, :]
+                # and generated samples
+                dict_var_to_dict_nglobal_to_value['x_int'][n_global] = curr_dict_qsample['x_int'][n_local, :].detach().cpu().numpy()
+                dict_var_to_dict_nglobal_to_value['x_spl'][n_global] = curr_dict_qsample['x_spl'][n_local,:].detach().cpu().numpy()
 
         self.train()
 
