@@ -43,7 +43,9 @@ class InFlowVarDist(nn.Module):
             coef_P3loss:float,
             module_predictor_P3loss:nn.Module,
             str_modeP3loss_regorcls:str,
-            module_annealing:kl_annealing.AnnealingSchedule
+            module_annealing:kl_annealing.AnnealingSchedule,
+            weight_logprob_zinbpos:float,
+            weight_logprob_zinbzero:float
     ):
         '''
 
@@ -96,6 +98,8 @@ class InFlowVarDist(nn.Module):
         else:
             self.module_annealing = None
 
+        self.weight_logprob_zinbpos = weight_logprob_zinbpos
+        self.weight_logprob_zinbzero = weight_logprob_zinbzero
 
         # args related to P1 loss
         self.coef_P1loss = coef_P1loss
@@ -551,11 +555,24 @@ class InFlowVarDist(nn.Module):
             loss = 0.0
             if list_flag_elboloss_imputationloss[0]:
                 for k in dict_logp.keys():
-                    loss = loss - dict_logp[k].sum(1).mean()
+                    if k not in ['logp_x_int', 'logp_x_spl']:
+                        lossterm_logp = dict_logp[k].sum(1).mean()
+                        loss = loss - lossterm_logp
+                    else:
+                        assert (k in ['logp_x_int', 'logp_x_spl'])
+                        print("   {} was treated differently.".format(k))
+                        x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
+                        lossterm_logp_pos = dict_logp[k][x_cnt > 0]
+                        lossterm_logp_zero = dict_logp[k][x_cnt == 0]
+                        lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos + self.weight_logprob_zinbzero*lossterm_logp_zero
+                        lossterm_logp = lossterm_logp.sum()/((x_cnt.size()[0] + 0.0) * (self.weight_logprob_zinbpos + self.weight_logprob_zinbzero))
+                        loss = loss - lossterm_logp
+
+
                     if flag_tensorboardsave:
                         with torch.no_grad():
                             wandb.log(
-                                {"Loss/logprob_P/{}".format(k): torch.mean(- dict_logp[k].sum(1).mean())},
+                                {"Loss/logprob_P/{}".format(k): lossterm_logp},
                                 step=itrcount_wandb
                             )
 
@@ -953,6 +970,9 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        assert (self.weight_logprob_zinbpos >= 0.0)
+        assert (self.weight_logprob_zinbzero >= 0.0)
 
         assert (
             self.str_modeP3loss_regorcls in ['reg', 'cls']
