@@ -571,14 +571,14 @@ class GNNDisentangler(nn.Module):
             torch.exp(
                 covint
             ),
-            min=0.0001 * torch.ones_like(covint),  # TODO: maybe tune?
+            min=1e-2 * torch.ones_like(covint),  # TODO: maybe tune?
             max=(x_cnt ** 2).detach()
         )  # [N, num_genes]
         sigmaxspl_raw = torch.clamp(
             torch.exp(
                 covspl
             ),
-            min=0.0001 * torch.ones_like(covspl),  # TODO: maybe tune?
+            min=1e-2 * torch.ones_like(covspl),  # TODO: maybe tune?
             max=(x_cnt ** 2).detach()
         )  # [N, num_genes]
 
