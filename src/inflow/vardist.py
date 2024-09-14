@@ -579,27 +579,6 @@ class InFlowVarDist(nn.Module):
                                 step=itrcount_wandb
                             )
 
-            # add the imputation loss
-            if list_flag_elboloss_imputationloss[1]:
-                raise Exception(
-                    'batch.y now contains the cell-type labels and identifiability, so now imputation is not supported.'
-                )
-
-                if dict_q_sample['loss_imputex'] is not None:
-                    loss = loss + dict_q_sample['loss_imputex'].mean()
-
-                if flag_tensorboardsave:
-                    with torch.no_grad():
-                        if dict_q_sample['loss_imputex'] is not None:
-                            wandb.log(
-                                {"Loss/loss_imputex": dict_q_sample['loss_imputex'].mean()},
-                                step=itrcount_wandb
-                            )
-                        else:
-                            wandb.log(
-                                {"Loss/loss_imputex": torch.nan},
-                                step=itrcount_wandb
-                            )
 
             # add the loss terms to predict adjecancy matrix ===
             if len(self.list_ajdmatpredloss.list_adjpredictors) > 0:
