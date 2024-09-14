@@ -595,6 +595,8 @@ class GNNDisentangler(nn.Module):
             1
         ).sqrt()
 
+        sigmaxint = torch.clamp(sigmaxint, min=1e-2)
+        sigmaxspl = torch.clamp(sigmaxspl, min=1e-2)
 
         # sigma-s cannot be more than the observed count
         #DONE above sigmaxint = torch.clamp(sigmaxint, max=x_cnt.detach())
