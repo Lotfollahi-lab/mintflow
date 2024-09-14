@@ -571,15 +571,15 @@ class GNNDisentangler(nn.Module):
             torch.exp(
                 covint
             ),
-            min=0.0001,  # TODO: maybe tune?
-            max=1.0
+            min=0.0001 * torch.ones_like(covint),  # TODO: maybe tune?
+            max=(x_cnt ** 2).detach()
         )  # [N, num_genes]
         sigmaxspl_raw = torch.clamp(
             torch.exp(
                 covspl
             ),
-            min=0.0001,  # TODO: maybe tune?
-            max=1.0
+            min=0.0001 * torch.ones_like(covspl),  # TODO: maybe tune?
+            max=(x_cnt ** 2).detach()
         )  # [N, num_genes]
 
         '''
@@ -597,8 +597,8 @@ class GNNDisentangler(nn.Module):
 
 
         # sigma-s cannot be more than the observed count
-        sigmaxint = torch.clamp(sigmaxint, max=x_cnt)
-        sigmaxspl = torch.clamp(sigmaxspl, max=x_cnt)
+        #DONE above sigmaxint = torch.clamp(sigmaxint, max=x_cnt.detach())
+        #DONE above sigmaxspl = torch.clamp(sigmaxspl, max=x_cnt.detach())
 
 
         return dict(
