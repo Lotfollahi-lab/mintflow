@@ -561,12 +561,12 @@ class InFlowVarDist(nn.Module):
 
             if list_flag_elboloss_imputationloss[0]:
                 for k in dict_logq.keys():
-                    if k not in ['x_int', 'x_spl']:
+                    if k not in ['logq_xint', 'logq_xspl']:
                         lossterm_logq = dict_logq[k].sum(1).mean()
                         loss = loss + lossterm_logq
                     else:
                         # q(x_int|x) and q(x_spl|x) handled on non-zero elements.
-                        assert k in ['x_int', 'x_spl']
+                        assert k in ['logq_xint', 'logq_xspl']
                         print("k handled differently.")
                         x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
                         lossterm_logq = (dict_logq[k][x_cnt > 0].sum())/(x_cnt.size()[0]+0.0)
