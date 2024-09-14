@@ -567,7 +567,7 @@ class InFlowVarDist(nn.Module):
                     else:
                         # q(x_int|x) and q(x_spl|x) handled on non-zero elements.
                         assert k in ['logq_xint', 'logq_xspl']
-                        print("k handled differently.")
+                        
                         x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
                         lossterm_logq = (dict_logq[k][x_cnt > 0].sum())/(x_cnt.size()[0]+0.0)
                         loss = loss + lossterm_logq
