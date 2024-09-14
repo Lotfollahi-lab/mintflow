@@ -577,7 +577,7 @@ class InFlowVarDist(nn.Module):
                     if flag_tensorboardsave:
                         with torch.no_grad():
                             wandb.log(
-                                {"Loss/logprob_P/{}".format(k): lossterm_logp},
+                                {"Loss/logprob_P/{}".format(k): -lossterm_logp},
                                 step=itrcount_wandb
                             )
 
