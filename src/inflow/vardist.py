@@ -901,7 +901,9 @@ class InFlowVarDist(nn.Module):
             'muxbar_spl':{},
             'mu_sin':{},
             'mu_sout':{},
-            'mu_z':{}
+            'mu_z':{},
+            'x_int':{},
+            'x_spl':{}
         }  # TODO: add other variables.
         cnt_tqdm = 1
         for batch in tqdm(dl, desc='Epoch {}'.format(cnt_tqdm), position=0, leave=False):
