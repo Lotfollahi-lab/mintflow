@@ -561,7 +561,7 @@ class InFlowVarDist(nn.Module):
                     else:
                         assert (k in ['logp_x_int', 'logp_x_spl'])
                         print("   {} was treated differently.".format(k))
-                        x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
+                        x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach()[:batch.batch_size] + 0.0
                         lossterm_logp_pos = dict_logp[k][x_cnt > 0]
                         lossterm_logp_zero = dict_logp[k][x_cnt == 0]
                         lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos + self.weight_logprob_zinbzero*lossterm_logp_zero
