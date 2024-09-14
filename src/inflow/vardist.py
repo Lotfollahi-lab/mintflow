@@ -561,11 +561,20 @@ class InFlowVarDist(nn.Module):
 
             if list_flag_elboloss_imputationloss[0]:
                 for k in dict_logq.keys():
-                    loss = loss + dict_logq[k].sum(1).mean()
+                    if k not in ['x_int', 'x_spl']:
+                        lossterm_logq = dict_logq[k].sum(1).mean()
+                        loss = loss + lossterm_logq
+                    else:
+                        # q(x_int|x) and q(x_spl|x) handled on non-zero elements.
+                        assert k in ['x_int', 'x_spl']
+                        x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
+                        lossterm_logq = (dict_logq[k][x_cnt > 0].sum())/(x_cnt.size()[0]+0.0)
+                        loss = loss + lossterm_logq
+
                     if flag_tensorboardsave:
                         with torch.no_grad():
                             wandb.log(
-                                {"Loss/logprob_Q/{}".format(k): torch.mean(+ dict_logq[k].sum(1).mean())},
+                                {"Loss/logprob_Q/{}".format(k): lossterm_logq},
                                 step=itrcount_wandb
                             )
 
