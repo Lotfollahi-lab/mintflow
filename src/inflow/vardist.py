@@ -564,8 +564,8 @@ class InFlowVarDist(nn.Module):
                         x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach()[:batch.batch_size] + 0.0
                         lossterm_logp_pos = dict_logp[k][x_cnt > 0]
                         lossterm_logp_zero = dict_logp[k][x_cnt == 0]
-                        lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos + self.weight_logprob_zinbzero*lossterm_logp_zero
-                        lossterm_logp = lossterm_logp.sum()/((x_cnt.size()[0] + 0.0) * (self.weight_logprob_zinbpos + self.weight_logprob_zinbzero))
+                        lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos.sum() + self.weight_logprob_zinbzero*lossterm_logp_zero.sum()
+                        lossterm_logp = lossterm_logp/((x_cnt.size()[0] + 0.0) * (self.weight_logprob_zinbpos + self.weight_logprob_zinbzero))
                         loss = loss - lossterm_logp
 
 
