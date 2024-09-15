@@ -45,8 +45,7 @@ class InFlowVarDist(nn.Module):
             str_modeP3loss_regorcls:str,
             module_annealing:kl_annealing.AnnealingSchedule,
             weight_logprob_zinbpos:float,
-            weight_logprob_zinbzero:float,
-            flag_use_std_disentangler:bool
+            weight_logprob_zinbzero:float
     ):
         '''
 
@@ -259,34 +258,19 @@ class InFlowVarDist(nn.Module):
     def log_prob(self, dict_retvalrsample):
 
         if isinstance(self.module_impanddisentgl, GNNDisentangler):
-            if self.flag_use_std_disentangler:
-                # use the std-s returned by the disentangler module
-                # xint
-                logq_xint = Normal(
-                    loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
-                    scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxint']
-                ).log_prob(dict_retvalrsample['x_int'])  # [N, num_genes]
+            # use the std-s returned by the disentangler module
+            # xint
+            logq_xint = Normal(
+                loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
+                scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxint']
+            ).log_prob(dict_retvalrsample['x_int'])  # [N, num_genes]
 
-                # xspl
-                logq_xspl = Normal(
-                    loc=dict_retvalrsample['params_q_impanddisentgl']['muxspl'],
-                    scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxspl']
-                ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
-            else:
-                # use the std-s manually specificied
-                # xint
-                logq_xint = probutils.ExtenededNormal(
-                    loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
-                    scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['scale'],
-                    flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['flag_unweighted']
-                ).log_prob(dict_retvalrsample['x_int'])  # [N, num_genes]
+            # xspl
+            logq_xspl = Normal(
+                loc=dict_retvalrsample['params_q_impanddisentgl']['muxspl'],
+                scale=dict_retvalrsample['params_q_impanddisentgl']['sigmaxspl']
+            ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
 
-                # xspl
-                logq_xspl = probutils.ExtenededNormal(
-                    loc=dict_retvalrsample['params_q_impanddisentgl']['muxspl'],
-                    scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['scale'],
-                    flag_unweighted=self.dict_qname_to_scaleandunweighted['impanddisentgl_spl']['flag_unweighted']
-                ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
 
         else:
             # xint
