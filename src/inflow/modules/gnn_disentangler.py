@@ -574,14 +574,14 @@ class GNNDisentangler(nn.Module):
             torch.exp(
                 covint
             ),
-            min=1e-2 * torch.ones_like(covint),  # TODO: maybe tune?
+            min=0.0 * torch.ones_like(covint),  # TODO: maybe tune?
             max=(x_cnt ** 2).detach()
         )  # [N, num_genes]
         sigmaxspl_raw = torch.clamp(
             torch.exp(
                 covspl
             ),
-            min=1e-2 * torch.ones_like(covspl),  # TODO: maybe tune?
+            min=0.0 * torch.ones_like(covspl),  # TODO: maybe tune?
             max=(x_cnt ** 2).detach()
         )  # [N, num_genes]
 
@@ -589,6 +589,10 @@ class GNNDisentangler(nn.Module):
         The below part puts a lower bound on the variance on non-central nodes.
         This is done to solve the conceptual issue of getting GNN output on non-central nodes.
         '''
+
+        sigmaxint = torch.clamp(sigmaxint, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
+        sigmaxspl = torch.clamp(sigmaxspl, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
+
         sigmaxint = torch.concat(
             [sigmaxint_raw[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint_raw[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
             1
@@ -598,8 +602,7 @@ class GNNDisentangler(nn.Module):
             1
         ).sqrt()
 
-        sigmaxint = torch.clamp(sigmaxint, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
-        sigmaxspl = torch.clamp(sigmaxspl, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
+
 
         # sigma-s cannot be more than the observed count
         #DONE above sigmaxint = torch.clamp(sigmaxint, max=x_cnt.detach())
