@@ -590,15 +590,15 @@ class GNNDisentangler(nn.Module):
         This is done to solve the conceptual issue of getting GNN output on non-central nodes.
         '''
 
-        sigmaxint = torch.clamp(sigmaxint, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
-        sigmaxspl = torch.clamp(sigmaxspl, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
+        sigmaxint = torch.clamp(sigmaxint_raw, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
+        sigmaxspl = torch.clamp(sigmaxspl_raw, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
 
         sigmaxint = torch.concat(
-            [sigmaxint_raw[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint_raw[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
+            [sigmaxint[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
             1
         ).sqrt()
         sigmaxspl = torch.concat(
-            [sigmaxspl_raw[:, 0:batch.batch_size]+0.0, torch.clamp(sigmaxspl_raw[:, batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
+            [sigmaxspl[:, 0:batch.batch_size]+0.0, torch.clamp(sigmaxspl[:, batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
             1
         ).sqrt()
 
