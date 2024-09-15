@@ -105,12 +105,7 @@ class InFlowVarDist(nn.Module):
         assert (
             self.flag_drop_loss_logQdisentangler in [True, False]
         )
-        if self.flag_drop_loss_logQdisentangler:
-            # in this case moduleDisent.std is not trained --> must be set to a fixed number.
-            self.module_impanddisentgl : GNNDisentangler
-            assert (
-                self.module_impanddisentgl.std_minval_finalclip == self.module_impanddisentgl.std_maxval_finalclip
-            )
+
 
         # args related to P1 loss
         self.coef_P1loss = coef_P1loss
@@ -997,6 +992,13 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        if self.flag_drop_loss_logQdisentangler:
+            # in this case moduleDisent.std is not trained --> must be set to a fixed number.
+            self.module_impanddisentgl : GNNDisentangler
+            assert (
+                self.module_impanddisentgl.std_minval_finalclip == self.module_impanddisentgl.std_maxval_finalclip
+            )
 
         assert (self.weight_logprob_zinbpos >= 0.0)
         assert (self.weight_logprob_zinbzero >= 0.0)
