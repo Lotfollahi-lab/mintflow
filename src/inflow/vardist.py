@@ -45,7 +45,8 @@ class InFlowVarDist(nn.Module):
             str_modeP3loss_regorcls:str,
             module_annealing:kl_annealing.AnnealingSchedule,
             weight_logprob_zinbpos:float,
-            weight_logprob_zinbzero:float
+            weight_logprob_zinbzero:float,
+            flag_drop_loss_logQdisentangler:bool
     ):
         '''
 
@@ -75,9 +76,7 @@ class InFlowVarDist(nn.Module):
                 - sin: with keys scale, flag_unweighted
                 - sout: with keys scale, flag_unweighted
         :param coef_P1loss
-        :param flag_use_std_disentangler: if set to True, the std returned by the disentangler module is used.
-            Otherwise the manually set values are used.
-
+        :param flag_drop_loss_logQdisentangler: if set to True, the term logq(x_int, x_spl | x) is dropped from the loss.
 
         '''
         super(InFlowVarDist, self).__init__()
@@ -92,10 +91,6 @@ class InFlowVarDist(nn.Module):
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
         self.module_conditionalflowmatcher = module_conditionalflowmatcher
-        self.flag_use_std_disentangler = flag_use_std_disentangler
-        assert (
-            self.flag_use_std_disentangler in [True, False]
-        )
         assert (
             isinstance(module_annealing, kl_annealing.AnnealingSchedule) or (module_annealing is None)
         )
@@ -106,6 +101,10 @@ class InFlowVarDist(nn.Module):
 
         self.weight_logprob_zinbpos = weight_logprob_zinbpos
         self.weight_logprob_zinbzero = weight_logprob_zinbzero
+        self.flag_drop_loss_logQdisentangler = flag_drop_loss_logQdisentangler
+        assert (
+            self.flag_drop_loss_logQdisentangler in [True, False]
+        )
 
         # args related to P1 loss
         self.coef_P1loss = coef_P1loss
@@ -596,12 +595,15 @@ class InFlowVarDist(nn.Module):
                         lossterm_logq = dict_logq[k].sum(1).mean()
                         loss = loss + lossterm_logq
                     else:
-                        # q(x_int|x) and q(x_spl|x) handled on non-zero elements.
-                        assert k in ['logq_xint', 'logq_xspl']
+                        if not self.flag_drop_loss_logQdisentangler:
+                            # q(x_int|x) and q(x_spl|x) handled on non-zero elements.
+                            assert k in ['logq_xint', 'logq_xspl']
 
-                        x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
-                        lossterm_logq = (dict_logq[k][x_cnt > 0].sum())/(x_cnt.size()[0]+0.0)
-                        loss = loss + lossterm_logq
+                            x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
+                            lossterm_logq = (dict_logq[k][x_cnt > 0].sum())/(x_cnt.size()[0]+0.0)
+                            loss = loss + lossterm_logq
+                        else:
+                            lossterm_logq = -1
 
                     if flag_tensorboardsave:
                         with torch.no_grad():

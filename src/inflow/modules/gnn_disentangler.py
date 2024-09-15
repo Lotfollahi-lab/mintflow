@@ -23,7 +23,7 @@ class ArchInsertionPoint:
 
 class GNNDisentangler(nn.Module):
     def __init__(self, kwargs_genmodel, str_mode_normalizex:str, maxsize_subgraph, dict_general_args, mode_headxint_headxspl_headboth_twosep,
-                 gnn_list_dim_hidden, kwargs_sageconv, clipval_cov_noncentralnodes:float, dict_CTNNC_usage:dict):
+                 gnn_list_dim_hidden, kwargs_sageconv, clipval_cov_noncentralnodes:float, dict_CTNNC_usage:dict, std_minval_finalclip:float, std_maxval_finalclip:float):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
         :param str_mode_normalizex: in ['counts', 'logp1'], whether the GNN works on counts or log1p
@@ -40,6 +40,7 @@ class GNNDisentangler(nn.Module):
                 - mlp fro x_int
         :param clipval_cov_noncentralnodes: the value by which the covariance for non-central nodes is clipped.
         :param dict_CTNNC_usage: a dictionary that specifies wheteher/how CT and NCC are used.
+        :param std_minval_finalclip, std_maxval_finalclip: values for the final clip. Can also be used to freez the std to a fixed value.
         '''
         super(GNNDisentangler, self).__init__()
         self.kwargs_genmodel = kwargs_genmodel
@@ -52,6 +53,8 @@ class GNNDisentangler(nn.Module):
         self.str_mode_normalizex = str_mode_normalizex
         self.clipval_cov_noncentralnodes = clipval_cov_noncentralnodes
         self.dict_CTNNC_usage = dict_CTNNC_usage
+        self.std_minval_finalclip = std_minval_finalclip
+        self.std_maxval_finalclip = std_maxval_finalclip
 
         self._check_dict_CTNCCusage()
         self._check_args()
@@ -595,8 +598,8 @@ class GNNDisentangler(nn.Module):
             1
         ).sqrt()
 
-        sigmaxint = torch.clamp(sigmaxint, min=1e-2)
-        sigmaxspl = torch.clamp(sigmaxspl, min=1e-2)
+        sigmaxint = torch.clamp(sigmaxint, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
+        sigmaxspl = torch.clamp(sigmaxspl, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
 
         # sigma-s cannot be more than the observed count
         #DONE above sigmaxint = torch.clamp(sigmaxint, max=x_cnt.detach())
