@@ -73,6 +73,7 @@ class EvalLargeReadoutsXsplpred:
         )
         set_cnts.sort()
 
+        dict_toret = {}
         for min_count in set_cnts:
             mask_min_exp = (np_xobs >= min_count)
             np_pred = np_xspl_pred[mask_min_exp].flatten() + 0.0
@@ -86,10 +87,11 @@ class EvalLargeReadoutsXsplpred:
 
             np_gt = np_xspl_gt[mask_min_exp].flatten() + 0.0
 
-            dict_toret = {}
             for measure in self.list_measures:
                 measname, measval = measure(np_pred, np_gt)
                 dict_toret["{} (among readout >= {})".format(measname, min_count)] = measval
+
+        return dict_toret
 
 
 
