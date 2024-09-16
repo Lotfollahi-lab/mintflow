@@ -90,7 +90,7 @@ class EvalLargeReadoutsXsplpred:
             for measure in self.list_measures:
                 measname, measval = measure(np_pred, np_gt)
                 dict_toret["{} (among readout >= {}, total={})".format(
-                    measname, min_count, np.sum(np_xobs >= self.mincut_readout))
+                    measname, min_count, np.sum(np_xobs >= mincut_readout))
                 ] = measval
 
         return dict_toret
