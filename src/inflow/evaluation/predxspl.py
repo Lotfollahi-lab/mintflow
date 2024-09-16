@@ -31,8 +31,8 @@ class EvalXsplpred:
         np_pred = np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
         if flag_normalize:
             try:
-                np_pred = np_pred - np.min(np_pred)
-                np_pred = np_pred / np_pred.max()
+                np_pred = np_pred - np.expand_dims(np.min(np_pred, 1), 1)
+                np_pred = np_pred / np.expand_dims(np.max(np_pred, 1), 1)
                 np_pred = np_pred * np_xobs[mask_nonzero_exp].flatten()
             except:
                 np_pred = np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
@@ -79,8 +79,8 @@ class EvalLargeReadoutsXsplpred:
             np_pred = np_xspl_pred[mask_min_exp].flatten() + 0.0
             if flag_normalize:
                 try:
-                    np_pred = np_pred - np.min(np_pred)
-                    np_pred = np_pred / np_pred.max()
+                    np_pred = np_pred - np.expand_dims(np.min(np_pred, 1), 1)
+                    np_pred = np_pred / np.expand_dims(np.max(np_pred, 1), 1)
                     np_pred = np_pred * np_xobs[mask_min_exp].flatten()
                 except:
                     np_pred = np_xspl_pred[mask_min_exp].flatten() + 0.0
