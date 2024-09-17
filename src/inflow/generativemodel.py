@@ -272,16 +272,24 @@ class InFlowGenerativeModel(nn.Module):
             assert (isinstance(self.dict_pname_to_scaleandunweighted['x'][0], float))
             assert (self.dict_pname_to_scaleandunweighted['x'][1] in [True, False])
 
-        assert (
-            isinstance(
-                self.initval_thetanegbin_int, float
-            )
-        )
-        assert (
-            isinstance(
-                self.initval_thetanegbin_spl, float
-            )
-        )
+        if not isinstance(self.initval_thetanegbin_int, float):
+            assert (isinstance(self.initval_thetanegbin_int, str))
+            assert(self.initval_thetanegbin_int == 'rand')
+
+        if not isinstance(self.initval_thetanegbin_spl, float):
+            assert (isinstance(self.initval_thetanegbin_spl, str))
+            assert(self.initval_thetanegbin_spl == 'rand')
+        
+        # assert (
+        #     isinstance(
+        #         self.initval_thetanegbin_int, float
+        #     )
+        # )
+        # assert (
+        #     isinstance(
+        #         self.initval_thetanegbin_spl, float
+        #     )
+        # )
         if isinstance(self.module_w_dec_int, mlp.SimpleMLP):
             if (not self.module_w_dec_int.flag_endwithReLU) and (not self.module_w_dec_int.flag_endswithSoftmax):
                 raise Exception(
