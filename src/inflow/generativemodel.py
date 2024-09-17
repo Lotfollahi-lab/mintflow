@@ -279,7 +279,7 @@ class InFlowGenerativeModel(nn.Module):
         if not isinstance(self.initval_thetanegbin_spl, float):
             assert (isinstance(self.initval_thetanegbin_spl, str))
             assert(self.initval_thetanegbin_spl == 'rand')
-        
+
         # assert (
         #     isinstance(
         #         self.initval_thetanegbin_int, float

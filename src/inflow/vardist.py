@@ -529,13 +529,15 @@ class InFlowVarDist(nn.Module):
             itrcount_wandb = 0
 
 
-        wandb.log(
-            {"InspectVals/annealing_coefficient": self.coef_anneal},
-            step=itrcount_wandb
-        )
 
         list_coef_anneal = []
         for batch in tqdm(dl):
+
+            wandb.log(
+                {"InspectVals/annealing_coefficient": self.coef_anneal},
+                step=itrcount_wandb
+            )
+
             batch.INFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
                 "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
