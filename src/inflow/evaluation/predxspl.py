@@ -12,6 +12,55 @@ def func_mae(a, b):
     return 'MAE', np.mean(np.abs(a-b))
 
 
+class EvalOnHVGsXsplpred:
+    def __init__(self, list_flag_HVG):
+        self.list_measures = [func_mse, func_mae]
+        self.list_flag_HVG = list_flag_HVG
+        assert (isinstance(self.list_flag_HVG , list))
+        for u in list_flag_HVG:
+            assert (u in [True, False])
+
+        self.np_flag_HVG = np.expand_dims(
+            np.array(self.list_flag_HVG),
+            0
+        )  # [1, num_genes]
+
+    def eval(self, np_xspl_gt:np.ndarray, np_xspl_pred:np.ndarray, np_xobs:np.ndarray, flag_normalize:bool):
+
+        assert (
+            isinstance(np_xspl_gt, np.ndarray)
+        )
+        assert (
+            isinstance(np_xspl_pred, np.ndarray)
+        )
+        assert (
+            isinstance(np_xobs, np.ndarray)
+        )
+
+
+        mask_selecteval = (np_xobs > 0.0) * self.np_flag_HVG  # [N x num_genes]
+
+        np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
+        if flag_normalize:
+            try:
+                np_pred = np_pred - np.expand_dims(np.min(np_pred, 1), 1)
+                np_pred = np_pred / np.expand_dims(np.max(np_pred, 1), 1)
+                np_pred = np_pred * np_xobs[mask_selecteval].flatten()
+            except:
+                np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
+
+        np_gt = np_xspl_gt[mask_selecteval].flatten() + 0.0
+
+        dict_toret = {}
+        for measure in self.list_measures:
+            measname, measval = measure(np_pred, np_gt)
+            dict_toret[measname+"_among_{}HVGs".format(len(self.list_flag_HVG))] = measval
+
+        return dict_toret
+
+
+
+
 class EvalXsplpred:
     def __init__(self):
         self.list_measures = [func_mse, func_mae]
