@@ -16,7 +16,7 @@ class EvalOnHVGsXsplpred:
     def __init__(self, list_flag_HVG):
         self.list_measures = [func_mse, func_mae]
         self.list_flag_HVG = list_flag_HVG
-        assert (isinstance(self.list_flag_HVG , list))
+        assert (isinstance(self.list_flag_HVG, list))
         for u in list_flag_HVG:
             assert (u in [True, False])
 
@@ -39,15 +39,16 @@ class EvalOnHVGsXsplpred:
 
 
         mask_selecteval = (np_xobs > 0.0) * self.np_flag_HVG  # [N x num_genes]
-
-        np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
+        np_pred = np_xspl_pred + 0.0  # np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
         if flag_normalize:
             try:
                 np_pred = np_pred - np.expand_dims(np.min(np_pred, 1), 1)
                 np_pred = np_pred / np.expand_dims(np.max(np_pred, 1), 1)
-                np_pred = np_pred * np_xobs[mask_selecteval].flatten()
+                np_pred = np_pred[mask_selecteval].flatten() * np_xobs[mask_selecteval].flatten()
             except:
                 np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
+        else:
+            np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
 
         np_gt = np_xspl_gt[mask_selecteval].flatten() + 0.0
 
@@ -76,17 +77,20 @@ class EvalXsplpred:
             isinstance(np_xobs, np.ndarray)
         )
 
-        mask_nonzero_exp = np_xobs > 0.0
-        np_pred = np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
+        #mask_nonzero_exp = np_xobs > 0.0
+        mask_selecteval = np_xobs > 0.0
+        np_pred = np_xspl_pred + 0.0  # np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
         if flag_normalize:
             try:
                 np_pred = np_pred - np.expand_dims(np.min(np_pred, 1), 1)
                 np_pred = np_pred / np.expand_dims(np.max(np_pred, 1), 1)
-                np_pred = np_pred * np_xobs[mask_nonzero_exp].flatten()
+                np_pred = np_pred[mask_selecteval].flatten() * np_xobs[mask_selecteval].flatten()
             except:
-                np_pred = np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
+                np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
+        else:
+            np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
 
-        np_gt = np_xspl_gt[mask_nonzero_exp].flatten() + 0.0
+        np_gt = np_xspl_gt[mask_selecteval].flatten() + 0.0
 
         dict_toret = {}
         for measure in self.list_measures:
@@ -124,17 +128,20 @@ class EvalLargeReadoutsXsplpred:
 
         dict_toret = {}
         for min_count in set_cnts:
-            mask_min_exp = (np_xobs >= min_count)
-            np_pred = np_xspl_pred[mask_min_exp].flatten() + 0.0
+            # mask_min_exp = (np_xobs >= min_count)
+            mask_selecteval = (np_xobs >= min_count)
+            np_pred = np_xspl_pred + 0.0  # np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
             if flag_normalize:
                 try:
                     np_pred = np_pred - np.expand_dims(np.min(np_pred, 1), 1)
                     np_pred = np_pred / np.expand_dims(np.max(np_pred, 1), 1)
-                    np_pred = np_pred * np_xobs[mask_min_exp].flatten()
+                    np_pred = np_pred[mask_selecteval].flatten() * np_xobs[mask_selecteval].flatten()
                 except:
-                    np_pred = np_xspl_pred[mask_min_exp].flatten() + 0.0
+                    np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
+            else:
+                np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
 
-            np_gt = np_xspl_gt[mask_min_exp].flatten() + 0.0
+            np_gt = np_xspl_gt[mask_selecteval].flatten() + 0.0
 
             for measure in self.list_measures:
                 measname, measval = measure(np_pred, np_gt)
