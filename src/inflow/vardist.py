@@ -508,6 +508,8 @@ class InFlowVarDist(nn.Module):
         else:
             self.coef_anneal = None
 
+
+
         if flag_lockencdec_duringtraining:
             assert (optim_training.flag_freezeencdec)  # TODO: make the check differently
 
@@ -525,6 +527,12 @@ class InFlowVarDist(nn.Module):
             itrcount_wandb = itrcount_wandbstep_input + 0
         else:
             itrcount_wandb = 0
+
+
+        wandb.log(
+            {"InspectVals/annealing_coefficient": self.coef_anneal},
+            step=itrcount_wandb
+        )
 
         list_coef_anneal = []
         for batch in tqdm(dl):

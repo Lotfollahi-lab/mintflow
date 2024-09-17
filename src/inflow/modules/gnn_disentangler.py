@@ -25,7 +25,7 @@ class ArchInsertionPoint:
 class GNNDisentangler(nn.Module):
     def __init__(self, kwargs_genmodel, str_mode_normalizex:str, maxsize_subgraph, dict_general_args, mode_headxint_headxspl_headboth_twosep,
                  gnn_list_dim_hidden, kwargs_sageconv, clipval_cov_noncentralnodes:float, dict_CTNNC_usage:dict, std_minval_finalclip:float, std_maxval_finalclip:float,
-                 flag_use_layernorm:bool):
+                 flag_use_layernorm:bool, flag_use_dropout:bool):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
         :param str_mode_normalizex: in ['counts', 'logp1'], whether the GNN works on counts or log1p
@@ -59,6 +59,7 @@ class GNNDisentangler(nn.Module):
         self.std_minval_finalclip = std_minval_finalclip
         self.std_maxval_finalclip = std_maxval_finalclip
         self.flag_use_layernorm = flag_use_layernorm
+        self.flag_use_dropout = flag_use_dropout
 
         self._check_dict_CTNCCusage()
         self._check_args()
@@ -127,6 +128,7 @@ class GNNDisentangler(nn.Module):
         if self.mode_headxint_headxspl_headboth_twosep == ModeArch.HEADXINT:
             self.module_muxint = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x']//10
@@ -140,6 +142,7 @@ class GNNDisentangler(nn.Module):
             )  # TODO:TUNE //10
             self.module_covxint = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -158,6 +161,7 @@ class GNNDisentangler(nn.Module):
             self.module_covxint = None
             self.module_muxspl = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -171,6 +175,7 @@ class GNNDisentangler(nn.Module):
             )  # TODO:TUNE //10
             self.module_covxspl = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -186,6 +191,7 @@ class GNNDisentangler(nn.Module):
         elif self.mode_headxint_headxspl_headboth_twosep == ModeArch.HEADBOTH:
             self.module_muxint = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -199,6 +205,7 @@ class GNNDisentangler(nn.Module):
             )  # TODO:TUNE //10
             self.module_covxint = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -212,6 +219,7 @@ class GNNDisentangler(nn.Module):
             )  # TODO:TUNE //10
             self.module_muxspl = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -225,6 +233,7 @@ class GNNDisentangler(nn.Module):
             )  # TODO:TUNE //10
             self.module_covxspl = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -264,6 +273,7 @@ class GNNDisentangler(nn.Module):
             )  # TODO:TUNE //10
             self.module_muxspl = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -277,6 +287,7 @@ class GNNDisentangler(nn.Module):
             )  # TODO:TUNE //10
             self.module_covxspl = nn.Sequential(
                 nn.ReLU(),
+                nn.Dropout(p=0.1) if (self.flag_use_dropout) else mlp.Identity(),
                 nn.Linear(
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
@@ -338,6 +349,9 @@ class GNNDisentangler(nn.Module):
 
 
     def _check_args(self):
+        assert (
+            self.flag_use_dropout in [True, False]
+        )
         assert (
             self.flag_use_layernorm in [True, False]
         )

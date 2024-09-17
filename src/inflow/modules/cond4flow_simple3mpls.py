@@ -11,7 +11,7 @@ from . import mlp
 
 
 class Cond4FlowVarphi0SimpleMLPs(nn.Module):
-    def __init__(self, kwargs_genmodel, encZ_list_dim_hidden, encSin_list_dim_hidden, encSout_list_dim_hidden, dict_varname_to_takeCT_takeNCC, flag_use_layernorm:bool):
+    def __init__(self, kwargs_genmodel, encZ_list_dim_hidden, encSin_list_dim_hidden, encSout_list_dim_hidden, dict_varname_to_takeCT_takeNCC, flag_use_layernorm:bool, flag_use_dropout:bool):
         '''
         :param kwargs_genmodel: so this module knows wheter to add cell-type/niche labels for z and s_out.
         :param encZ_list_dim_hidden: list of hidden dimenions of the MLP encoder for Z (in dim and out dim are automatically determined).
@@ -24,39 +24,79 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
         self.encSout_list_dim_hidden = encSout_list_dim_hidden
         self.dict_varname_to_takeCT_takeNCC = dict_varname_to_takeCT_takeNCC
         self.flag_use_layernorm = flag_use_layernorm
+        self.flag_use_dropout = flag_use_dropout
 
         self._check_args()
 
         dim_s = self.kwargs_genmodel['dict_varname_to_dim']['s']
 
         #create encoder modules
-        self.module_enc_z = mlp.SimpleMLP(
-            dim_input=dim_s + self._func_varname_to_dimextention('z'),
-            list_dim_hidden=encZ_list_dim_hidden,
-            dim_output=dim_s,
-            bias=True,
-            flag_endwithReLU=False,  # TODO:check
-            flag_startswithReLU=False,  # TODO:check
-            flag_use_layernorm=self.flag_use_layernorm
-        )
-        self.module_enc_sin = mlp.SimpleMLP(
-            dim_input=dim_s + self._func_varname_to_dimextention('sin'),
-            list_dim_hidden=encSin_list_dim_hidden,
-            dim_output=dim_s,
-            bias=True,
-            flag_endwithReLU=False,  # TODO:check
-            flag_startswithReLU=False,  # TODO:check
-            flag_use_layernorm=self.flag_use_layernorm
-        )
-        self.module_enc_sout = mlp.SimpleMLP(
-            dim_input=2*dim_s + self._func_varname_to_dimextention('sout'),
-            list_dim_hidden=encSout_list_dim_hidden,
-            dim_output=dim_s,
-            bias=True,
-            flag_endwithReLU=False,  # TODO:check
-            flag_startswithReLU=False,  # TODO:check
-            flag_use_layernorm=self.flag_use_layernorm
-        )
+        if self.flag_use_dropout:
+            self.module_enc_z = torch.nn.Sequential(
+                torch.nn.Dropout(p=0.1),
+                mlp.SimpleMLP(
+                    dim_input=dim_s + self._func_varname_to_dimextention('z'),
+                    list_dim_hidden=encZ_list_dim_hidden,
+                    dim_output=dim_s,
+                    bias=True,
+                    flag_endwithReLU=False,  # TODO:check
+                    flag_startswithReLU=False,  # TODO:check
+                    flag_use_layernorm=self.flag_use_layernorm
+                )
+            )
+            self.module_enc_sin = torch.nn.Sequential(
+                torch.nn.Dropout(p=0.1),
+                mlp.SimpleMLP(
+                    dim_input=dim_s + self._func_varname_to_dimextention('sin'),
+                    list_dim_hidden=encSin_list_dim_hidden,
+                    dim_output=dim_s,
+                    bias=True,
+                    flag_endwithReLU=False,  # TODO:check
+                    flag_startswithReLU=False,  # TODO:check
+                    flag_use_layernorm=self.flag_use_layernorm
+                )
+            )
+            self.module_enc_sout = torch.nn.Sequential(
+                torch.nn.Dropout(p=0.1),
+                mlp.SimpleMLP(
+                    dim_input=2 * dim_s + self._func_varname_to_dimextention('sout'),
+                    list_dim_hidden=encSout_list_dim_hidden,
+                    dim_output=dim_s,
+                    bias=True,
+                    flag_endwithReLU=False,  # TODO:check
+                    flag_startswithReLU=False,  # TODO:check
+                    flag_use_layernorm=self.flag_use_layernorm
+                )
+            )
+        else:
+            self.module_enc_z = mlp.SimpleMLP(
+                dim_input=dim_s + self._func_varname_to_dimextention('z'),
+                list_dim_hidden=encZ_list_dim_hidden,
+                dim_output=dim_s,
+                bias=True,
+                flag_endwithReLU=False,  # TODO:check
+                flag_startswithReLU=False,  # TODO:check
+                flag_use_layernorm=self.flag_use_layernorm
+            )
+            self.module_enc_sin = mlp.SimpleMLP(
+                dim_input=dim_s + self._func_varname_to_dimextention('sin'),
+                list_dim_hidden=encSin_list_dim_hidden,
+                dim_output=dim_s,
+                bias=True,
+                flag_endwithReLU=False,  # TODO:check
+                flag_startswithReLU=False,  # TODO:check
+                flag_use_layernorm=self.flag_use_layernorm
+            )
+            self.module_enc_sout = mlp.SimpleMLP(
+                dim_input=2 * dim_s + self._func_varname_to_dimextention('sout'),
+                list_dim_hidden=encSout_list_dim_hidden,
+                dim_output=dim_s,
+                bias=True,
+                flag_endwithReLU=False,  # TODO:check
+                flag_startswithReLU=False,  # TODO:check
+                flag_use_layernorm=self.flag_use_layernorm
+            )
+
 
 
     @torch.no_grad()
@@ -112,6 +152,9 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
 
 
     def _check_args(self):
+        assert (
+            self.flag_use_dropout in [True, False]
+        )
         assert (
             self.flag_use_layernorm in [True, False]
         )
