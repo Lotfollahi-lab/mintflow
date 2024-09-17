@@ -55,7 +55,7 @@ class EvalOnHVGsXsplpred:
         dict_toret = {}
         for measure in self.list_measures:
             measname, measval = measure(np_pred, np_gt)
-            dict_toret[measname+"_among_{}HVGs".format(len(self.list_flag_HVG))] = measval
+            dict_toret[measname+"_among_{}HVGs".format(np.sum(self.list_flag_HVG))] = measval
 
         return dict_toret
 
