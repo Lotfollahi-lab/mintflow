@@ -18,7 +18,7 @@ class Identity(torch.nn.Module):
 
 
 class SimpleMLP(torch.nn.Module):
-    def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool, flag_startswithReLU:bool, flag_endswithSoftmax:bool=False):
+    def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool, flag_startswithReLU:bool, flag_endswithSoftmax:bool=False, flag_use_layernorm:bool=False):
         super(SimpleMLP, self).__init__()
         #grab args ===
         self.dim_input = dim_input
@@ -27,6 +27,7 @@ class SimpleMLP(torch.nn.Module):
         self.flag_endwithReLU = flag_endwithReLU
         self.flag_startswithReLU = flag_startswithReLU
         self.flag_endswithSoftmax = flag_endswithSoftmax
+        self.flag_use_layernorm = flag_use_layernorm
         self._check_args()
 
         #make internals ==
@@ -38,6 +39,10 @@ class SimpleMLP(torch.nn.Module):
             list_module.append(
                 torch.nn.Linear(self.list_dim[l], self.list_dim[l+1], bias=bias)
             )
+            if self.flag_use_layernorm and (l != len(self.list_dim)-2):
+                list_module.append(
+                    torch.nn.LayerNorm(self.list_dim[l+1])
+                )
             if l != len(self.list_dim)-2:
                 list_module.append(torch.nn.ReLU())
         if flag_endwithReLU:
@@ -49,6 +54,9 @@ class SimpleMLP(torch.nn.Module):
         self.module = torch.nn.Sequential(*list_module)
 
     def _check_args(self):
+        assert (
+            self.flag_use_layernorm in [True, False]
+        )
         if self.flag_endswithSoftmax:
             assert not self.flag_endwithReLU
         if self.flag_endwithReLU:

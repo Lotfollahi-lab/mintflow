@@ -11,7 +11,7 @@ from . import mlp
 
 
 class Cond4FlowVarphi0SimpleMLPs(nn.Module):
-    def __init__(self, kwargs_genmodel, encZ_list_dim_hidden, encSin_list_dim_hidden, encSout_list_dim_hidden, dict_varname_to_takeCT_takeNCC):
+    def __init__(self, kwargs_genmodel, encZ_list_dim_hidden, encSin_list_dim_hidden, encSout_list_dim_hidden, dict_varname_to_takeCT_takeNCC, flag_use_layernorm:bool):
         '''
         :param kwargs_genmodel: so this module knows wheter to add cell-type/niche labels for z and s_out.
         :param encZ_list_dim_hidden: list of hidden dimenions of the MLP encoder for Z (in dim and out dim are automatically determined).
@@ -23,6 +23,7 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
         self.encSin_list_dim_hidden = encSin_list_dim_hidden
         self.encSout_list_dim_hidden = encSout_list_dim_hidden
         self.dict_varname_to_takeCT_takeNCC = dict_varname_to_takeCT_takeNCC
+        self.flag_use_layernorm = flag_use_layernorm
 
         self._check_args()
 
@@ -35,7 +36,8 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
             dim_output=dim_s,
             bias=True,
             flag_endwithReLU=False,  # TODO:check
-            flag_startswithReLU=False  # TODO:check
+            flag_startswithReLU=False,  # TODO:check
+            flag_use_layernorm=self.flag_use_layernorm
         )
         self.module_enc_sin = mlp.SimpleMLP(
             dim_input=dim_s + self._func_varname_to_dimextention('sin'),
@@ -43,7 +45,8 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
             dim_output=dim_s,
             bias=True,
             flag_endwithReLU=False,  # TODO:check
-            flag_startswithReLU=False  # TODO:check
+            flag_startswithReLU=False,  # TODO:check
+            flag_use_layernorm=self.flag_use_layernorm
         )
         self.module_enc_sout = mlp.SimpleMLP(
             dim_input=2*dim_s + self._func_varname_to_dimextention('sout'),
@@ -51,7 +54,8 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
             dim_output=dim_s,
             bias=True,
             flag_endwithReLU=False,  # TODO:check
-            flag_startswithReLU=False  # TODO:check
+            flag_startswithReLU=False,  # TODO:check
+            flag_use_layernorm=self.flag_use_layernorm
         )
 
 
@@ -108,6 +112,9 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
 
 
     def _check_args(self):
+        assert (
+            self.flag_use_layernorm in [True, False]
+        )
         assert (
             set(self.dict_varname_to_takeCT_takeNCC.keys()) == {'z', 'sin', 'sout'}
         )
