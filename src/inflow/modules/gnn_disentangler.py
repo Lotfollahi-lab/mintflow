@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 from . import gnn
 import torch_geometric as pyg
+from . import mlp
 #from enum import Enum
 
 class ModeArch:
@@ -23,7 +24,8 @@ class ArchInsertionPoint:
 
 class GNNDisentangler(nn.Module):
     def __init__(self, kwargs_genmodel, str_mode_normalizex:str, maxsize_subgraph, dict_general_args, mode_headxint_headxspl_headboth_twosep,
-                 gnn_list_dim_hidden, kwargs_sageconv, clipval_cov_noncentralnodes:float, dict_CTNNC_usage:dict, std_minval_finalclip:float, std_maxval_finalclip:float):
+                 gnn_list_dim_hidden, kwargs_sageconv, clipval_cov_noncentralnodes:float, dict_CTNNC_usage:dict, std_minval_finalclip:float, std_maxval_finalclip:float,
+                 flag_use_layernorm:bool):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
         :param str_mode_normalizex: in ['counts', 'logp1'], whether the GNN works on counts or log1p
@@ -42,6 +44,7 @@ class GNNDisentangler(nn.Module):
         :param dict_CTNNC_usage: a dictionary that specifies wheteher/how CT and NCC are used.
         :param std_minval_finalclip, std_maxval_finalclip: values for the final clip. Can also be used to freez the std to a fixed value.
         '''
+
         super(GNNDisentangler, self).__init__()
         self.kwargs_genmodel = kwargs_genmodel
         self.num_celltypes = dict_general_args['num_celltypes']
@@ -55,6 +58,7 @@ class GNNDisentangler(nn.Module):
         self.dict_CTNNC_usage = dict_CTNNC_usage
         self.std_minval_finalclip = std_minval_finalclip
         self.std_maxval_finalclip = std_maxval_finalclip
+        self.flag_use_layernorm = flag_use_layernorm
 
         self._check_dict_CTNCCusage()
         self._check_args()
@@ -127,6 +131,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x']//10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x']//10) if(self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -139,6 +144,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -156,6 +162,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -168,6 +175,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -182,6 +190,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -194,6 +203,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -206,6 +216,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -218,6 +229,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -231,6 +243,7 @@ class GNNDisentangler(nn.Module):
                     kwargs_genmodel['dict_varname_to_dim']['x'] + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -242,6 +255,7 @@ class GNNDisentangler(nn.Module):
                     kwargs_genmodel['dict_varname_to_dim']['x'] + adddim_int_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -254,6 +268,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -266,6 +281,7 @@ class GNNDisentangler(nn.Module):
                     self.module_gnn.dim_output + adddim_spl_mlp,
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10
                 ),
+                nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['x'] // 10) if (self.flag_use_layernorm) else mlp.Identity(),
                 nn.ReLU(),
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
@@ -322,6 +338,9 @@ class GNNDisentangler(nn.Module):
 
 
     def _check_args(self):
+        assert (
+            self.flag_use_layernorm in [True, False]
+        )
         assert (
             self.mode_headxint_headxspl_headboth_twosep in [ModeArch.HEADXINT, ModeArch.HEADXSPL, ModeArch.HEADBOTH, ModeArch.TWOSEP]
         )

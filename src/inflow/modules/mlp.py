@@ -4,6 +4,19 @@ from typing import List
 import numpy as np
 import torch
 
+
+
+class Identity(torch.nn.Module):
+    '''
+    The identity module (dummy module to simplify handling, e.g., dropout or LayerNorm flags).s
+    '''
+    def __init__(self):
+        super(Identity, self).__init__()
+
+    def forward(self, x):
+        return x
+
+
 class SimpleMLP(torch.nn.Module):
     def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool, flag_startswithReLU:bool, flag_endswithSoftmax:bool=False):
         super(SimpleMLP, self).__init__()
