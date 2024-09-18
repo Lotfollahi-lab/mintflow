@@ -4,6 +4,8 @@ Measures to evaluate how well a method can predict xspl (i.e. the spatial part o
 '''
 
 import numpy as np
+from scipy.stats import wasserstein_distance
+from scipy import stats
 
 def func_mse(a, b):
     return 'MSE', np.mean((a-b)**2)
@@ -11,10 +13,16 @@ def func_mse(a, b):
 def func_mae(a, b):
     return 'MAE', np.mean(np.abs(a-b))
 
+def func_wassdist(a, b):
+    return 'EMD', wasserstein_distance(a, b)
+
+def func_pearsoncorrel(a, b):
+    return 'PearsonCorrelation', stats.pearsonr(a, b).statistic
+
 
 class EvalOnHVGsXsplpred:
     def __init__(self, list_flag_HVG):
-        self.list_measures = [func_mse, func_mae]
+        self.list_measures = [func_mse, func_mae, func_wassdist, func_pearsoncorrel]
         self.list_flag_HVG = list_flag_HVG
         assert (isinstance(self.list_flag_HVG, list))
         for u in list_flag_HVG:
@@ -64,7 +72,7 @@ class EvalOnHVGsXsplpred:
 
 class EvalXsplpred:
     def __init__(self):
-        self.list_measures = [func_mse, func_mae]
+        self.list_measures = [func_mse, func_mae, func_wassdist, func_pearsoncorrel]
 
     def eval(self, np_xspl_gt:np.ndarray, np_xspl_pred:np.ndarray, np_xobs:np.ndarray, flag_normalize:bool):
         assert (
@@ -108,7 +116,7 @@ class EvalLargeReadoutsXsplpred:
 
     def __init__(self, mincut_readout:int):
         self.mincut_readout = mincut_readout
-        self.list_measures = [func_mse, func_mae]
+        self.list_measures = [func_mse, func_mae, func_wassdist, func_pearsoncorrel]
 
     def eval(self, np_xspl_gt:np.ndarray, np_xspl_pred:np.ndarray, np_xobs:np.ndarray, flag_normalize:bool):
         assert (
