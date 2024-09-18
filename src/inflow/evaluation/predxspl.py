@@ -14,10 +14,10 @@ def func_mae(a, b):
     return 'MAE', np.mean(np.abs(a-b))
 
 def func_wassdist(a, b):
-    return 'EMD', wasserstein_distance(a, b)
+    return 'EMD', wasserstein_distance(a.flatten(), b.flatten())
 
 def func_pearsoncorrel(a, b):
-    return 'PearsonCorrelation', stats.pearsonr(a, b).statistic
+    return 'PearsonCorrelation', stats.pearsonr(a.flatten(), b.flatten()).statistic
 
 
 class EvalOnHVGsXsplpred:
