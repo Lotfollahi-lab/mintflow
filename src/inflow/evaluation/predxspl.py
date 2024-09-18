@@ -17,7 +17,11 @@ def func_wassdist(a, b):
     return 'EMD', wasserstein_distance(a.flatten(), b.flatten())
 
 def func_pearsoncorrel(a, b):
-    return 'PearsonCorrelation', stats.pearsonr(a.flatten(), b.flatten()).statistic
+    try:
+        val_corelcoef = stats.pearsonr(a.flatten(), b.flatten()).statistic
+    except:
+        val_corelcoef = None
+    return 'PearsonCorrelation', val_corelcoef
 
 
 class EvalOnHVGsXsplpred:
