@@ -1009,9 +1009,17 @@ class InFlowVarDist(nn.Module):
             assert (
                 self.module_impanddisentgl.std_minval_finalclip == self.module_impanddisentgl.std_maxval_finalclip
             )
+        if self.weight_logprob_zinbpos != -1:
+            assert (self.weight_logprob_zinbpos >= 0.0)
+        else:
+            assert (self.weight_logprob_zinbzero == -1)
 
-        assert (self.weight_logprob_zinbpos >= 0.0)
-        assert (self.weight_logprob_zinbzero >= 0.0)
+        if self.weight_logprob_zinbzero != -1:
+            assert (self.weight_logprob_zinbzero >= 0.0)
+        else:
+            assert (self.weight_logprob_zinbpos == -1)
+
+
 
         assert (
             self.str_modeP3loss_regorcls in ['reg', 'cls']
