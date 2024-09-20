@@ -291,12 +291,12 @@ class InFlowGenerativeModel(nn.Module):
         #     )
         # )
         if isinstance(self.module_w_dec_int, mlp.SimpleMLP):
-            if (not self.module_w_dec_int.flag_endwithReLU) and (not self.module_w_dec_int.flag_endswithSoftmax):
+            if (not self.module_w_dec_int.flag_endwithReLU) and (not self.module_w_dec_int.flag_endswithSoftmax) and (not self.module_w_dec_int.flag_endswith_softplus):
                 raise Exception(
                     "Set flag_endwithReLU to True, so the NegBin parameters are non-negative."
                 )
         if isinstance(self.module_w_dec_spl, mlp.SimpleMLP):
-            if (not self.module_w_dec_int.flag_endwithReLU) and (not self.module_w_dec_int.flag_endswithSoftmax):
+            if (not self.module_w_dec_int.flag_endwithReLU) and (not self.module_w_dec_int.flag_endswithSoftmax) and (not self.module_w_dec_int.flag_endswith_softplus):
                 raise Exception(
                     "Set flag_endwithReLU to True, so the NegBin parameters are non-negative."
                 )
