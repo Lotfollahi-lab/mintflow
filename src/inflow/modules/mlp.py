@@ -18,7 +18,11 @@ class Identity(torch.nn.Module):
 
 
 class SimpleMLP(torch.nn.Module):
-    def __init__(self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool, flag_startswithReLU:bool, flag_endswithSoftmax:bool=False, flag_use_layernorm:bool=False):
+    def __init__(
+        self, dim_input:int, list_dim_hidden:List, dim_output:int, bias:bool, flag_endwithReLU:bool,
+        flag_startswithReLU:bool, flag_endswithSoftmax:bool=False, flag_use_layernorm:bool=False,
+        flag_endswith_softplus:bool=False
+    ):
         super(SimpleMLP, self).__init__()
         #grab args ===
         self.dim_input = dim_input
@@ -28,6 +32,7 @@ class SimpleMLP(torch.nn.Module):
         self.flag_startswithReLU = flag_startswithReLU
         self.flag_endswithSoftmax = flag_endswithSoftmax
         self.flag_use_layernorm = flag_use_layernorm
+        self.flag_endswith_softplus = flag_endswith_softplus
         self._check_args()
 
         #make internals ==
@@ -45,20 +50,32 @@ class SimpleMLP(torch.nn.Module):
                 )
             if l != len(self.list_dim)-2:
                 list_module.append(torch.nn.ReLU())
-        if flag_endwithReLU:
-            list_module.append(torch.nn.ReLU())
-        if flag_endswithSoftmax:
-            list_module.append(torch.nn.Softmax(1))
 
+        if self.flag_endwithReLU:
+            list_module.append(torch.nn.ReLU())
+        if self.flag_endswithSoftmax:
+            list_module.append(torch.nn.Softmax(1))
+        if self.flag_endswith_softplus:
+            list_module.append(torch.nn.Softplus())
 
         self.module = torch.nn.Sequential(*list_module)
 
     def _check_args(self):
+        assert(
+            np.sum(
+                [self.flag_endwithReLU, self.flag_endswithSoftmax, self.flag_endswith_softplus]
+            ) <= 1
+        )
+
+        assert (
+            self.flag_endswith_softplus in [True, False]
+        )
         assert (
             self.flag_use_layernorm in [True, False]
         )
         if self.flag_endswithSoftmax:
             assert not self.flag_endwithReLU
+
         if self.flag_endwithReLU:
             assert not self.flag_endswithSoftmax
 
