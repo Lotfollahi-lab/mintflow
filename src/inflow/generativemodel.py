@@ -35,7 +35,7 @@ class InFlowGenerativeModel(nn.Module):
             initval_thetanegbin_int:float | str, flag_train_negbintheta_int:bool, negbintheta_int_clamp_minmax:List[float] | None,
             initval_thetanegbin_spl:float | str, flag_train_negbintheta_spl:bool, negbintheta_spl_clamp_minmax:List[float] | None,
             flag_use_int_u: bool, module_int_mu_u: nn.Module | None, module_int_cov_u: mlp.SimpleMLPandExp | None,
-            flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
+            flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None
     ):
         '''
 
@@ -68,6 +68,7 @@ class InFlowGenerativeModel(nn.Module):
         :param flag_use_spl_u, module_spl_mu_u, module_spl_cov_u: whether the u-label (with the notation of iVAE) is used for s_out, and modules to produce
             the mean and cov of p(s_out|u).
         :param TODO:complete
+
 
         '''
         super(InFlowGenerativeModel, self).__init__()
