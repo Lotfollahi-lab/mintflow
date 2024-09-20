@@ -128,7 +128,7 @@ class LinearEncoding(torch.nn.Module):
 
     def forward(self, x):
         if self.flag_detach:
-            torch.matmul(x, self.W.detach())
+            return torch.matmul(x, self.W.detach())
         else:
             return torch.matmul(x, self.W)
 
