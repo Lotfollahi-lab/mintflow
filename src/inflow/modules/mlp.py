@@ -117,14 +117,14 @@ class LinearEncoding(torch.nn.Module):
     Fixed linear layer (similar to torch.Embedding).
     '''
     def __init__(self, dim_input:int, dim_output:int, flag_detach:bool=False):
-
         super(LinearEncoding, self).__init__()
+        self.flag_detach = flag_detach
         self.W = torch.nn.Parameter(
             torch.rand(dim_input, dim_output),
             requires_grad=(not self.flag_detach)
         )
         self.flag_endwithReLU = False  # so this module passes an external assertion
-        self.flag_detach = flag_detach
+
 
     def forward(self, x):
         if self.flag_detach:
