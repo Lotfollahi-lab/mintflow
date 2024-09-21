@@ -46,7 +46,12 @@ class InFlowVarDist(nn.Module):
             module_annealing:kl_annealing.AnnealingSchedule,
             weight_logprob_zinbpos:float,
             weight_logprob_zinbzero:float,
-            flag_drop_loss_logQdisentangler:bool
+            flag_drop_loss_logQdisentangler:bool,
+            coef_xbarintCT_loss:float,
+            module_classifier_xbarintCT:nn.Module,
+            coef_xbarsplNCC_loss:float,
+            module_predictor_xbarsplNCC:nn.Module,
+            str_modexbarsplNCCloss_regorcls:str
     ):
         '''
 
@@ -77,6 +82,11 @@ class InFlowVarDist(nn.Module):
                 - sout: with keys scale, flag_unweighted
         :param coef_P1loss
         :param flag_drop_loss_logQdisentangler: if set to True, the term logq(x_int, x_spl | x) is dropped from the loss.
+        :param coef_xbarintCT_loss: the coeffficient of loss of cell type being predictable from xbar_int,
+        :param module_classifier_xbarintCT:nn.Module,
+        :param coef_xbarsplNCC_loss: the coefficient of loss of NCC being predictable from xbar_spl.
+        :param module_predictor_xbarsplNCC:nn.Module,
+        :param str_modexbarsplNCCloss_regorcls:str
 
         '''
         super(InFlowVarDist, self).__init__()
@@ -91,6 +101,10 @@ class InFlowVarDist(nn.Module):
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
         self.module_conditionalflowmatcher = module_conditionalflowmatcher
+
+
+
+
         assert (
             isinstance(module_annealing, kl_annealing.AnnealingSchedule) or (module_annealing is None)
         )
@@ -118,6 +132,19 @@ class InFlowVarDist(nn.Module):
         self.str_modeP3loss_regorcls = str_modeP3loss_regorcls
         assert (self.str_modeP3loss_regorcls in ['reg', 'cls'])
         self.crit_P3loss = nn.MSELoss() if(self.str_modeP3loss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
+
+        # related to pred: xbarint --> CT loss
+        self.coef_xbarintCT_loss = coef_xbarintCT_loss
+        self.module_classifier_xbarintCT = module_classifier_xbarintCT
+        self.crit_loss_xbarint2CT = nn.CrossEntropyLoss()
+
+        # related to pred: xbarspl --> NCC loss
+        self.coef_xbarsplNCC_loss = coef_xbarsplNCC_loss
+        self.module_predictor_xbarsplNCC = module_predictor_xbarsplNCC
+        self.str_modexbarsplNCCloss_regorcls = str_modexbarsplNCCloss_regorcls
+        assert (self.str_modexbarsplNCCloss_regorcls in ['reg', 'cls'])
+        self.crit_loss_xbarspl2NCC = nn.MSELoss() if(self.str_modexbarsplNCCloss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
+
 
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
@@ -713,6 +740,58 @@ class InFlowVarDist(nn.Module):
                         )
 
 
+            # add xbarint-->CT loss ===
+            if self.coef_xbarintCT_loss > 0.0:
+                rng_CT = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                ]
+                xbarint2CT_loss = self.crit_loss_xbarint2CT(
+                    self.module_classifier_xbarintCT(
+                        dict_q_sample['xbar_int']
+                    ),
+                    torch.argmax(
+                        batch.y[:, rng_CT[0]:rng_CT[1]].to(ten_xy_absolute.device),
+                        1
+                    )
+                )
+                loss = loss + self.coef_xbarintCT_loss * xbarint2CT_loss
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        wandb.log(
+                            {"Loss/xbarint-->CT (after mult by coef={})".format(self.coef_xbarintCT_loss): self.coef_xbarintCT_loss * xbarint2CT_loss},
+                            step=itrcount_wandb
+                        )
+
+
+            # add xbarspl-->NCC loss ===
+            if self.coef_xbarsplNCC_loss > 0.0:
+                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                ten_NCC = batch.y[
+                    :,
+                    rng_NCC:
+                ].to(ten_xy_absolute.device).float()
+
+                if self.str_modexbarsplNCCloss_regorcls == 'cls':
+                    ten_NCC = ((ten_NCC > 0) + 0).float()
+                else:
+                    assert (self.str_modexbarsplNCCloss_regorcls == 'reg')
+
+                xbarspl2NCC_loss = self.crit_loss_xbarspl2NCC(
+                    self.module_predictor_xbarsplNCC(dict_q_sample['xbar_spl']),
+                    ten_NCC
+                )
+                loss = loss + self.coef_xbarsplNCC_loss * xbarspl2NCC_loss
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        wandb.log(
+                            {"Loss/xbarspl-->NCC (after mult by coef={})".format(self.coef_xbarsplNCC_loss): self.coef_xbarsplNCC_loss * xbarspl2NCC_loss},
+                            step=itrcount_wandb
+                        )
+
+
+
+
             # log int_cov_u and spl_cov_u ===
             if flag_tensorboardsave:
                 with torch.no_grad():
@@ -1002,6 +1081,29 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        assert (
+            isinstance(self.coef_xbarintCT_loss, float)
+        )
+        assert (self.coef_xbarintCT_loss >= 0.0)
+        assert(
+            isinstance(self.module_classifier_xbarintCT, nn.Module)
+        )
+        assert (
+            isinstance(self.coef_xbarsplNCC_loss, float)
+        )
+        assert (self.coef_xbarsplNCC_loss >= 0.0)
+        assert (
+            isinstance(self.module_predictor_xbarsplNCC, nn.Module)
+        )
+        assert (
+            isinstance(self.str_modexbarsplNCCloss_regorcls, str)
+        )
+        assert (
+            self.str_modexbarsplNCCloss_regorcls in ['reg', 'cls']
+        )
+
+
 
         if self.flag_drop_loss_logQdisentangler:
             # in this case moduleDisent.std is not trained --> must be set to a fixed number.
