@@ -139,7 +139,7 @@ class InFlowGenerativeModel(nn.Module):
         else:
             assert (self.initval_thetanegbin_int == 'rand')
             self.theta_negbin_int = torch.nn.Parameter(
-                torch.rand(size=[self.dict_varname_to_dim['x']]).unsqueeze(0),
+                torch.empty(size=[self.dict_varname_to_dim['x']]).unsqueeze(0),
                 requires_grad=self.flag_train_negbintheta_int
             )
         with torch.no_grad():
@@ -158,7 +158,7 @@ class InFlowGenerativeModel(nn.Module):
         else:
             assert (self.initval_thetanegbin_spl == 'rand')
             self.theta_negbin_spl = torch.nn.Parameter(
-                torch.rand(size=[self.dict_varname_to_dim['x']]).unsqueeze(0),
+                torch.empty(size=[self.dict_varname_to_dim['x']]).unsqueeze(0),
                 requires_grad=self.flag_train_negbintheta_spl
             )
         with torch.no_grad():
