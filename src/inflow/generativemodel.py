@@ -450,7 +450,7 @@ class InFlowGenerativeModel(nn.Module):
                     module_input=self.module_w_dec_int,
                     x=xbar_int,
                     batch_size=batch_size_feedforward),
-                  'theta':self.theta_negbin_int},
+                  'theta':torch.exp(self.theta_negbin_int)},
                 **self.kwargs_negbin_int}
         ).sample() #[num_cells, num_genes]
         x_spl = ZeroInflatedNegativeBinomial(
@@ -458,7 +458,7 @@ class InFlowGenerativeModel(nn.Module):
                     module_input=self.module_w_dec_spl,
                     x=xbar_spl,
                     batch_size=batch_size_feedforward),
-                  'theta':self.theta_negbin_spl},
+                  'theta':torch.exp(self.theta_negbin_spl)},
                 **self.kwargs_negbin_spl}
         ).sample()  # [num_cells, num_genes]
 
@@ -597,14 +597,14 @@ class InFlowGenerativeModel(nn.Module):
         # x_int
         logp_x_int = ZeroInflatedNegativeBinomial(
             **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
-                  'theta': self.theta_negbin_int},
+                  'theta': torch.exp(self.theta_negbin_int)},
                   **self.kwargs_negbin_int}
         ).log_prob(dict_qsamples['x_int'][:batch.batch_size])  # [b, num_genes]
 
         # x_spl
         logp_x_spl = ZeroInflatedNegativeBinomial(
             **{**{'mu': self.module_w_dec_spl(dict_qsamples['xbar_spl'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
-                  'theta': self.theta_negbin_spl},
+                  'theta': torch.exp(self.theta_negbin_spl)},
                **self.kwargs_negbin_spl}
         ).log_prob(dict_qsamples['x_spl'][:batch.batch_size])  # [b, num_genes]
 
