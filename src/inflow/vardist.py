@@ -1,3 +1,4 @@
+import random
 
 import numpy as np
 import torch
@@ -16,6 +17,7 @@ from . import utils_imputer
 from . predadjmat import ListAdjMatPredLoss
 from . import utils_flowmatching
 from . import kl_annealing
+import predadjmat
 #from tqdm.auto import tqdm
 from tqdm.notebook import tqdm, trange
 import wandb
@@ -51,7 +53,11 @@ class InFlowVarDist(nn.Module):
             module_classifier_xbarintCT:nn.Module,
             coef_xbarsplNCC_loss:float,
             module_predictor_xbarsplNCC:nn.Module,
-            str_modexbarsplNCCloss_regorcls:str
+            str_modexbarsplNCCloss_regorcls:str,
+            coef_rankloss_xbarint:float,
+            module_predictor_ranklossxbarint_X:nn.Module,
+            module_predictor_ranklossxbarint_Y:nn.Module,
+            num_subsample_XYrankloss:int
     ):
         '''
 
@@ -101,6 +107,10 @@ class InFlowVarDist(nn.Module):
         self.dict_qname_to_scaleandunweighted = dict_qname_to_scaleandunweighted
         self.list_ajdmatpredloss = list_ajdmatpredloss
         self.module_conditionalflowmatcher = module_conditionalflowmatcher
+        self.coef_rankloss_xbarint = coef_rankloss_xbarint
+        self.module_predictor_ranklossxbarint_X = module_predictor_ranklossxbarint_X
+        self.module_predictor_ranklossxbarint_Y = module_predictor_ranklossxbarint_Y
+        self.num_subsample_XYrankloss = num_subsample_XYrankloss
 
 
 
@@ -145,6 +155,8 @@ class InFlowVarDist(nn.Module):
         assert (self.str_modexbarsplNCCloss_regorcls in ['reg', 'cls'])
         self.crit_loss_xbarspl2NCC = nn.MSELoss() if(self.str_modexbarsplNCCloss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
 
+        # related to xbar_int rank loss ===
+        self.crit_xbarint_rankloss = nn.MarginRankingLoss(margin=0.0)
 
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
@@ -789,7 +801,65 @@ class InFlowVarDist(nn.Module):
                             step=itrcount_wandb
                         )
 
+            # add xbarint rank loss  ===
+            if self.coef_rankloss_xbarint > 0.0:
 
+                assert(batch.input_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
+                assert (ten_xy_absolute.size()[1] == 2)
+                ten_x, ten_y = ten_ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+
+                # subsample the mini-batch to define the rank loss
+                rng_N = tuple(range(ten_x.size()[0]))
+                list_ij_subsample = random.sample(
+                    [(i, j) for i in rng_N for j in set(rng_N)-{i}],
+                    k=min(self.num_subsample_XYrankloss, ten_x.size()[0])
+                )
+                list_i_subsample = [u[0] for u in list_ij_subsample]
+                list_j_subsample = [u[1] for u in list_ij_subsample]
+
+
+
+
+                netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
+                    predadjmat.grad_reverse(
+                        torch.cat(
+                            [dict_q_sample['xbar_int'][list_i_subsample, :], dict_q_sample['xbar_int'][list_j_subsample, :]],
+                            1
+                        )
+                    )
+                )  # [N,2]
+                assert (netout_rank_Xpos.size()[1] == 2)
+                netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
+                    predadjmat.grad_reverse(
+                        torch.cat(
+                            [dict_q_sample['xbar_int'][list_i_subsample, :], dict_q_sample['xbar_int'][list_j_subsample, :]],
+                            1
+                        )
+                    )
+                )  # [N,2]
+                assert (netout_rank_Ypos.size()[1] == 2)
+
+                loss_rank_Xpos = self.crit_xbarint_rankloss(
+                    netout_rank_Xpos[:, 0],
+                    netout_rank_Xpos[:, 1],
+                    (ten_x[list_i_subsample] > ten_x[list_j_subsample]).sign()
+                )
+                loss_rank_Ypos = self.crit_xbarint_rankloss(
+                    netout_rank_Ypos[:, 0],
+                    netout_rank_Ypos[:, 1],
+                    (ten_y[list_i_subsample] > ten_y[list_j_subsample]).sign()
+                )
+
+                loss_rank_XYpos = loss_rank_Xpos + loss_rank_Ypos
+
+
+                loss = loss + self.coef_rankloss_xbarint * loss_rank_XYpos
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        wandb.log(
+                            {"Loss/RankXY loss, xbarint (after mult by coef={})".format(self.coef_rankloss_xbarint): self.coef_rankloss_xbarint * loss_rank_XYpos},
+                            step=itrcount_wandb
+                        )
 
 
             # log int_cov_u and spl_cov_u ===
@@ -1081,6 +1151,12 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+        assert isinstance(self.num_subsample_XYrankloss, int)
+        assert (self.num_subsample_XYrankloss > 0)
+        assert isinstance(self.coef_rankloss_xbarint, float)
+        assert (self.coef_rankloss_xbarint >= 0.0)
+        assert isinstance(self.module_predictor_ranklossxbarint_X, nn.Module)
+        assert isinstance(self.module_predictor_ranklossxbarint_Y, nn.Module)
 
         assert (
             isinstance(self.coef_xbarintCT_loss, float)
