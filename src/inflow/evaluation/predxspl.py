@@ -209,7 +209,7 @@ class EvalLargeReadoutsXsplpredExactVersion:
 
             for measure in self.list_measures:
                 measname, measval = measure(np_pred, np_gt)
-                dict_toret["{} (among readout >= {}, total={})".format(
+                dict_toret["{} (among readout == {}, total={})".format(
                     measname, min_count, np.sum(np_xobs >= min_count))
                 ] = measval
 
