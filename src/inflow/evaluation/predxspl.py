@@ -165,4 +165,53 @@ class EvalLargeReadoutsXsplpred:
 
 
 
+class EvalLargeReadoutsXsplpredExactVersion:
+    '''
+    Evaluates predXspl on large readouts (i.e. after excluding small readouts) and when the number of readouts is "exactly" equal to mincut_readout.
+    '''
+
+    def __init__(self, mincut_readout:int):
+        self.mincut_readout = mincut_readout
+        self.list_measures = [func_mse, func_mae, func_wassdist, func_pearsoncorrel]
+
+    def eval(self, np_xspl_gt:np.ndarray, np_xspl_pred:np.ndarray, np_xobs:np.ndarray, flag_normalize:bool):
+        assert (
+            isinstance(np_xspl_gt, np.ndarray)
+        )
+        assert (
+            isinstance(np_xspl_pred, np.ndarray)
+        )
+        assert (
+            isinstance(np_xobs, np.ndarray)
+        )
+
+        set_cnts = list(
+            set(np_xobs[np_xobs >= self.mincut_readout].flatten().tolist())
+        )
+        set_cnts.sort()
+
+        dict_toret = {}
+        for min_count in set_cnts:
+            # mask_min_exp = (np_xobs >= min_count)
+            mask_selecteval = (np_xobs == min_count)
+            np_pred = np_xspl_pred + 0.0  # np_xspl_pred[mask_nonzero_exp].flatten() + 0.0
+            if flag_normalize:
+                try:
+                    np_pred = np_pred - np.expand_dims(np.min(np_pred, 1), 1)
+                    np_pred = np_pred / np.expand_dims(np.max(np_pred, 1), 1)
+                    np_pred = np_pred[mask_selecteval].flatten() * np_xobs[mask_selecteval].flatten()
+                except:
+                    np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
+            else:
+                np_pred = np_xspl_pred[mask_selecteval].flatten() + 0.0
+
+            np_gt = np_xspl_gt[mask_selecteval].flatten() + 0.0
+
+            for measure in self.list_measures:
+                measname, measval = measure(np_pred, np_gt)
+                dict_toret["{} (among readout >= {}, total={})".format(
+                    measname, min_count, np.sum(np_xobs >= min_count))
+                ] = measval
+
+        return dict_toret
 
