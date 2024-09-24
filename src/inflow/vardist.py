@@ -539,7 +539,8 @@ class InFlowVarDist(nn.Module):
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
             coef_loss_zzcloseness:float=0.0,
-            coef_flowmatchingloss:float=0.0
+            coef_flowmatchingloss:float=0.0,
+            numsteps_accumgrad:int=5
     ):
         '''
         One epoch of the training.
@@ -558,6 +559,7 @@ class InFlowVarDist(nn.Module):
         :param prob_applytfm_affinexy: with this probability the [xy] positions go throug an affined transformation.
         :param coef_flowmatchingloss: the coefficient for flow-matching loss.
         :param np_size_factor: a tensor of shape [num_cells], containing the size factors.
+        :param numsteps_accumgrad: number of gradient accumulation step (to increase the batch-size).
         :return:
         '''
 
@@ -587,9 +589,10 @@ class InFlowVarDist(nn.Module):
         else:
             itrcount_wandb = 0
 
-
-
         list_coef_anneal = []
+
+        num_backwards = 0
+        optim_training.zero_grad()
         for batch in tqdm(dl):
 
             wandb.log(
@@ -611,7 +614,7 @@ class InFlowVarDist(nn.Module):
 
             self.module_genmodel.clamp_thetanegbins()
 
-            optim_training.zero_grad()
+            # optim_training.zero_grad()
             flag_tensorboardsave = (itrcount_wandb%tensorboard_stepsize_save == 0)
 
             dict_q_sample = self.rsample(
@@ -1081,12 +1084,25 @@ class InFlowVarDist(nn.Module):
 
             # update params
             if isinstance(loss, torch.Tensor):  # to handle 1. only imputed loss is active and 2. there is no masking
+                loss = loss/(numsteps_accumgrad+0.0)
                 loss.backward()
+                num_backwards += 1
+                print("Backward()-----")
+
+                #loss.backward()
+                #optim_training.step()
+
+            if (num_backwards > 0) and (num_backwards%numsteps_accumgrad == 0):
                 optim_training.step()
+                optim_training.zero_grad()
+                print("      optim.step() and zero_grad()")
+
             itrcount_wandb += 1
 
+
+
         return itrcount_wandb, list_coef_anneal
-    
+
 
     def train_imputer(
         self,
