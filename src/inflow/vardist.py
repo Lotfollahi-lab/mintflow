@@ -1095,6 +1095,7 @@ class InFlowVarDist(nn.Module):
             if (num_backwards > 0) and (num_backwards%numsteps_accumgrad == 0):
                 optim_training.step()
                 optim_training.zero_grad()
+                num_backwards = 0
                 print("      optim.step() and zero_grad()")
 
             itrcount_wandb += 1
