@@ -612,7 +612,8 @@ class InFlowVarDist(nn.Module):
             # for debug
             print("batch.x.shape = {}".format(batch.x.shape))
             for k in dict_q_sample.keys():
-                print("{}: {}".format(k, dict_q_sample[k].shape))
+                if isinstance(dict_q_sample[k], torch.Tensor):
+                    print("{}: {}".format(k, dict_q_sample[k].shape))
             assert False
 
             '''
