@@ -609,6 +609,11 @@ class InFlowVarDist(nn.Module):
             )
             list_coef_anneal.append(dict_otherinf['coef_anneal'])
 
+            # fordebug
+            print("batch.x.shape = {}".format(batch.x.shape))
+            for k in dict_logp.keys():
+                print("{}: {}".format(k, dict_logp[k].shape))
+            assert False
             # make the loss
             loss = 0.0
             if list_flag_elboloss_imputationloss[0]:
