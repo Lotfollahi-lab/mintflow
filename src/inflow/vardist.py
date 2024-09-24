@@ -1131,17 +1131,24 @@ class InFlowVarDist(nn.Module):
                 assert (self.str_modez2notNCCloss_regorcls == 'reg')
 
             z2notNCC_loss = self.crit_loss_z2notNCC(
-                predadjmat.grad_reverse(
-                    self.module_predictor_z2notNCC(dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size])
+                self.module_predictor_z2notNCC(
+                    predadjmat.grad_reverse(
+                        dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size]
+                    )
                 ),
                 ten_NCC.detach()
             )
+            '''
+            predadjmat.grad_reverse(
+                self.module_predictor_z2notNCC(dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size])
+            ),
+            '''
             z2notNCC_loss.backward()
             optim_training.step()
             history_loss.append(
                 z2notNCC_loss.detach().cpu().numpy()
             )
-        
+
         return history_loss
 
 
