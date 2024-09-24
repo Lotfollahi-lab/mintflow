@@ -847,7 +847,7 @@ class InFlowVarDist(nn.Module):
                 #print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
                 assert(batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
                 assert (ten_xy_absolute.size()[1] == 2)
-                ten_x, ten_y = ten_ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+                ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
 
                 # subsample the mini-batch to define the rank loss
                 rng_N = tuple(range(ten_x.size()[0]))
