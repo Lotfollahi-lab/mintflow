@@ -937,8 +937,10 @@ class InFlowVarDist(nn.Module):
                     assert (self.str_modexbarint2notNCCloss_regorcls == 'reg')
 
                 xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
-                    predadjmat.grad_reverse(
-                        self.module_predictor_xbarint2notNCC(dict_q_sample['param_q_xbarint'][:batch.batch_size])
+                    self.module_predictor_xbarint2notNCC(
+                        predadjmat.grad_reverse(
+                            dict_q_sample['param_q_xbarint'][:batch.batch_size]
+                        )
                     ),
                     ten_NCC.detach()
                 )
@@ -964,8 +966,10 @@ class InFlowVarDist(nn.Module):
                     assert (self.str_modez2notNCCloss_regorcls == 'reg')
 
                 z2notNCC_loss = self.crit_loss_z2notNCC(
-                    predadjmat.grad_reverse(
-                        self.module_predictor_z2notNCC(dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size])
+                    self.module_predictor_z2notNCC(
+                        predadjmat.grad_reverse(
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size]
+                        )
                     ),
                     ten_NCC.detach()
                 )
