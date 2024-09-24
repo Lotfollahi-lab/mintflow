@@ -1083,6 +1083,69 @@ class InFlowVarDist(nn.Module):
 
         return itrcount_wandb, list_coef_anneal
 
+
+    def _debug_trainsep_Z2NCCNot(
+        self,
+        dl: NeighborLoader,
+        prob_maskknowngenes: float,
+        t_num_steps: int,
+        ten_xy_absolute: torch.Tensor,
+        optim_training: torch.optim.Optimizer,
+        tensorboard_stepsize_save: int,
+        prob_applytfm_affinexy: float,
+        np_size_factor: np.ndarray,
+        flag_lockencdec_duringtraining,
+        itrcount_wandbstep_input: int | None = None,
+        list_flag_elboloss_imputationloss=[True, True],
+        coef_loss_zzcloseness: float = 0.0,
+        coef_flowmatchingloss: float = 0.0
+    ):
+
+        history_loss = []
+        for batch in tqdm(dl):
+
+            batch.INFLOWMETAINF = {
+                "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
+                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
+                "dim_CT": self.module_genmodel.dict_varname_to_dim['CT'],
+                "dim_NCC": self.module_genmodel.dict_varname_to_dim['NCC']
+            }  # how batch.y is split between u_int, u_spl, CT, and NCC
+
+            ten_xy_touse = ten_xy_absolute + 0.0
+
+            dict_q_sample = self.rsample(
+                batch=batch,
+                prob_maskknowngenes=prob_maskknowngenes,
+                ten_xy_absolute=ten_xy_touse
+            )
+
+            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            ten_NCC = batch.y[
+                :batch.batch_size,
+                rng_NCC:
+            ].to(ten_xy_absolute.device).float()
+
+            if self.str_modez2notNCCloss_regorcls == 'cls':
+                ten_NCC = ((ten_NCC > 0) + 0).float()
+            else:
+                assert (self.str_modez2notNCCloss_regorcls == 'reg')
+
+            z2notNCC_loss = self.crit_loss_z2notNCC(
+                predadjmat.grad_reverse(
+                    self.module_predictor_z2notNCC(dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size])
+                ),
+                ten_NCC.detach()
+            )
+            z2notNCC_loss.backward()
+            optim_training.step()
+            history_loss.append(
+                z2notNCC_loss.detach().cpu().numpy()
+            )
+        
+        return history_loss
+
+
+
     def train_imputer(
         self,
         dl: NeighborLoader,
