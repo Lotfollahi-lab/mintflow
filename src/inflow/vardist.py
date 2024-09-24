@@ -536,11 +536,11 @@ class InFlowVarDist(nn.Module):
             prob_applytfm_affinexy:float,
             np_size_factor: np.ndarray,
             flag_lockencdec_duringtraining,
+            numsteps_accumgrad:int,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
             coef_loss_zzcloseness:float=0.0,
-            coef_flowmatchingloss:float=0.0,
-            numsteps_accumgrad:int=5
+            coef_flowmatchingloss:float=0.0
     ):
         '''
         One epoch of the training.
