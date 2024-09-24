@@ -938,7 +938,7 @@ class InFlowVarDist(nn.Module):
 
                 xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
                     predadjmat.grad_reverse(
-                        self.module_predictor_xbarint2notNCC(dict_q_sample['xbar_int'][:batch.batch_size])
+                        self.module_predictor_xbarint2notNCC(dict_q_sample['param_q_xbarint'][:batch.batch_size])
                     ),
                     ten_NCC.detach()
                 )
@@ -965,7 +965,7 @@ class InFlowVarDist(nn.Module):
 
                 z2notNCC_loss = self.crit_loss_z2notNCC(
                     predadjmat.grad_reverse(
-                        self.module_predictor_z2notNCC(dict_q_sample['z'][:batch.batch_size])
+                        self.module_predictor_z2notNCC(dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size])
                     ),
                     ten_NCC.detach()
                 )
