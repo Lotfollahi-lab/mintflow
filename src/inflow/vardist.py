@@ -883,12 +883,12 @@ class InFlowVarDist(nn.Module):
                 loss_rank_Xpos = self.crit_xbarint_rankloss(
                     netout_rank_Xpos[:, 0],
                     netout_rank_Xpos[:, 1],
-                    (ten_x[list_i_subsample] > ten_x[list_j_subsample]).sign()
+                    (ten_x[list_i_subsample] - ten_x[list_j_subsample]).sign()
                 )
                 loss_rank_Ypos = self.crit_xbarint_rankloss(
                     netout_rank_Ypos[:, 0],
                     netout_rank_Ypos[:, 1],
-                    (ten_y[list_i_subsample] > ten_y[list_j_subsample]).sign()
+                    (ten_y[list_i_subsample] - ten_y[list_j_subsample]).sign()
                 )
 
                 loss_rank_XYpos = loss_rank_Xpos + loss_rank_Ypos
