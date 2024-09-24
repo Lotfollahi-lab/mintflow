@@ -610,11 +610,26 @@ class InFlowVarDist(nn.Module):
             list_coef_anneal.append(dict_otherinf['coef_anneal'])
 
             # for debug
+            '''
             print("batch.x.shape = {}".format(batch.x.shape))
             for k in dict_q_sample.keys():
                 if isinstance(dict_q_sample[k], torch.Tensor):
                     print("{}: {}".format(k, dict_q_sample[k].shape))
             assert False
+            OUTPUT:
+            batch.x.shape = torch.Size([274, 2000])
+            param_q_xbarint: torch.Size([274, 100])
+            param_q_xbarspl: torch.Size([274, 100])
+            x_int: torch.Size([274, 2000])
+            x_spl: torch.Size([274, 2000])
+            xbar_int: torch.Size([274, 100])
+            xbar_spl: torch.Size([274, 100])
+            z: torch.Size([274, 100])
+            s_in: torch.Size([274, 100])
+            s_out: torch.Size([274, 100])
+            ten_u_int: torch.Size([274, 8])
+            ten_u_spl: torch.Size([274, 8])
+            '''
 
             '''
             # fordebug
@@ -785,10 +800,10 @@ class InFlowVarDist(nn.Module):
                 ]
                 xbarint2CT_loss = self.crit_loss_xbarint2CT(
                     self.module_classifier_xbarintCT(
-                        dict_q_sample['xbar_int']
+                        dict_q_sample['xbar_int'][:batch.batch_size]
                     ),
                     torch.argmax(
-                        batch.y[:, rng_CT[0]:rng_CT[1]].to(ten_xy_absolute.device),
+                        batch.y[:batch.batch_size, rng_CT[0]:rng_CT[1]].to(ten_xy_absolute.device),
                         1
                     )
                 )
@@ -805,7 +820,7 @@ class InFlowVarDist(nn.Module):
             if self.coef_xbarsplNCC_loss > 0.0:
                 rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ten_NCC = batch.y[
-                    :,
+                    :batch.batch_size,
                     rng_NCC:
                 ].to(ten_xy_absolute.device).float()
 
@@ -815,7 +830,7 @@ class InFlowVarDist(nn.Module):
                     assert (self.str_modexbarsplNCCloss_regorcls == 'reg')
 
                 xbarspl2NCC_loss = self.crit_loss_xbarspl2NCC(
-                    self.module_predictor_xbarsplNCC(dict_q_sample['xbar_spl']),
+                    self.module_predictor_xbarsplNCC(dict_q_sample['xbar_spl'][:batch.batch_size]),
                     ten_NCC
                 )
                 loss = loss + self.coef_xbarsplNCC_loss * xbarspl2NCC_loss
@@ -828,9 +843,9 @@ class InFlowVarDist(nn.Module):
 
             # add xbarint rank loss  ===
             if self.coef_rankloss_xbarint > 0.0:
-                print("batch.input_id.shape = {}".format(batch.input_id.shape))
-                print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
-                assert(batch.input_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
+                #print("batch.input_id.shape = {}".format(batch.input_id.shape))
+                #print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
+                assert(batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
                 assert (ten_xy_absolute.size()[1] == 2)
                 ten_x, ten_y = ten_ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
 
@@ -849,7 +864,7 @@ class InFlowVarDist(nn.Module):
                 netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['xbar_int'][list_i_subsample, :], dict_q_sample['xbar_int'][list_j_subsample, :]],
+                            [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :], dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
                             1
                         )
                     )
@@ -858,7 +873,7 @@ class InFlowVarDist(nn.Module):
                 netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['xbar_int'][list_i_subsample, :], dict_q_sample['xbar_int'][list_j_subsample, :]],
+                            [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :], dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
                             1
                         )
                     )
