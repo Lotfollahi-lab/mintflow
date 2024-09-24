@@ -940,7 +940,7 @@ class InFlowVarDist(nn.Module):
                     predadjmat.grad_reverse(
                         self.module_predictor_xbarint2notNCC(dict_q_sample['xbar_int'][:batch.batch_size])
                     ),
-                    ten_NCC
+                    ten_NCC.detach()
                 )
                 loss = loss + self.coef_xbarint2notNCC_loss * xbarint2notNCC_loss
                 if flag_tensorboardsave:
@@ -967,7 +967,7 @@ class InFlowVarDist(nn.Module):
                     predadjmat.grad_reverse(
                         self.module_predictor_z2notNCC(dict_q_sample['z'][:batch.batch_size])
                     ),
-                    ten_NCC
+                    ten_NCC.detach()
                 )
                 loss = loss + self.coef_z2notNCC_loss * z2notNCC_loss
                 if flag_tensorboardsave:
