@@ -609,11 +609,30 @@ class InFlowVarDist(nn.Module):
             )
             list_coef_anneal.append(dict_otherinf['coef_anneal'])
 
+            # for debug
+            print("batch.x.shape = {}".format(batch.x.shape))
+            for k in dict_q_sample.keys():
+                print("{}: {}".format(k, dict_q_sample[k].shape))
+            assert False
+
+            '''
             # fordebug
             print("batch.x.shape = {}".format(batch.x.shape))
             for k in dict_logp.keys():
                 print("{}: {}".format(k, dict_logp[k].shape))
             assert False
+            OUTPUT:
+            batch.x.shape = torch.Size([308, 2000])
+            logp_s_out: torch.Size([308, 100])
+            logp_z: torch.Size([308, 100])
+            logp_s_in: torch.Size([249, 100])
+            logp_xbarint: torch.Size([249, 100])
+            logp_xbarspl: torch.Size([249, 100])
+            logp_x_int: torch.Size([249, 2000])
+            logp_x_spl: torch.Size([249, 2000])
+            logp_x: torch.Size([1, 1])
+            '''
+
             # make the loss
             loss = 0.0
             if list_flag_elboloss_imputationloss[0]:
