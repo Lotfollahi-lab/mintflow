@@ -803,7 +803,8 @@ class InFlowVarDist(nn.Module):
 
             # add xbarint rank loss  ===
             if self.coef_rankloss_xbarint > 0.0:
-
+                print("batch.input_id.shape = {}".format(batch.input_id.shape))
+                print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
                 assert(batch.input_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
                 assert (ten_xy_absolute.size()[1] == 2)
                 ten_x, ten_y = ten_ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
