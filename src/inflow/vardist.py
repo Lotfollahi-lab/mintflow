@@ -60,7 +60,10 @@ class InFlowVarDist(nn.Module):
             num_subsample_XYrankloss:int,
             coef_xbarint2notNCC_loss: float,
             module_predictor_xbarint2notNCC: nn.Module,
-            str_modexbarint2notNCCloss_regorcls: str
+            str_modexbarint2notNCCloss_regorcls: str,
+            coef_z2notNCC_loss: float,
+            module_predictor_z2notNCC: nn.Module,
+            str_modez2notNCCloss_regorcls: str
     ):
         '''
 
@@ -167,6 +170,13 @@ class InFlowVarDist(nn.Module):
         # related to xbraint 2 not NCC loss ===
         assert (self.str_modexbarint2notNCCloss_regorcls in ['reg', 'cls'])
         self.crit_loss_xbarint2notNCC = nn.MSELoss() if(self.str_modexbarint2notNCCloss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
+
+        # related to z 2 not NCC loss ===
+        self.coef_z2notNCC_loss = coef_z2notNCC_loss
+        self.module_predictor_z2notNCC = module_predictor_z2notNCC
+        self.str_modez2notNCCloss_regorcls = str_modez2notNCCloss_regorcls
+        assert (self.str_modez2notNCCloss_regorcls in ['reg', 'cls'])
+        self.crit_loss_z2notNCC = nn.MSELoss() if (self.str_modez2notNCCloss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
 
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
@@ -940,6 +950,32 @@ class InFlowVarDist(nn.Module):
                             step=itrcount_wandb
                         )
 
+            # add Z-->notNCC loss ===
+            if self.coef_z2notNCC_loss > 0.0:
+                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                ten_NCC = batch.y[
+                    :batch.batch_size,
+                    rng_NCC:
+                ].to(ten_xy_absolute.device).float()
+
+                if self.str_modez2notNCCloss_regorcls == 'cls':
+                    ten_NCC = ((ten_NCC > 0) + 0).float()
+                else:
+                    assert (self.str_modez2notNCCloss_regorcls == 'reg')
+
+                z2notNCC_loss = self.crit_loss_z2notNCC(
+                    predadjmat.grad_reverse(
+                        self.module_predictor_z2notNCC(dict_q_sample['z'][:batch.batch_size])
+                    ),
+                    ten_NCC
+                )
+                loss = loss + self.coef_z2notNCC_loss * z2notNCC_loss
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        wandb.log(
+                            {"Loss/Z-->notNCC (after mult by coef={})".format(self.coef_z2notNCC_loss): self.coef_z2notNCC_loss * z2notNCC_loss},
+                            step=itrcount_wandb
+                        )
 
             # log int_cov_u and spl_cov_u ===
             if flag_tensorboardsave:
@@ -1230,6 +1266,11 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        assert (isinstance(self.coef_z2notNCC_loss, float))
+        assert (self.coef_z2notNCC_loss >= 0.0)
+        assert isinstance(self.module_predictor_z2notNCC, nn.Module)
+        assert (self.str_modez2notNCCloss_regorcls in ['reg', 'cls'])
 
         assert isinstance(self.coef_xbarint2notNCC_loss, float)
         assert (self.coef_xbarint2notNCC_loss >= 0.0)
