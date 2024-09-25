@@ -934,7 +934,7 @@ class InFlowVarDist(nn.Module):
                 if flag_tensorboardsave:
                     with torch.no_grad():
                         wandb.log(
-                            {"Loss/RankXY loss, xbarint (after mult by coef={})".format(self.coef_rankloss_Z): self.coef_rankloss_Z * loss_rank_XYpos},
+                            {"Loss/RankXY loss, Z (after mult by coef={})".format(self.coef_rankloss_Z): self.coef_rankloss_Z * loss_rank_XYpos},
                             step=itrcount_wandb
                         )
 
@@ -1265,6 +1265,105 @@ class InFlowVarDist(nn.Module):
         )  # NOTE: the first .detach() is IMPORTANT
 
         loss = loss + xbarint2notNCC_loss
+
+
+
+        # add Z rank loss  ======================================================================================
+        assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
+        assert (ten_xy_absolute.size()[1] == 2)
+        ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+
+        # subsample the mini-batch to define the rank loss
+        rng_N = tuple(range(ten_x.size()[0]))
+        list_ij_subsample = random.sample(
+            [(i, j) for i in rng_N for j in set(rng_N) - {i}],
+            k=min(self.num_subsample_XYrankloss, ten_x.size()[0])
+        )
+        list_i_subsample = [u[0] for u in list_ij_subsample]
+        list_j_subsample = [u[1] for u in list_ij_subsample]
+
+        netout_rank_Xpos = self.module_predictor_ranklossZ_X(
+            predadjmat.grad_reverse(
+                torch.cat(
+                    [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
+                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                    1
+                )
+            )
+        )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+        assert (netout_rank_Xpos.size()[1] == 2)
+        netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
+            predadjmat.grad_reverse(
+                torch.cat(
+                    [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
+                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                    1
+                )
+            )
+        )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+        assert (netout_rank_Ypos.size()[1] == 2)
+
+        loss_rank_Xpos = self.crit_Z_rankloss(
+            netout_rank_Xpos[:, 0],
+            netout_rank_Xpos[:, 1],
+            (ten_x[list_i_subsample] - ten_x[list_j_subsample]).sign()
+        )
+        loss_rank_Ypos = self.crit_Z_rankloss(
+            netout_rank_Ypos[:, 0],
+            netout_rank_Ypos[:, 1],
+            (ten_y[list_i_subsample] - ten_y[list_j_subsample]).sign()
+        )
+        loss_rank_XYpos_Z = loss_rank_Xpos + loss_rank_Ypos
+        loss = loss + loss_rank_XYpos_Z
+
+        # add xbarint rank loss  =====================================================
+        assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
+        assert (ten_xy_absolute.size()[1] == 2)
+        ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+
+        # subsample the mini-batch to define the rank loss
+        rng_N = tuple(range(ten_x.size()[0]))
+        list_ij_subsample = random.sample(
+            [(i, j) for i in rng_N for j in set(rng_N) - {i}],
+            k=min(self.num_subsample_XYrankloss, ten_x.size()[0])
+        )
+        list_i_subsample = [u[0] for u in list_ij_subsample]
+        list_j_subsample = [u[1] for u in list_ij_subsample]
+
+        netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
+            predadjmat.grad_reverse(
+                torch.cat(
+                    [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :],
+                     dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
+                    1
+                )
+            )
+        )  # [N,2]
+        assert (netout_rank_Xpos.size()[1] == 2)
+        netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
+            predadjmat.grad_reverse(
+                torch.cat(
+                    [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :],
+                     dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
+                    1
+                )
+            )
+        )  # [N,2]
+        assert (netout_rank_Ypos.size()[1] == 2)
+
+        loss_rank_Xpos = self.crit_xbarint_rankloss(
+            netout_rank_Xpos[:, 0],
+            netout_rank_Xpos[:, 1],
+            (ten_x[list_i_subsample] - ten_x[list_j_subsample]).sign()
+        )
+        loss_rank_Ypos = self.crit_xbarint_rankloss(
+            netout_rank_Ypos[:, 0],
+            netout_rank_Ypos[:, 1],
+            (ten_y[list_i_subsample] - ten_y[list_j_subsample]).sign()
+        )
+
+        loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
+        loss = loss + loss_rank_XYpos_xbarint
 
         return loss
 
