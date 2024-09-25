@@ -1106,7 +1106,12 @@ class InFlowVarDist(nn.Module):
                 # update the predictors after GRLs ----
                 for _ in range(num_updateseparate_afterGRLs):
                     optim_training.zero_grad()
-                    batch_afterGRLs = next(iterpygdl_for_afterGRL)
+                    try:
+                        batch_afterGRLs = next(iterpygdl_for_afterGRL)
+                    except StopIteration:
+                        iterpygdl_for_afterGRL = iter(dl)
+                        batch_afterGRLs = next(iterpygdl_for_afterGRL)
+
                     batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
 
                     loss_after_GRLs = self._getloss_GradRevPredictors(
@@ -1118,6 +1123,8 @@ class InFlowVarDist(nn.Module):
                     loss_after_GRLs.backward()
                     optim_training.step()
                     print("              >>>> after GRLs update.")
+
+                optim_training.zero_grad()  # for next accumgrad iters
 
             itrcount_wandb += 1
 
