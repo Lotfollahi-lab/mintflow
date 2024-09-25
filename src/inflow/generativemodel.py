@@ -35,7 +35,9 @@ class InFlowGenerativeModel(nn.Module):
             initval_thetanegbin_int:float | str, flag_train_negbintheta_int:bool, negbintheta_int_clamp_minmax:List[float] | None,
             initval_thetanegbin_spl:float | str, flag_train_negbintheta_spl:bool, negbintheta_spl_clamp_minmax:List[float] | None,
             flag_use_int_u: bool, module_int_mu_u: nn.Module | None, module_int_cov_u: mlp.SimpleMLPandExp | None,
-            flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None
+            flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
+            coef_zinb_int_loglik: float,
+            coef_zinb_spl_loglik: float
     ):
         '''
 
@@ -85,6 +87,9 @@ class InFlowGenerativeModel(nn.Module):
         self.negbintheta_int_clamp_minmax, self.negbintheta_spl_clamp_minmax = negbintheta_int_clamp_minmax, negbintheta_spl_clamp_minmax
         self.flag_use_int_u, self.module_int_mu_u, self.module_int_cov_u = flag_use_int_u, module_int_mu_u, module_int_cov_u
         self.flag_use_spl_u, self.module_spl_mu_u, self.module_spl_cov_u = flag_use_spl_u, module_spl_mu_u, module_spl_cov_u
+        self.coef_zinb_int_loglik = coef_zinb_int_loglik
+        self.coef_zinb_spl_loglik = coef_zinb_spl_loglik
+
 
 
         #make internals ===
@@ -194,6 +199,13 @@ class InFlowGenerativeModel(nn.Module):
         Check args and raise appropriate error.
         :return:
         '''
+
+        assert isinstance(self.coef_zinb_int_loglik, float)
+        assert (self.coef_zinb_int_loglik >= 0.0)
+
+        assert isinstance(self.coef_zinb_spl_loglik, float)
+        assert (self.coef_zinb_spl_loglik >= 0.0)
+
 
         # the negbin_theta initvals, train flags, and minmax ===
         if not isinstance(self.initval_thetanegbin_int, float):
@@ -595,14 +607,14 @@ class InFlowGenerativeModel(nn.Module):
 
 
         # x_int
-        logp_x_int = ZeroInflatedNegativeBinomial(
+        logp_x_int = self.coef_zinb_int_loglik * ZeroInflatedNegativeBinomial(
             **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
                   'theta': torch.exp(self.theta_negbin_int)},
                   **self.kwargs_negbin_int}
         ).log_prob(dict_qsamples['x_int'][:batch.batch_size])  # [b, num_genes]
 
         # x_spl
-        logp_x_spl = ZeroInflatedNegativeBinomial(
+        logp_x_spl = self.coef_zinb_spl_loglik * ZeroInflatedNegativeBinomial(
             **{**{'mu': self.module_w_dec_spl(dict_qsamples['xbar_spl'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
                   'theta': torch.exp(self.theta_negbin_spl)},
                **self.kwargs_negbin_spl}
