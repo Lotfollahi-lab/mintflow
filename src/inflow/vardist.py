@@ -1106,8 +1106,11 @@ class InFlowVarDist(nn.Module):
                 # update the predictors after GRLs ----
                 for _ in range(num_updateseparate_afterGRLs):
                     optim_training.zero_grad()
+                    batch_afterGRLs = next(iterpygdl_for_afterGRL)
+                    batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
+
                     loss_after_GRLs = self._getloss_GradRevPredictors(
-                        batch=next(iterpygdl_for_afterGRL),
+                        batch=batch_afterGRLs,
                         ten_xy_absolute=ten_xy_absolute,
                         ten_xy_touse=ten_xy_touse,
                         prob_maskknowngenes=prob_maskknowngenes
@@ -1157,7 +1160,7 @@ class InFlowVarDist(nn.Module):
                 )
             ),
             ten_NCC.detach()
-        )
+        )  # NOTE: the first .detach() is IMPORTANT
         loss = loss + z2notNCC_loss
 
 
@@ -1180,7 +1183,8 @@ class InFlowVarDist(nn.Module):
                 )
             ),
             ten_NCC.detach()
-        )
+        )  # NOTE: the first .detach() is IMPORTANT
+
         loss = loss + xbarint2notNCC_loss
 
         return loss
