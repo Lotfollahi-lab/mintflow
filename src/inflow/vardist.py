@@ -537,6 +537,7 @@ class InFlowVarDist(nn.Module):
             np_size_factor: np.ndarray,
             flag_lockencdec_duringtraining,
             numsteps_accumgrad:int,
+            num_updateseparate_afterGRLs:int,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
             coef_loss_zzcloseness:float=0.0,
@@ -560,6 +561,7 @@ class InFlowVarDist(nn.Module):
         :param coef_flowmatchingloss: the coefficient for flow-matching loss.
         :param np_size_factor: a tensor of shape [num_cells], containing the size factors.
         :param numsteps_accumgrad: number of gradient accumulation step (to increase the batch-size).
+        :param num_updateseparate_afterGRLs
         :return:
         '''
 
@@ -592,6 +594,9 @@ class InFlowVarDist(nn.Module):
         list_coef_anneal = []
 
         num_backwards = 0
+
+        iterpygdl_for_afterGRL = iter(dl)
+
         optim_training.zero_grad()
         for batch in tqdm(dl):
 
@@ -1098,11 +1103,88 @@ class InFlowVarDist(nn.Module):
                 num_backwards = 0
                 print("      optim.step() and zero_grad()")
 
+                # update the predictors after GRLs ----
+                for _ in range(num_updateseparate_afterGRLs):
+                    optim_training.zero_grad()
+                    loss_after_GRLs = self._getloss_GradRevPredictors(
+                        batch=next(iterpygdl_for_afterGRL),
+                        ten_xy_absolute=ten_xy_absolute,
+                        ten_xy_touse=ten_xy_touse,
+                        prob_maskknowngenes=prob_maskknowngenes
+                    )
+                    loss_after_GRLs.backward()
+                    optim_training.step()
+                    print("              >>>> after GRLs update.")
+
             itrcount_wandb += 1
 
 
 
         return itrcount_wandb, list_coef_anneal
+
+
+
+    def _getloss_GradRevPredictors(self, batch, ten_xy_absolute, ten_xy_touse, prob_maskknowngenes):
+        '''
+
+        :return: the loss of predictors atop a gradient reverse layer.
+        '''
+
+        loss = 0.0
+        dict_q_sample = self.rsample(
+            batch=batch,
+            prob_maskknowngenes=prob_maskknowngenes,
+            ten_xy_absolute=ten_xy_touse
+        )
+
+        # Z 2 NotNCC ======================
+        rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+        ten_NCC = batch.y[
+            :batch.batch_size,
+            rng_NCC:
+        ].to(ten_xy_absolute.device).float()
+
+        if self.str_modez2notNCCloss_regorcls == 'cls':
+            ten_NCC = ((ten_NCC > 0) + 0).float()
+        else:
+            assert (self.str_modez2notNCCloss_regorcls == 'reg')
+
+        z2notNCC_loss = self.crit_loss_z2notNCC(
+            self.module_predictor_z2notNCC(
+                predadjmat.grad_reverse(
+                    dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size]
+                )
+            ),
+            ten_NCC.detach()
+        )
+        loss = loss + z2notNCC_loss
+
+
+        # xbarint 2 NotNCC ================
+        rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+        ten_NCC = batch.y[
+            :batch.batch_size,
+            rng_NCC:
+        ].to(ten_xy_absolute.device).float()
+
+        if self.str_modexbarint2notNCCloss_regorcls == 'cls':
+            ten_NCC = ((ten_NCC > 0) + 0).float()
+        else:
+            assert (self.str_modexbarint2notNCCloss_regorcls == 'reg')
+
+        xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
+            self.module_predictor_xbarint2notNCC(
+                predadjmat.grad_reverse(
+                    dict_q_sample['param_q_xbarint'][:batch.batch_size]
+                )
+            ),
+            ten_NCC.detach()
+        )
+        loss = loss + xbarint2notNCC_loss
+
+        return loss
+
+
 
 
     def train_imputer(
@@ -1166,9 +1248,11 @@ class InFlowVarDist(nn.Module):
                 loss.backward()
                 cnt_backward += 1
 
-            if (cnt_backward%numsteps_accumgrad == 0) and (cnt_backward>0):
+            if (cnt_backward%numsteps_accumgrad == 0) and (cnt_backward > 0):
                 optim_training.step()
                 optim_training.zero_grad()
+
+
 
 
             if flag_tensorboardsave:
