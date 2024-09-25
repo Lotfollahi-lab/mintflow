@@ -54,6 +54,9 @@ class InFlowVarDist(nn.Module):
             coef_xbarsplNCC_loss:float,
             module_predictor_xbarsplNCC:nn.Module,
             str_modexbarsplNCCloss_regorcls:str,
+            coef_rankloss_Z: float,
+            module_predictor_ranklossZ_X: nn.Module,
+            module_predictor_ranklossZ_Y: nn.Module,
             coef_rankloss_xbarint:float,
             module_predictor_ranklossxbarint_X:nn.Module,
             module_predictor_ranklossxbarint_Y:nn.Module,
@@ -177,6 +180,12 @@ class InFlowVarDist(nn.Module):
         self.str_modez2notNCCloss_regorcls = str_modez2notNCCloss_regorcls
         assert (self.str_modez2notNCCloss_regorcls in ['reg', 'cls'])
         self.crit_loss_z2notNCC = nn.MSELoss() if (self.str_modez2notNCCloss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
+
+        # realted to rank loss for Z
+        self.coef_rankloss_Z = coef_rankloss_Z
+        self.module_predictor_ranklossZ_X = module_predictor_ranklossZ_X
+        self.module_predictor_ranklossZ_Y = module_predictor_ranklossZ_Y
+        self.crit_Z_rankloss = nn.MarginRankingLoss(margin=0.0)
 
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
@@ -869,6 +878,69 @@ class InFlowVarDist(nn.Module):
                             step=itrcount_wandb
                         )
 
+
+            # add Z rank loss  ===
+            if self.coef_rankloss_Z > 0.0:
+                # print("batch.input_id.shape = {}".format(batch.input_id.shape))
+                # print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
+                assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
+                assert (ten_xy_absolute.size()[1] == 2)
+                ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+
+                # subsample the mini-batch to define the rank loss
+                rng_N = tuple(range(ten_x.size()[0]))
+                list_ij_subsample = random.sample(
+                    [(i, j) for i in rng_N for j in set(rng_N) - {i}],
+                    k=min(self.num_subsample_XYrankloss, ten_x.size()[0])
+                )
+                list_i_subsample = [u[0] for u in list_ij_subsample]
+                list_j_subsample = [u[1] for u in list_ij_subsample]
+
+                netout_rank_Xpos = self.module_predictor_ranklossZ_X(
+                    predadjmat.grad_reverse(
+                        torch.cat(
+                            [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
+                             dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                            1
+                        )
+                    )
+                )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+                assert (netout_rank_Xpos.size()[1] == 2)
+                netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
+                    predadjmat.grad_reverse(
+                        torch.cat(
+                            [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
+                             dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                            1
+                        )
+                    )
+                )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+                assert (netout_rank_Ypos.size()[1] == 2)
+
+                loss_rank_Xpos = self.crit_Z_rankloss(
+                    netout_rank_Xpos[:, 0],
+                    netout_rank_Xpos[:, 1],
+                    (ten_x[list_i_subsample] - ten_x[list_j_subsample]).sign()
+                )
+                loss_rank_Ypos = self.crit_Z_rankloss(
+                    netout_rank_Ypos[:, 0],
+                    netout_rank_Ypos[:, 1],
+                    (ten_y[list_i_subsample] - ten_y[list_j_subsample]).sign()
+                )
+
+                loss_rank_XYpos = loss_rank_Xpos + loss_rank_Ypos
+
+                loss = loss + self.coef_rankloss_Z * loss_rank_XYpos
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        wandb.log(
+                            {"Loss/RankXY loss, xbarint (after mult by coef={})".format(self.coef_rankloss_Z): self.coef_rankloss_Z * loss_rank_XYpos},
+                            step=itrcount_wandb
+                        )
+
+
+
+
             # add xbarint rank loss  ===
             if self.coef_rankloss_xbarint > 0.0:
                 #print("batch.input_id.shape = {}".format(batch.input_id.shape))
@@ -1384,6 +1456,12 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        assert isinstance(self.coef_rankloss_Z, float)
+        assert(self.coef_rankloss_Z >= 0.0)
+        assert isinstance(self.module_predictor_ranklossZ_X, nn.Module)
+        assert isinstance(self.module_predictor_ranklossZ_Y, nn.Module)
+
 
         assert (isinstance(self.coef_z2notNCC_loss, float))
         assert (self.coef_z2notNCC_loss >= 0.0)
