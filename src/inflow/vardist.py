@@ -1131,11 +1131,12 @@ class InFlowVarDist(nn.Module):
         '''
 
         loss = 0.0
-        dict_q_sample = self.rsample(
-            batch=batch,
-            prob_maskknowngenes=prob_maskknowngenes,
-            ten_xy_absolute=ten_xy_touse
-        )
+        with torch.no_grad():
+            dict_q_sample = self.rsample(
+                batch=batch,
+                prob_maskknowngenes=prob_maskknowngenes,
+                ten_xy_absolute=ten_xy_touse
+            )
 
         # Z 2 NotNCC ======================
         rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
@@ -1152,7 +1153,7 @@ class InFlowVarDist(nn.Module):
         z2notNCC_loss = self.crit_loss_z2notNCC(
             self.module_predictor_z2notNCC(
                 predadjmat.grad_reverse(
-                    dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size]
+                    dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size].detach()
                 )
             ),
             ten_NCC.detach()
@@ -1175,7 +1176,7 @@ class InFlowVarDist(nn.Module):
         xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
             self.module_predictor_xbarint2notNCC(
                 predadjmat.grad_reverse(
-                    dict_q_sample['param_q_xbarint'][:batch.batch_size]
+                    dict_q_sample['param_q_xbarint'][:batch.batch_size].detach()
                 )
             ),
             ten_NCC.detach()
