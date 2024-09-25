@@ -1285,22 +1285,24 @@ class InFlowVarDist(nn.Module):
         netout_rank_Xpos = self.module_predictor_ranklossZ_X(
             predadjmat.grad_reverse(
                 torch.cat(
-                    [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
-                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                    [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
+                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
                     1
                 )
             )
         )  # [N,2]  # TODO: should it be on non-cental nodes as well?
         assert (netout_rank_Xpos.size()[1] == 2)
+
         netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
             predadjmat.grad_reverse(
                 torch.cat(
-                    [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
-                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                    [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
+                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
                     1
                 )
             )
         )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+        # NOTE: the first .detach() is IMPORTANT
         assert (netout_rank_Ypos.size()[1] == 2)
 
         loss_rank_Xpos = self.crit_Z_rankloss(
@@ -1333,18 +1335,19 @@ class InFlowVarDist(nn.Module):
         netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
             predadjmat.grad_reverse(
                 torch.cat(
-                    [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :],
-                     dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
+                    [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
+                     dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
                     1
                 )
             )
         )  # [N,2]
         assert (netout_rank_Xpos.size()[1] == 2)
+
         netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
             predadjmat.grad_reverse(
                 torch.cat(
-                    [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :],
-                     dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
+                    [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
+                     dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
                     1
                 )
             )
