@@ -1233,6 +1233,11 @@ class InFlowVarDist(nn.Module):
             )
 
         # Z 2 NotNCC ======================
+        rng_CT = [
+            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
+            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+        ]
+
         rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
         ten_NCC = batch.y[
             :batch.batch_size,
@@ -1246,9 +1251,10 @@ class InFlowVarDist(nn.Module):
 
         z2notNCC_loss = self.crit_loss_z2notNCC(
             self.module_predictor_z2notNCC(
-                predadjmat.grad_reverse(
+                x=predadjmat.grad_reverse(
                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size].detach()
-                )
+                ),
+                ten_CT=batch.y[:batch.batch_size, :][:, rng_CT[0]:rng_CT[1]]
             ),
             ten_NCC.detach()
         )  # NOTE: the first .detach() is IMPORTANT
@@ -1256,6 +1262,10 @@ class InFlowVarDist(nn.Module):
 
 
         # xbarint 2 NotNCC ================
+        rng_CT = [
+            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
+            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+        ]
         rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
         ten_NCC = batch.y[
             :batch.batch_size,
@@ -1269,9 +1279,10 @@ class InFlowVarDist(nn.Module):
 
         xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
             self.module_predictor_xbarint2notNCC(
-                predadjmat.grad_reverse(
+                x=predadjmat.grad_reverse(
                     dict_q_sample['param_q_xbarint'][:batch.batch_size].detach()
-                )
+                ),
+                ten_CT=batch.y[:batch.batch_size, :][:, rng_CT[0]:rng_CT[1]]
             ),
             ten_NCC.detach()
         )  # NOTE: the first .detach() is IMPORTANT
