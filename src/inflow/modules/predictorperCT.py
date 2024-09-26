@@ -27,7 +27,11 @@ class MinRowLoss(nn.Module):
         with torch.no_grad():
             argmin_row = torch.argmin(output, 1).tolist()
 
-        return torch.mean(output[:, argmin_row])
+        return torch.mean(
+            torch.stack(
+                [output[n, argmin_row[n]] for n in x.size()[0]]
+            )
+        )
 
 
 
