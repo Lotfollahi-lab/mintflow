@@ -1004,6 +1004,11 @@ class InFlowVarDist(nn.Module):
 
             # add xbarint-->notNCC loss ===
             if self.coef_xbarint2notNCC_loss > 0.0:
+                rng_CT = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                ]
+
                 rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + \
                           batch.INFLOWMETAINF['dim_CT']
                 ten_NCC = batch.y[
@@ -1018,9 +1023,10 @@ class InFlowVarDist(nn.Module):
 
                 xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
                     self.module_predictor_xbarint2notNCC(
-                        predadjmat.grad_reverse(
+                        x=predadjmat.grad_reverse(
                             dict_q_sample['param_q_xbarint'][:batch.batch_size]
-                        )
+                        ),
+                        ten_CT=batch.y[:batch.batch_size, :][:, rng_CT[0]:rng_CT[1]]
                     ),
                     ten_NCC.detach()
                 )
