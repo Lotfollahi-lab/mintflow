@@ -17,6 +17,7 @@ from . import utils_imputer
 from . predadjmat import ListAdjMatPredLoss
 from . import utils_flowmatching
 from . import kl_annealing
+from .modules import predictorperCT
 import predadjmat
 #from tqdm.auto import tqdm
 from tqdm.notebook import tqdm, trange
@@ -179,7 +180,7 @@ class InFlowVarDist(nn.Module):
         self.module_predictor_z2notNCC = module_predictor_z2notNCC
         self.str_modez2notNCCloss_regorcls = str_modez2notNCCloss_regorcls
         assert (self.str_modez2notNCCloss_regorcls in ['reg', 'cls'])
-        self.crit_loss_z2notNCC = nn.MSELoss() if (self.str_modez2notNCCloss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
+        self.crit_loss_z2notNCC = predictorperCT.MinRowLoss(nn.MSELoss) if (self.str_modez2notNCCloss_regorcls == 'reg') else predictorperCT.MinRowLoss(nn.BCEWithLogitsLoss)
 
         # realted to rank loss for Z
         self.coef_rankloss_Z = coef_rankloss_Z

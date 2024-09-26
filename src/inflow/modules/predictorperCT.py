@@ -6,6 +6,30 @@ import torch.nn as nn
 from abc import ABC, abstractmethod
 
 
+class MinRowLoss(nn.Module):
+    '''
+    A torch loss, but in each row the minimum value is selected to be maximised.
+    Like, intuitively, the maximum values may not be reducible because, e.g., a cell of type A never sits next to a cell of type B.
+    '''
+    def __init__(self, type_loss):
+        super(MinRowLoss, self).__init__()
+        self.crit = type_loss(reduction='none')
+
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        assert (x.size()[0] == y.size()[0])
+        output = self.crit(x, y)
+        assert (
+            len(output.size()) == 2
+        )
+        assert (output.size()[0] == x.size()[0])  # i.e. assert no reduction is done.
+        assert (output.size()[1] == y.size()[1])  # i.e. assert no reduction is done.
+
+        with torch.no_grad():
+            argmin_row = torch.argmin(output, 1).tolist()
+
+        return torch.mean(output[:, argmin_row])
+
+
 
 class PredictorPerCT(nn.Module):
     def __init__(self, list_modules:List[nn.Module]):
