@@ -1217,6 +1217,40 @@ class InFlowVarDist(nn.Module):
 
         return itrcount_wandb, list_coef_anneal
 
+    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, dl, ten_xy_absolute):
+
+        iterpygdl_for_afterGRL = iter(dl)
+        history_loss = []
+
+        for _ in range(numiters):
+            optim_gradrevpreds.zero_grad()
+
+            try:
+                batch_afterGRLs = next(iterpygdl_for_afterGRL)
+            except StopIteration:
+                iterpygdl_for_afterGRL = iter(dl)
+                batch_afterGRLs = next(iterpygdl_for_afterGRL)
+
+            batch_afterGRLs.INFLOWMETAINF = {
+                "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
+                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
+                "dim_CT": self.module_genmodel.dict_varname_to_dim['CT'],
+                "dim_NCC": self.module_genmodel.dict_varname_to_dim['NCC']
+            }  # how batch.y is split between u_int, u_spl, CT, and NCC
+
+            loss_after_GRLs = self._getloss_GradRevPredictors(
+                batch=batch_afterGRLs,
+                ten_xy_absolute=ten_xy_absolute,
+                ten_xy_touse=ten_xy_absolute,
+                prob_maskknowngenes=0.0
+            )
+            loss_after_GRLs.backward()
+            optim_gradrevpreds.step()
+            history_loss.append(
+                loss_after_GRLs.detach().cpu().numpy().tolist()
+            )
+        
+        return history_loss
 
 
     def _getloss_GradRevPredictors(self, batch, ten_xy_absolute, ten_xy_touse, prob_maskknowngenes):
