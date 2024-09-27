@@ -78,7 +78,7 @@ class PredictorPerCT(nn.Module):
             dict_ct_to_listidxlocal[ct].sort()
 
         dict_nlocal_to_output = {}
-        for ct in range(ten_CT.size()):
+        for ct in range(ten_CT.size()[1]):
             if len(dict_ct_to_listidxlocal[ct]) == 0:
                 continue  # no cell of type ct --> continue
             flag_retzero = self.flag_has_BNlayer and (len(dict_ct_to_listidxlocal[ct]) <= 1)
