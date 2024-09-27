@@ -1218,7 +1218,7 @@ class InFlowVarDist(nn.Module):
         return itrcount_wandb, list_coef_anneal
 
 
-    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute):
+    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute, device):
 
         ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC)
         dl = torch.utils.data.DataLoader(ds, shuffle=True)
@@ -1244,10 +1244,10 @@ class InFlowVarDist(nn.Module):
 
             loss_after_GRLs = self.crit_loss_z2notNCC(
                 self.module_predictor_z2notNCC(
-                    x=batch_afterGRLs[0],
-                    ten_CT=batch_afterGRLs[1]
+                    x=batch_afterGRLs[0].to(device),
+                    ten_CT=batch_afterGRLs[1].to(device)
                 ),
-                y
+                y.to(device)
             )
 
             loss_after_GRLs.backward()
