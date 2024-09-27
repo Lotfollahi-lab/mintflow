@@ -1222,7 +1222,7 @@ class InFlowVarDist(nn.Module):
         iterpygdl_for_afterGRL = iter(dl)
         history_loss = []
 
-        for _ in range(numiters):
+        for _ in tqdm(range(numiters)):
             optim_gradrevpreds.zero_grad()
 
             try:
@@ -1249,7 +1249,7 @@ class InFlowVarDist(nn.Module):
             history_loss.append(
                 loss_after_GRLs.detach().cpu().numpy().tolist()
             )
-        
+
         return history_loss
 
 
