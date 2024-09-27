@@ -28,6 +28,8 @@ class MinRowLoss(nn.Module):
             argmin_row = torch.argmin(output, 1).tolist()
             assert (len(argmin_row) == x.size()[0])
 
+
+
         FLAG_DISABLE = True
 
         if not FLAG_DISABLE:
@@ -50,6 +52,13 @@ class PredictorPerCT(nn.Module):
 
         self.list_modules = nn.ModuleList(list_modules)
 
+        # set flag_has_BNlayer
+        self.flag_has_BNlayer = False
+        for mod in self.list_modules:
+            for ch in list(mod.children()):
+                if isinstance(ch, nn.BatchNorm1d):
+                    self.flag_has_BNlayer = True
+
     def forward(self, x, ten_CT):
         '''
         :param x: a tensor of shape [N, D].
@@ -62,10 +71,61 @@ class PredictorPerCT(nn.Module):
         with torch.no_grad():
             list_CT = torch.argmax(ten_CT, 1).tolist()
 
+        # separate cells by CT
+        dict_ct_to_listidxlocal = {}
+        for ct in range(ten_CT.size()[1]):
+            dict_ct_to_listidxlocal[ct] = np.where(np.array(list_CT) == ct)[0].tolist()
+            dict_ct_to_listidxlocal[ct].sort()
+
+        dict_nlocal_to_output = {}
+        for ct in range(ten_CT.size()):
+            if len(dict_ct_to_listidxlocal[ct]) == 0:
+                continue  # no cell of type ct --> continue
+            flag_retzero = self.flag_has_BNlayer and (len(dict_ct_to_listidxlocal[ct]) <= 1)
+
+            if flag_retzero:
+                assert (len(dict_ct_to_listidxlocal[ct]) == 1)
+                assert (
+                    dict_ct_to_listidxlocal[ct][0] not in dict_nlocal_to_output.keys()
+                )
+                dict_nlocal_to_output[dict_ct_to_listidxlocal[ct][0]] = torch.zeros(size=[ten_CT.size()[1]]).to(x.device)
+            else:
+                # group x rows in ct
+                x_ct = x[
+                    dict_ct_to_listidxlocal[ct],
+                    :
+                ]
+                if len(dict_ct_to_listidxlocal[ct]) == 1:
+                    x_ct = x_ct.unsqueeze(0)
+
+
+                netout_ct = self.list_modules[ct](x_ct)
+                for idx_inct, nlocal in enumerate(dict_ct_to_listidxlocal[ct]):
+                    assert (
+                        nlocal not in dict_nlocal_to_output.keys()
+                    )
+                    dict_nlocal_to_output[nlocal] = netout_ct[idx_inct, :]
+
+        assert (
+            set(dict_nlocal_to_output.keys()) == set(range(x.size()[0]))
+        )
+        return torch.stack(
+            [dict_nlocal_to_output[nlocal] for nlocal in range(x.size()[0])],
+            0
+        )
+
+
+
+
+
+        '''
+        BNlayer could be used --> batch size of size 1 is not doable.
         output = torch.stack(
             [self.list_modules[list_CT[n]](x[n,:].unsqueeze(0))[0,:] for n in range(x.size()[0])],
             dim=0
         )  # [N, Dout]
+        '''
+
 
         return output
 
