@@ -1218,10 +1218,10 @@ class InFlowVarDist(nn.Module):
         return itrcount_wandb, list_coef_anneal
 
 
-    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute, device):
+    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute, device, kwargs_dl):
 
         ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC)
-        dl = torch.utils.data.DataLoader(ds, shuffle=True)
+        dl = torch.utils.data.DataLoader(ds, shuffle=True, **kwargs_dl)
 
         iterpygdl_for_afterGRL = iter(dl)
 
