@@ -1217,9 +1217,14 @@ class InFlowVarDist(nn.Module):
 
         return itrcount_wandb, list_coef_anneal
 
-    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, dl, ten_xy_absolute):
+
+    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute):
+
+        ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC)
+        dl = torch.utils.data.DataLoader(ds, shuffle=True)
 
         iterpygdl_for_afterGRL = iter(dl)
+
         history_loss = []
 
         for _ in tqdm(range(numiters)):
@@ -1231,19 +1236,20 @@ class InFlowVarDist(nn.Module):
                 iterpygdl_for_afterGRL = iter(dl)
                 batch_afterGRLs = next(iterpygdl_for_afterGRL)
 
-            batch_afterGRLs.INFLOWMETAINF = {
-                "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
-                "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
-                "dim_CT": self.module_genmodel.dict_varname_to_dim['CT'],
-                "dim_NCC": self.module_genmodel.dict_varname_to_dim['NCC']
-            }  # how batch.y is split between u_int, u_spl, CT, and NCC
+            y = batch_afterGRLs[2].detach()
+            if self.str_modez2notNCCloss_regorcls == 'cls':
+                y = ((y > 0) + 0).float()
+            else:
+                assert (self.str_modez2notNCCloss_regorcls == 'reg')
 
-            loss_after_GRLs = self._getloss_GradRevPredictors(
-                batch=batch_afterGRLs,
-                ten_xy_absolute=ten_xy_absolute,
-                ten_xy_touse=ten_xy_absolute,
-                prob_maskknowngenes=0.0
+            loss_after_GRLs = self.crit_loss_z2notNCC(
+                self.module_predictor_z2notNCC(
+                    x=batch_afterGRLs[0],
+                    ten_CT=batch_afterGRLs[1]
+                ),
+                y
             )
+
             loss_after_GRLs.backward()
             optim_gradrevpreds.step()
             history_loss.append(
