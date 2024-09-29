@@ -1202,7 +1202,7 @@ class InFlowVarDist(nn.Module):
                 print("      optim.step() and zero_grad()")
 
                 # update the predictors after GRLs ----
-                for _ in range(num_updateseparate_afterGRLs):
+                for idx_iter_afterGRL in range(num_updateseparate_afterGRLs):
                     optim_training.zero_grad()
                     try:
                         batch_afterGRLs = next(iterpygdl_for_afterGRL)
@@ -1221,6 +1221,15 @@ class InFlowVarDist(nn.Module):
                     loss_after_GRLs.backward()
                     optim_training.step()
                     print("              >>>> after GRLs update.")
+
+                    if idx_iter_afterGRL%5 == 0:
+                        with torch.no_grad():
+                            for loss_name in dict_z2notNCC_loss.keys():
+                                wandb.log(
+                                    {"Loss/Z-->notNCC {} (after mult by coef={})".format(loss_name,dict_z2notNCC_loss[loss_name]['coef']):dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']},
+                                    step=itrcount_wandb
+                                )
+                                itrcount_wandb += 1
 
                 optim_training.zero_grad()  # for next accumgrad iters
 
@@ -1327,6 +1336,8 @@ class InFlowVarDist(nn.Module):
             )
             for loss_name in dict_z2notNCC_loss.keys():
                 loss = loss + dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']
+
+
 
 
 
