@@ -17,6 +17,8 @@ def _truncated_x2min1(x):
 
 def _smoothnessloss_leibcont(z:torch.Tensor, module_NCCpredictor:predictorperCT.PredictorPerCT, ten_CT: torch.Tensor, ten_NCC: torch.Tensor):
     assert isinstance(z, torch.Tensor)
+    assert (z.size()[0] == ten_CT.size()[0])
+
 
     # separate cells by CT
     with torch.no_grad():
@@ -47,7 +49,7 @@ def _smoothnessloss_leibcont(z:torch.Tensor, module_NCCpredictor:predictorperCT.
             z_ctgroup = z_ctgroup[
                 np.random.permutation(N).tolist(),
                 :
-            ] + torch.rand(N) * z_ctgroup[
+            ] + torch.rand(N).unsqueeze(1) * z_ctgroup[
                 np.random.permutation(N).tolist(),
                 :
             ]
