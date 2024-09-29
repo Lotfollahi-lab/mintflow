@@ -1212,12 +1212,16 @@ class InFlowVarDist(nn.Module):
 
                     batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
 
-                    loss_after_GRLs = self._getloss_GradRevPredictors(
+                    dict_z2notNCC_loss = self._getloss_GradRevPredictors(
                         batch=batch_afterGRLs,
                         ten_xy_absolute=ten_xy_absolute,
                         ten_xy_touse=ten_xy_touse,
                         prob_maskknowngenes=prob_maskknowngenes
                     )
+                    loss_after_GRLs = 0.0
+                    for loss_name in dict_z2notNCC_loss.keys():
+                        loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']
+
                     loss_after_GRLs.backward()
                     optim_training.step()
                     print("              >>>> after GRLs update.")
@@ -1464,7 +1468,7 @@ class InFlowVarDist(nn.Module):
             loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
             loss = loss + loss_rank_XYpos_xbarint
 
-        return loss
+        return dict_z2notNCC_loss
 
 
 
