@@ -1220,7 +1220,7 @@ class InFlowVarDist(nn.Module):
                     )
                     loss_after_GRLs = 0.0
                     for loss_name in dict_z2notNCC_loss.keys():
-                        loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']
+                        loss_after_GRLs = loss_after_GRLs + 1.0 * dict_z2notNCC_loss[loss_name]['val']
 
                     loss_after_GRLs.backward()
                     optim_training.step()
@@ -1322,7 +1322,7 @@ class InFlowVarDist(nn.Module):
 
             dict_z2notNCC_loss = self.crit_loss_z2notNCC(
                 z=predadjmat.grad_reverse(
-                    dict_q_sample['param_q_cond4flow']['mu_z']
+                    dict_q_sample['param_q_cond4flow']['mu_z'].detach()
                 ).detach(),
                 module_NCCpredictor=self.module_predictor_z2notNCC,
                 ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
