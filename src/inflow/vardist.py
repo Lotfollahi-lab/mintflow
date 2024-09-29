@@ -559,7 +559,8 @@ class InFlowVarDist(nn.Module):
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
             coef_loss_zzcloseness:float=0.0,
-            coef_flowmatchingloss:float=0.0
+            coef_flowmatchingloss:float=0.0,
+            flag_verbose:bool=False
     ):
         '''
         One epoch of the training.
@@ -1190,7 +1191,9 @@ class InFlowVarDist(nn.Module):
                 loss = loss/(numsteps_accumgrad+0.0)
                 loss.backward()
                 num_backwards += 1
-                print("Backward()-----")
+
+                if flag_verbose:
+                    print("Backward()-----")
 
                 #loss.backward()
                 #optim_training.step()
@@ -1199,7 +1202,9 @@ class InFlowVarDist(nn.Module):
                 optim_training.step()
                 optim_training.zero_grad()
                 num_backwards = 0
-                print("      optim.step() and zero_grad()")
+
+                if flag_verbose:
+                    print("      optim.step() and zero_grad()")
 
                 # update the predictors after GRLs ----
                 for idx_iter_afterGRL in range(num_updateseparate_afterGRLs):
@@ -1224,7 +1229,9 @@ class InFlowVarDist(nn.Module):
 
                     loss_after_GRLs.backward()
                     optim_training.step()
-                    print("              >>>> after GRLs update.")
+
+                    if flag_verbose:
+                        print("              >>>> after GRLs update.")
 
                     if False: #idx_iter_afterGRL%5 == 0:
                         with torch.no_grad():
@@ -1242,6 +1249,8 @@ class InFlowVarDist(nn.Module):
 
 
         return itrcount_wandb, list_coef_anneal
+
+
 
 
     def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute, device, kwargs_dl):
@@ -1467,6 +1476,7 @@ class InFlowVarDist(nn.Module):
             loss = loss + loss_rank_XYpos_xbarint
 
         return dict_z2notNCC_loss
+
 
 
 
