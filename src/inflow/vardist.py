@@ -1060,10 +1060,10 @@ class InFlowVarDist(nn.Module):
                     rng_NCC:
                 ].to(ten_xy_absolute.device).float()
 
-                if self.str_modez2notNCCloss_regorcls == 'cls':
+                if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
                     ten_NCC = ((ten_NCC > 0) + 0).float()
                 else:
-                    assert (self.str_modez2notNCCloss_regorcls == 'reg')
+                    assert (self.str_modez2notNCCloss_regorclsorwassdist == 'reg')
 
                 dict_z2notNCC_loss = self.crit_loss_z2notNCC(
                     z=predadjmat.grad_reverse(
@@ -1311,10 +1311,10 @@ class InFlowVarDist(nn.Module):
                 rng_NCC:
             ].to(ten_xy_absolute.device).float()
 
-            if self.str_modez2notNCCloss_regorcls == 'cls':
+            if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
                 ten_NCC = ((ten_NCC > 0) + 0).float()
             else:
-                assert (self.str_modez2notNCCloss_regorcls == 'reg')
+                assert (self.str_modez2notNCCloss_regorclsorwassdist == 'reg')
 
 
             dict_z2notNCC_loss = self.crit_loss_z2notNCC(
@@ -1663,7 +1663,7 @@ class InFlowVarDist(nn.Module):
         assert (isinstance(self.coef_z2notNCC_loss, float))
         assert (self.coef_z2notNCC_loss >= 0.0)
         assert isinstance(self.module_predictor_z2notNCC, nn.Module)
-        assert (self.str_modez2notNCCloss_regorcls in ['reg', 'cls'])
+        assert (self.str_modez2notNCCloss_regorclsorwassdist in ['reg', 'cls'])
 
         assert isinstance(self.coef_xbarint2notNCC_loss, float)
         assert (self.coef_xbarint2notNCC_loss >= 0.0)
