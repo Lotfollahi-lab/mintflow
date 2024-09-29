@@ -1074,7 +1074,7 @@ class InFlowVarDist(nn.Module):
                     ten_NCC=ten_NCC.detach()
                 )
 
-                
+
                 for loss_name in dict_z2notNCC_loss.keys():
                     loss = loss + dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']
 
@@ -1232,6 +1232,7 @@ class InFlowVarDist(nn.Module):
 
 
     def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute, device, kwargs_dl):
+        raise NotImplementedError("DDDDD")
 
         ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC)
         dl = torch.utils.data.DataLoader(ds, shuffle=True, **kwargs_dl)
@@ -1255,6 +1256,16 @@ class InFlowVarDist(nn.Module):
             else:
                 assert (self.str_modez2notNCCloss_regorcls == 'reg')
 
+            dict_z2notNCC_loss = self.crit_loss_z2notNCC(
+                z=predadjmat.grad_reverse(
+                    dict_q_sample['param_q_cond4flow']['mu_z']
+                ),
+                module_NCCpredictor=self.module_predictor_z2notNCC,
+                ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
+                ten_NCC=ten_NCC.detach()
+            )
+
+            '''
             loss_after_GRLs = self.crit_loss_z2notNCC(
                 self.module_predictor_z2notNCC(
                     x=batch_afterGRLs[0].to(device),
@@ -1262,6 +1273,7 @@ class InFlowVarDist(nn.Module):
                 ),
                 y.to(device)
             )
+            '''
 
             loss_after_GRLs.backward()
             optim_gradrevpreds.step()
@@ -1287,163 +1299,169 @@ class InFlowVarDist(nn.Module):
             )
 
         # Z 2 NotNCC ======================
-        rng_CT = [
-            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
-            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
-        ]
+        if self.coef_z2notNCC_loss > 0.0:
+            rng_CT = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            ]
 
-        rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
-        ten_NCC = batch.y[
-            :batch.batch_size,
-            rng_NCC:
-        ].to(ten_xy_absolute.device).float()
+            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            ten_NCC = batch.y[
+                :batch.batch_size,
+                rng_NCC:
+            ].to(ten_xy_absolute.device).float()
 
-        if self.str_modez2notNCCloss_regorcls == 'cls':
-            ten_NCC = ((ten_NCC > 0) + 0).float()
-        else:
-            assert (self.str_modez2notNCCloss_regorcls == 'reg')
+            if self.str_modez2notNCCloss_regorcls == 'cls':
+                ten_NCC = ((ten_NCC > 0) + 0).float()
+            else:
+                assert (self.str_modez2notNCCloss_regorcls == 'reg')
 
-        z2notNCC_loss = self.crit_loss_z2notNCC(
-            self.module_predictor_z2notNCC(
-                x=predadjmat.grad_reverse(
-                    dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size].detach()
-                ),
-                ten_CT=batch.y[:batch.batch_size, :][:, rng_CT[0]:rng_CT[1]]
-            ),
-            ten_NCC.detach()
-        )  # NOTE: the first .detach() is IMPORTANT
-        loss = loss + z2notNCC_loss
+
+            dict_z2notNCC_loss = self.crit_loss_z2notNCC(
+                z=predadjmat.grad_reverse(
+                    dict_q_sample['param_q_cond4flow']['mu_z']
+                ).detach(),
+                module_NCCpredictor=self.module_predictor_z2notNCC,
+                ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
+                ten_NCC=ten_NCC.detach()
+            )
+            for loss_name in dict_z2notNCC_loss.keys():
+                loss = loss + dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']
+
 
 
         # xbarint 2 NotNCC ================
-        rng_CT = [
-            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
-            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
-        ]
-        rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
-        ten_NCC = batch.y[
-            :batch.batch_size,
-            rng_NCC:
-        ].to(ten_xy_absolute.device).float()
+        if self.coef_xbarint2notNCC_loss > 0.0:
+            rng_CT = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            ]
+            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            ten_NCC = batch.y[
+                :batch.batch_size,
+                rng_NCC:
+            ].to(ten_xy_absolute.device).float()
 
-        if self.str_modexbarint2notNCCloss_regorcls == 'cls':
-            ten_NCC = ((ten_NCC > 0) + 0).float()
-        else:
-            assert (self.str_modexbarint2notNCCloss_regorcls == 'reg')
+            if self.str_modexbarint2notNCCloss_regorcls == 'cls':
+                ten_NCC = ((ten_NCC > 0) + 0).float()
+            else:
+                assert (self.str_modexbarint2notNCCloss_regorcls == 'reg')
 
-        xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
-            self.module_predictor_xbarint2notNCC(
-                x=predadjmat.grad_reverse(
-                    dict_q_sample['param_q_xbarint'][:batch.batch_size].detach()
+            xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
+                self.module_predictor_xbarint2notNCC(
+                    x=predadjmat.grad_reverse(
+                        dict_q_sample['param_q_xbarint'][:batch.batch_size].detach()
+                    ),
+                    ten_CT=batch.y[:batch.batch_size, :][:, rng_CT[0]:rng_CT[1]]
                 ),
-                ten_CT=batch.y[:batch.batch_size, :][:, rng_CT[0]:rng_CT[1]]
-            ),
-            ten_NCC.detach()
-        )  # NOTE: the first .detach() is IMPORTANT
+                ten_NCC.detach()
+            )  # NOTE: the first .detach() is IMPORTANT
 
-        loss = loss + xbarint2notNCC_loss
+            loss = loss + xbarint2notNCC_loss
 
 
 
         # add Z rank loss  ======================================================================================
-        assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
-        assert (ten_xy_absolute.size()[1] == 2)
-        ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+        if self.coef_rankloss_Z > 0.0:
+            assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
+            assert (ten_xy_absolute.size()[1] == 2)
+            ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
 
-        # subsample the mini-batch to define the rank loss
-        rng_N = tuple(range(ten_x.size()[0]))
-        list_ij_subsample = random.sample(
-            [(i, j) for i in rng_N for j in set(rng_N) - {i}],
-            k=min(self.num_subsample_XYrankloss, ten_x.size()[0])
-        )
-        list_i_subsample = [u[0] for u in list_ij_subsample]
-        list_j_subsample = [u[1] for u in list_ij_subsample]
-
-        netout_rank_Xpos = self.module_predictor_ranklossZ_X(
-            predadjmat.grad_reverse(
-                torch.cat(
-                    [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
-                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
-                    1
-                )
+            # subsample the mini-batch to define the rank loss
+            rng_N = tuple(range(ten_x.size()[0]))
+            list_ij_subsample = random.sample(
+                [(i, j) for i in rng_N for j in set(rng_N) - {i}],
+                k=min(self.num_subsample_XYrankloss, ten_x.size()[0])
             )
-        )  # [N,2]  # TODO: should it be on non-cental nodes as well?
-        assert (netout_rank_Xpos.size()[1] == 2)
+            list_i_subsample = [u[0] for u in list_ij_subsample]
+            list_j_subsample = [u[1] for u in list_ij_subsample]
 
-        netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
-            predadjmat.grad_reverse(
-                torch.cat(
-                    [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
-                     dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
-                    1
+            netout_rank_Xpos = self.module_predictor_ranklossZ_X(
+                predadjmat.grad_reverse(
+                    torch.cat(
+                        [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
+                         dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
+                        1
+                    )
                 )
-            )
-        )  # [N,2]  # TODO: should it be on non-cental nodes as well?
-        # NOTE: the first .detach() is IMPORTANT
-        assert (netout_rank_Ypos.size()[1] == 2)
+            )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+            assert (netout_rank_Xpos.size()[1] == 2)
 
-        loss_rank_Xpos = self.crit_Z_rankloss(
-            netout_rank_Xpos[:, 0],
-            netout_rank_Xpos[:, 1],
-            (ten_x[list_i_subsample] - ten_x[list_j_subsample]).sign()
-        )
-        loss_rank_Ypos = self.crit_Z_rankloss(
-            netout_rank_Ypos[:, 0],
-            netout_rank_Ypos[:, 1],
-            (ten_y[list_i_subsample] - ten_y[list_j_subsample]).sign()
-        )
-        loss_rank_XYpos_Z = loss_rank_Xpos + loss_rank_Ypos
-        loss = loss + loss_rank_XYpos_Z
+            netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
+                predadjmat.grad_reverse(
+                    torch.cat(
+                        [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
+                         dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
+                        1
+                    )
+                )
+            )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+            # NOTE: the first .detach() is IMPORTANT
+            assert (netout_rank_Ypos.size()[1] == 2)
+
+            loss_rank_Xpos = self.crit_Z_rankloss(
+                netout_rank_Xpos[:, 0],
+                netout_rank_Xpos[:, 1],
+                (ten_x[list_i_subsample] - ten_x[list_j_subsample]).sign()
+            )
+            loss_rank_Ypos = self.crit_Z_rankloss(
+                netout_rank_Ypos[:, 0],
+                netout_rank_Ypos[:, 1],
+                (ten_y[list_i_subsample] - ten_y[list_j_subsample]).sign()
+            )
+            loss_rank_XYpos_Z = loss_rank_Xpos + loss_rank_Ypos
+            loss = loss + loss_rank_XYpos_Z
 
         # add xbarint rank loss  =====================================================
-        assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
-        assert (ten_xy_absolute.size()[1] == 2)
-        ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+        if self.coef_rankloss_xbarint:
+            assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
+            assert (ten_xy_absolute.size()[1] == 2)
+            ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
 
-        # subsample the mini-batch to define the rank loss
-        rng_N = tuple(range(ten_x.size()[0]))
-        list_ij_subsample = random.sample(
-            [(i, j) for i in rng_N for j in set(rng_N) - {i}],
-            k=min(self.num_subsample_XYrankloss, ten_x.size()[0])
-        )
-        list_i_subsample = [u[0] for u in list_ij_subsample]
-        list_j_subsample = [u[1] for u in list_ij_subsample]
-
-        netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
-            predadjmat.grad_reverse(
-                torch.cat(
-                    [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
-                     dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
-                    1
-                )
+            # subsample the mini-batch to define the rank loss
+            rng_N = tuple(range(ten_x.size()[0]))
+            list_ij_subsample = random.sample(
+                [(i, j) for i in rng_N for j in set(rng_N) - {i}],
+                k=min(self.num_subsample_XYrankloss, ten_x.size()[0])
             )
-        )  # [N,2]
-        assert (netout_rank_Xpos.size()[1] == 2)
+            list_i_subsample = [u[0] for u in list_ij_subsample]
+            list_j_subsample = [u[1] for u in list_ij_subsample]
 
-        netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
-            predadjmat.grad_reverse(
-                torch.cat(
-                    [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
-                     dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
-                    1
+            netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
+                predadjmat.grad_reverse(
+                    torch.cat(
+                        [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
+                         dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
+                        1
+                    )
                 )
+            )  # [N,2]
+            assert (netout_rank_Xpos.size()[1] == 2)
+
+            netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
+                predadjmat.grad_reverse(
+                    torch.cat(
+                        [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
+                         dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
+                        1
+                    )
+                )
+            )  # [N,2]
+            assert (netout_rank_Ypos.size()[1] == 2)
+
+            loss_rank_Xpos = self.crit_xbarint_rankloss(
+                netout_rank_Xpos[:, 0],
+                netout_rank_Xpos[:, 1],
+                (ten_x[list_i_subsample] - ten_x[list_j_subsample]).sign()
             )
-        )  # [N,2]
-        assert (netout_rank_Ypos.size()[1] == 2)
+            loss_rank_Ypos = self.crit_xbarint_rankloss(
+                netout_rank_Ypos[:, 0],
+                netout_rank_Ypos[:, 1],
+                (ten_y[list_i_subsample] - ten_y[list_j_subsample]).sign()
+            )
 
-        loss_rank_Xpos = self.crit_xbarint_rankloss(
-            netout_rank_Xpos[:, 0],
-            netout_rank_Xpos[:, 1],
-            (ten_x[list_i_subsample] - ten_x[list_j_subsample]).sign()
-        )
-        loss_rank_Ypos = self.crit_xbarint_rankloss(
-            netout_rank_Ypos[:, 0],
-            netout_rank_Ypos[:, 1],
-            (ten_y[list_i_subsample] - ten_y[list_j_subsample]).sign()
-        )
-
-        loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
-        loss = loss + loss_rank_XYpos_xbarint
+            loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
+            loss = loss + loss_rank_XYpos_xbarint
 
         return loss
 
