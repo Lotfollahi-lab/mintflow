@@ -31,42 +31,45 @@ def _smoothnessloss_leibcont(z:torch.Tensor, module_NCCpredictor:predictorperCT.
     EPS = 1e-4  # TODO:TUNE
     loss_total = 0.0
     print("z.shape = {}".format(z.shape))
-    
+
     for ct in range(ten_CT.size()[1]):  # for each CT group
 
-        # create z1 and z2 of shape [N, dimZ], the vector sets on which the smoothness loss is defined.
+        if len(dict_ct_to_listidxlocal[ct] >= 2):
+            # create z1 and z2 of shape [N, dimZ], the vector sets on which the smoothness loss is defined.
+            z_ctgroup = z[dict_ct_to_listidxlocal[ct], :] + 0.0  # [size_CTgroup, dimZ]
 
-        z_ctgroup = z[dict_ct_to_listidxlocal[ct], :] + 0.0  # [size_CTgroup, dimZ]
-        print("z_ctgroup.shape = {}".format(z_ctgroup.shape))
 
-        N = z_ctgroup.size()[0]
-        assert (N == len(dict_ct_to_listidxlocal[ct]))
-        z_ctgroup = z_ctgroup[
-            np.random.permutation(N).tolist(),
-            :
-        ] + torch.rand(N) * z_ctgroup[
-            np.random.permutation(N).tolist(),
-            :
-        ]
-        z1 = z_ctgroup[
-            np.random.permutation(N).tolist(),
-            :
-        ] + 0.0  # [N, dimZ]
-        z2 = z_ctgroup[
-            np.random.permutation(N).tolist(),
-            :
-        ] + 0.0  # [N, dimZ]
 
-        loss_smoothness = module_NCCpredictor(
-            x=z1.detach(),
-            ten_CT=ten_CT[dict_ct_to_listidxlocal[ct], :]
-        ) - module_NCCpredictor(
-            x=z2.detach(),
-            ten_CT=ten_CT[dict_ct_to_listidxlocal[ct], :]
-        )  # [N, numCT]
-        loss_smoothness = torch.abs(loss_smoothness) / (EPS + torch.norm(z1 - z2, dim=1).unsqueeze(1))  # [N, numCT]
-        loss_smoothness = _truncated_x2min1(loss_smoothness)  # [N, numCT]
-        loss_total = loss_total + loss_smoothness.sum(1).mean()
+            print("z_ctgroup.shape = {}".format(z_ctgroup.shape))
+
+            N = z_ctgroup.size()[0]
+            assert (N == len(dict_ct_to_listidxlocal[ct]))
+            z_ctgroup = z_ctgroup[
+                np.random.permutation(N).tolist(),
+                :
+            ] + torch.rand(N) * z_ctgroup[
+                np.random.permutation(N).tolist(),
+                :
+            ]
+            z1 = z_ctgroup[
+                np.random.permutation(N).tolist(),
+                :
+            ] + 0.0  # [N, dimZ]
+            z2 = z_ctgroup[
+                np.random.permutation(N).tolist(),
+                :
+            ] + 0.0  # [N, dimZ]
+
+            loss_smoothness = module_NCCpredictor(
+                x=z1.detach(),
+                ten_CT=ten_CT[dict_ct_to_listidxlocal[ct], :]
+            ) - module_NCCpredictor(
+                x=z2.detach(),
+                ten_CT=ten_CT[dict_ct_to_listidxlocal[ct], :]
+            )  # [N, numCT]
+            loss_smoothness = torch.abs(loss_smoothness) / (EPS + torch.norm(z1 - z2, dim=1).unsqueeze(1))  # [N, numCT]
+            loss_smoothness = _truncated_x2min1(loss_smoothness)  # [N, numCT]
+            loss_total = loss_total + loss_smoothness.sum(1).mean()
 
     return loss_total
 
@@ -128,9 +131,8 @@ class WassDist(nn.Module):
                 for ncc_head in range(ten_NCC.size()[1]):
                     # add the f(.)-f(.) term
                     if set(y_ctgroup[:, ncc_head].tolist()) == {0, 1}:  # if there are both 0 and 1 in the colunmn of NCC matrix.
-                        loss = loss + torch.mean(
-                            x_ctgroup[y_ctgroup[:, ncc_head] == 1, ncc_head] - x_ctgroup[y_ctgroup[:, ncc_head] == 0, ncc_head]
-                        )
+                        loss = loss + torch.mean(x_ctgroup[y_ctgroup[:, ncc_head] == 1, ncc_head]) - torch.mean(x_ctgroup[y_ctgroup[:, ncc_head] == 0, ncc_head])
+
 
 
         # compute the smoothness loss based on x_ctgroup
