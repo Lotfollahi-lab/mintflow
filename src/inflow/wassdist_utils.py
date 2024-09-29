@@ -49,7 +49,7 @@ def _smoothnessloss_leibcont(z:torch.Tensor, module_NCCpredictor:predictorperCT.
             z_ctgroup = z_ctgroup[
                 np.random.permutation(N).tolist(),
                 :
-            ] + torch.rand(N).unsqueeze(1) * z_ctgroup[
+            ] + torch.rand(N).unsqueeze(1).to(z.device) * z_ctgroup[
                 np.random.permutation(N).tolist(),
                 :
             ]
