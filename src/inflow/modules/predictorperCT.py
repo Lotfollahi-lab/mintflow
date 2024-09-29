@@ -100,11 +100,12 @@ class PredictorPerCT(nn.Module):
 
 
                 netout_ct = self.list_modules[ct](x_ct)
+
                 for idx_inct, nlocal in enumerate(dict_ct_to_listidxlocal[ct]):
                     assert (
                         nlocal not in dict_nlocal_to_output.keys()
                     )
-                    dict_nlocal_to_output[nlocal] = netout_ct[idx_inct, :]
+                    dict_nlocal_to_output[nlocal] = netout_ct[idx_inct, :].flatten()
 
         assert (
             set(dict_nlocal_to_output.keys()) == set(range(x.size()[0]))
