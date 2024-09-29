@@ -1241,7 +1241,7 @@ class InFlowVarDist(nn.Module):
 
 
     def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute, device, kwargs_dl):
-        raise NotImplementedError("DDDDD")
+
 
         ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC)
         dl = torch.utils.data.DataLoader(ds, shuffle=True, **kwargs_dl)
@@ -1260,30 +1260,21 @@ class InFlowVarDist(nn.Module):
                 batch_afterGRLs = next(iterpygdl_for_afterGRL)
 
             y = batch_afterGRLs[2].detach()
-            if self.str_modez2notNCCloss_regorcls == 'cls':
+            if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
                 y = ((y > 0) + 0).float()
             else:
-                assert (self.str_modez2notNCCloss_regorcls == 'reg')
+                assert (self.str_modez2notNCCloss_regorclsorwassdist == 'reg')
 
             dict_z2notNCC_loss = self.crit_loss_z2notNCC(
                 z=predadjmat.grad_reverse(
                     dict_q_sample['param_q_cond4flow']['mu_z']
                 ),
                 module_NCCpredictor=self.module_predictor_z2notNCC,
-                ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
-                ten_NCC=ten_NCC.detach()
+                ten_CT=batch_afterGRLs[1].detach(),
+                ten_NCC=y.detach()
             )
 
-            '''
-            loss_after_GRLs = self.crit_loss_z2notNCC(
-                self.module_predictor_z2notNCC(
-                    x=batch_afterGRLs[0].to(device),
-                    ten_CT=batch_afterGRLs[1].to(device)
-                ),
-                y.to(device)
-            )
-            '''
-
+            loss_after_GRLs = dict_z2notNCC_loss['loss_fminf']['coef'] * dict_z2notNCC_loss['loss_fminf']['val']
             loss_after_GRLs.backward()
             optim_gradrevpreds.step()
             history_loss.append(
