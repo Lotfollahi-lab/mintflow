@@ -1266,9 +1266,7 @@ class InFlowVarDist(nn.Module):
                 assert (self.str_modez2notNCCloss_regorclsorwassdist == 'reg')
 
             dict_z2notNCC_loss = self.crit_loss_z2notNCC(
-                z=predadjmat.grad_reverse(
-                    dict_q_sample['param_q_cond4flow']['mu_z']
-                ),
+                z=ten_Z,
                 module_NCCpredictor=self.module_predictor_z2notNCC,
                 ten_CT=batch_afterGRLs[1].detach(),
                 ten_NCC=y.detach()
