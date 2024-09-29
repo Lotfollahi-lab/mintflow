@@ -1307,7 +1307,7 @@ class InFlowVarDist(nn.Module):
 
             rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
             ten_NCC = batch.y[
-                :batch.batch_size,
+                :,
                 rng_NCC:
             ].to(ten_xy_absolute.device).float()
 
