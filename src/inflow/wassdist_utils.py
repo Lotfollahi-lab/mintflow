@@ -34,7 +34,7 @@ def _smoothnessloss_leibcont(z:torch.Tensor, module_NCCpredictor:predictorperCT.
 
     for ct in range(ten_CT.size()[1]):  # for each CT group
 
-        if len(dict_ct_to_listidxlocal[ct] >= 2):
+        if len(dict_ct_to_listidxlocal[ct]) >= 2:
             # create z1 and z2 of shape [N, dimZ], the vector sets on which the smoothness loss is defined.
             z_ctgroup = z[dict_ct_to_listidxlocal[ct], :] + 0.0  # [size_CTgroup, dimZ]
 
