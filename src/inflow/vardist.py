@@ -1226,7 +1226,7 @@ class InFlowVarDist(nn.Module):
                     optim_training.step()
                     print("              >>>> after GRLs update.")
 
-                    if idx_iter_afterGRL%5 == 0:
+                    if False: #idx_iter_afterGRL%5 == 0:
                         with torch.no_grad():
                             for loss_name in dict_z2notNCC_loss.keys():
                                 wandb.log(
@@ -1249,11 +1249,9 @@ class InFlowVarDist(nn.Module):
 
         ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC)
         dl = torch.utils.data.DataLoader(ds, shuffle=True, **kwargs_dl)
-
         iterpygdl_for_afterGRL = iter(dl)
 
         history_loss = []
-
         for _ in tqdm(range(numiters)):
             optim_gradrevpreds.zero_grad()
 
