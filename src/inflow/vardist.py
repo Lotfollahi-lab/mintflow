@@ -1258,6 +1258,7 @@ class InFlowVarDist(nn.Module):
             except StopIteration:
                 iterpygdl_for_afterGRL = iter(dl)
                 batch_afterGRLs = next(iterpygdl_for_afterGRL)
+            
 
             y = batch_afterGRLs[2].detach()
             if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1266,7 +1267,7 @@ class InFlowVarDist(nn.Module):
                 assert (self.str_modez2notNCCloss_regorclsorwassdist == 'reg')
 
             dict_z2notNCC_loss = self.crit_loss_z2notNCC(
-                z=ten_Z,
+                z=batch_afterGRLs[0],
                 module_NCCpredictor=self.module_predictor_z2notNCC,
                 ten_CT=batch_afterGRLs[1].detach(),
                 ten_NCC=y.detach()
