@@ -1663,7 +1663,7 @@ class InFlowVarDist(nn.Module):
         assert (isinstance(self.coef_z2notNCC_loss, float))
         assert (self.coef_z2notNCC_loss >= 0.0)
         assert isinstance(self.module_predictor_z2notNCC, nn.Module)
-        assert (self.str_modez2notNCCloss_regorclsorwassdist in ['reg', 'cls'])
+        assert (self.str_modez2notNCCloss_regorclsorwassdist in ['reg', 'cls', 'wassdist'])
 
         assert isinstance(self.coef_xbarint2notNCC_loss, float)
         assert (self.coef_xbarint2notNCC_loss >= 0.0)
