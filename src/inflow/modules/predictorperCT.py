@@ -90,7 +90,7 @@ class PredictorPerCT(nn.Module):
                 )
                 dict_nlocal_to_output[dict_ct_to_listidxlocal[ct][0]] = torch.zeros(size=[ten_CT.size()[1]]).to(x.device)
             else:
-                # group x rows in ct
+                # group x rows based on ct
                 x_ct = x[
                     dict_ct_to_listidxlocal[ct],
                     :
@@ -109,14 +109,6 @@ class PredictorPerCT(nn.Module):
         assert (
             set(dict_nlocal_to_output.keys()) == set(range(x.size()[0]))
         )
-        return torch.stack(
-            [dict_nlocal_to_output[nlocal] for nlocal in range(x.size()[0])],
-            0
-        )
-
-
-
-
 
         '''
         BNlayer could be used --> batch size of size 1 is not doable.
@@ -126,8 +118,17 @@ class PredictorPerCT(nn.Module):
         )  # [N, Dout]
         '''
 
+        return torch.stack(
+            [dict_nlocal_to_output[nlocal] for nlocal in range(x.size()[0])],
+            0
+        )
 
-        return output
+
+
+
+
+
+
 
 
 

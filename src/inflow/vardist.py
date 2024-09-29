@@ -19,6 +19,7 @@ from . import utils_flowmatching
 from . import kl_annealing
 from .modules import predictorperCT
 import predadjmat
+from . import wassdist_utils
 #from tqdm.auto import tqdm
 from tqdm.notebook import tqdm, trange
 import wandb
@@ -67,7 +68,7 @@ class InFlowVarDist(nn.Module):
             str_modexbarint2notNCCloss_regorcls: str,
             coef_z2notNCC_loss: float,
             module_predictor_z2notNCC: nn.Module,
-            str_modez2notNCCloss_regorcls: str
+            str_modez2notNCCloss_regorclsorwassdist: str
     ):
         '''
 
@@ -178,9 +179,16 @@ class InFlowVarDist(nn.Module):
         # related to z 2 not NCC loss ===
         self.coef_z2notNCC_loss = coef_z2notNCC_loss
         self.module_predictor_z2notNCC = module_predictor_z2notNCC
-        self.str_modez2notNCCloss_regorcls = str_modez2notNCCloss_regorcls
-        assert (self.str_modez2notNCCloss_regorcls in ['reg', 'cls'])
-        self.crit_loss_z2notNCC = predictorperCT.MinRowLoss(nn.MSELoss) if (self.str_modez2notNCCloss_regorcls == 'reg') else predictorperCT.MinRowLoss(nn.BCEWithLogitsLoss)
+        self.str_modez2notNCCloss_regorclsorwassdist = str_modez2notNCCloss_regorclsorwassdist
+        assert (self.str_modez2notNCCloss_regorclsorwassdist in ['reg', 'cls', 'wassdist'])
+        if self.str_modez2notNCCloss_regorclsorwassdist in ['reg', 'cls']:
+            raise NotImplementedError("reg or cls is replaced by wassdist mode.")
+            self.crit_loss_z2notNCC = predictorperCT.MinRowLoss(nn.MSELoss) if (self.str_modez2notNCCloss_regorcls == 'reg') else predictorperCT.MinRowLoss(nn.BCEWithLogitsLoss)
+        else:
+            self.crit_loss_z2notNCC = wassdist_utils.WassDist(
+                coef_fminf=self.coef_z2notNCC_loss,
+                coef_smoothness=10.0*self.coef_z2notNCC_loss
+            )
 
         # realted to rank loss for Z
         self.coef_rankloss_Z = coef_rankloss_Z
@@ -1048,7 +1056,7 @@ class InFlowVarDist(nn.Module):
 
                 rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ten_NCC = batch.y[
-                    :batch.batch_size,
+                    :,
                     rng_NCC:
                 ].to(ten_xy_absolute.device).float()
 
@@ -1057,7 +1065,17 @@ class InFlowVarDist(nn.Module):
                 else:
                     assert (self.str_modez2notNCCloss_regorcls == 'reg')
 
-                z2notNCC_loss = self.crit_loss_z2notNCC(
+                self.crit_loss_z2notNCC(
+                    z=predadjmat.grad_reverse(
+                        dict_q_sample['param_q_cond4flow']['mu_z']
+                    ),
+                    module_NCCpredictor=self.module_predictor_z2notNCC,
+                    ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
+                    ten_NCC=ten_NCC.detach()
+                )
+
+
+                dict_z2notNCC_loss = self.crit_loss_z2notNCC(
                     self.module_predictor_z2notNCC(
                         x=predadjmat.grad_reverse(
                             dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size]
@@ -1066,13 +1084,17 @@ class InFlowVarDist(nn.Module):
                     ),
                     ten_NCC.detach()
                 )
-                loss = loss + self.coef_z2notNCC_loss * z2notNCC_loss
+                for loss_name in dict_z2notNCC_loss.keys():
+                    loss = loss + dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']
+
+
                 if flag_tensorboardsave:
                     with torch.no_grad():
-                        wandb.log(
-                            {"Loss/Z-->notNCC (after mult by coef={})".format(self.coef_z2notNCC_loss): self.coef_z2notNCC_loss * z2notNCC_loss},
-                            step=itrcount_wandb
-                        )
+                        for loss_name in dict_z2notNCC_loss.keys():
+                            wandb.log(
+                                {"Loss/Z-->notNCC {} (after mult by coef={})".format(loss_name, dict_z2notNCC_loss[loss_name]['coef']): dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']},
+                                step=itrcount_wandb
+                            )
 
             # log int_cov_u and spl_cov_u ===
             if flag_tensorboardsave:
