@@ -1190,6 +1190,10 @@ class InFlowVarDist(nn.Module):
                     for ct in set_celltype_minibatch:
                         if np.sum(np_celltype_batch == ct) >= 2:  # if there are atleast two cells of that type.
                             z_incelltype = dict_q_sample[varname][np_celltype_batch == ct, :]  # [n, dimz]
+
+                            if varname == 'x_int':  # for x_int the counts are in the order of 1e4 --> defined the closeness loss on log1p value
+                                z_incelltype = torch.log(z_incelltype + 1.0)
+
                             pairwise_dist = torch.sum(
                                 (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)) * (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)),
                                 2
