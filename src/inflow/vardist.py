@@ -1202,13 +1202,12 @@ class InFlowVarDist(nn.Module):
                             )  # [n, n]
                             assert (len(pairwise_dist.size()) == 2)
 
-                            if varname == 'x_int':
-                                print("pairwise_dist.shape = {}".format(pairwise_dist.shape))
-                                print("    pairwise_dist.max() = {}".format(pairwise_dist.max()))
 
                             loss_zzcloseness += torch.sum(
                                 torch.tril(pairwise_dist, diagonal=-1)
                             )/(pairwise_dist.size()[0]*(pairwise_dist.size()[0]-1.0)/2 + 0.0)
+
+                            loss_zzcloseness = loss_zzcloseness / (dict_q_sample[varname].size()[1] + 0.0)  # normalize by dimension as well, because in the case of x_int there might be a log of genes --> the loss becomes huge even after log1p(.)
 
                     if flag_tensorboardsave:
                         with torch.no_grad():
