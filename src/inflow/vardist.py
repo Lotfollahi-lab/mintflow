@@ -563,7 +563,7 @@ class InFlowVarDist(nn.Module):
             num_updateseparate_afterGRLs:int,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
-            coef_loss_zzcloseness:float=0.0,
+            coef_loss_closeness_zz_xbarintxbarint_xintxint:float=0.0,
             coef_flowmatchingloss:float=0.0,
             flag_verbose:bool=False
     ):
@@ -580,7 +580,7 @@ class InFlowVarDist(nn.Module):
         :param tensorboard_stepsize_save
         :param itrcount_wandbstep_input
         :param list_flag_elboloss_imputationloss
-        :param coef_loss_zzcloseness
+        :param coef_loss_closeness_zz_xbarintxbarint_xintxint
         :param prob_applytfm_affinexy: with this probability the [xy] positions go throug an affined transformation.
         :param coef_flowmatchingloss: the coefficient for flow-matching loss.
         :param np_size_factor: a tensor of shape [num_cells], containing the size factors.
@@ -1165,36 +1165,54 @@ class InFlowVarDist(nn.Module):
                         step=itrcount_wandb
                     )
 
-            # add the z-z closeness loss ===
+            # add the z-z, xbarint-xbarint, and xint-xint closeness loss ===
             num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
-            if coef_loss_zzcloseness > 0.0:
-                assert False
-                loss_zzcloseness = 0.0
-                set_celltype_minibatch = set(batch.y.tolist())
-                for c in set_celltype_minibatch:
-                    if batch.y.tolist().count(c) >= 2:  # if there are atleast two cells of that type.
-                        z_incelltype = dict_q_sample['z'][batch.y == c, :]  # [n, dimz]
-                        pairwise_dist = torch.sum(
-                            (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)) * (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)),
-                            2
-                        )  # [n, n]
-                        assert (len(pairwise_dist.size()) == 2)
-                        loss_zzcloseness += torch.sum(
-                            torch.tril(pairwise_dist, diagonal=-1)
-                        )/(pairwise_dist.size()[0]*(pairwise_dist.size()[0]-1.0)/2 + 0.0)
+            if coef_loss_closeness_zz_xbarintxbarint_xintxint > 0.0:
+                coef_loss_zzcloseness = coef_loss_closeness_zz_xbarintxbarint_xintxint + 0.0
+                rng_CT = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                ]
 
-                if flag_tensorboardsave:
-                    with torch.no_grad():
-                        if isinstance(loss_zzcloseness, torch.Tensor):
-                            wandb.log(
-                                {"Loss/loss_zzcloseness": loss_zzcloseness},
-                                step=itrcount_wandb
-                            )
-                        else:
-                            wandb.log(
-                                {"Loss/loss_zzcloseness": torch.nan},
-                                step=itrcount_wandb
-                            )
+
+
+                np_celltype_batch = torch.argmax(
+                    batch.y[:, rng_CT[0]:rng_CT[1]],
+                    1
+                ).detach().cpu().numpy().flatten()
+
+
+                set_celltype_minibatch = list(set(np_celltype_batch.tolist()))
+                set_celltype_minibatch.sort()
+
+                for varname in ['z', 'x_int', 'xbar_int']:
+                    loss_zzcloseness = 0.0
+                    for ct in set_celltype_minibatch:
+                        if np.sum(np_celltype_batch == ct) >= 2:  # if there are atleast two cells of that type.
+                            z_incelltype = dict_q_sample[varname][np_celltype_batch == ct, :]  # [n, dimz]
+                            pairwise_dist = torch.sum(
+                                (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)) * (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)),
+                                2
+                            )  # [n, n]
+                            assert (len(pairwise_dist.size()) == 2)
+                            loss_zzcloseness += torch.sum(
+                                torch.tril(pairwise_dist, diagonal=-1)
+                            )/(pairwise_dist.size()[0]*(pairwise_dist.size()[0]-1.0)/2 + 0.0)
+
+                    if flag_tensorboardsave:
+                        with torch.no_grad():
+                            if isinstance(loss_zzcloseness, torch.Tensor):
+                                wandb.log(
+                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(varname, varname, coef_loss_zzcloseness): coef_loss_zzcloseness * loss_zzcloseness},
+                                    step=itrcount_wandb
+                                )
+                            else:
+                                wandb.log(
+                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(varname, varname, coef_loss_zzcloseness): torch.nan},
+                                    step=itrcount_wandb
+                                )
+
+                    loss = loss + coef_loss_zzcloseness * loss_zzcloseness
 
             # wandblog other measures ===
             if flag_tensorboardsave:
