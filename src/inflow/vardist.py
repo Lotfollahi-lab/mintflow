@@ -1030,11 +1030,11 @@ class InFlowVarDist(nn.Module):
                     rng_NCC:
                 ].to(ten_xy_absolute.device).float()
 
-                if self.str_modexbarint2notNCCloss_regorcls in ['cls', 'wassdist']:
+                if self.str_modexbarint2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
                     ten_NCC = ((ten_NCC > 0) + 0).float()
                 else:
                     raise NotImplementedError("ddd")
-                    assert (self.str_modexbarint2notNCCloss_regorcls == 'reg')
+                    assert (self.str_modexbarint2notNCCloss_regorclsorwassdist == 'reg')
 
                 dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
                     z=predadjmat.grad_reverse(
@@ -1388,11 +1388,11 @@ class InFlowVarDist(nn.Module):
                 rng_NCC:
             ].to(ten_xy_absolute.device).float()
 
-            if self.str_modexbarint2notNCCloss_regorcls in ['cls', 'wassdist']:
+            if self.str_modexbarint2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
                 ten_NCC = ((ten_NCC > 0) + 0).float()
             else:
                 raise NotImplementedError("ddd")
-                assert (self.str_modexbarint2notNCCloss_regorcls == 'reg')
+                assert (self.str_modexbarint2notNCCloss_regorclsorwassdist == 'reg')
 
             dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
                 z=predadjmat.grad_reverse(
@@ -1715,8 +1715,8 @@ class InFlowVarDist(nn.Module):
         assert isinstance(self.coef_xbarint2notNCC_loss, float)
         assert (self.coef_xbarint2notNCC_loss >= 0.0)
         assert isinstance(self.module_predictor_xbarint2notNCC, nn.Module)
-        assert isinstance(self.str_modexbarint2notNCCloss_regorcls, str)
-        assert (self.str_modexbarint2notNCCloss_regorcls in ['reg', 'cls'])
+        assert isinstance(self.str_modexbarint2notNCCloss_regorclsorwassdist, str)
+        assert (self.str_modexbarint2notNCCloss_regorclsorwassdist in ['reg', 'cls'])
 
         assert isinstance(self.num_subsample_XYrankloss, int)
         assert (self.num_subsample_XYrankloss > 0)
