@@ -1238,17 +1238,19 @@ class InFlowVarDist(nn.Module):
 
                     batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
 
-                    dict_z2notNCC_loss = self._getloss_GradRevPredictors(
+                    dict_loss_GRLpreds = self._getloss_GradRevPredictors(
                         batch=batch_afterGRLs,
                         ten_xy_absolute=ten_xy_absolute,
                         ten_xy_touse=ten_xy_touse,
                         prob_maskknowngenes=prob_maskknowngenes
                     )
-                    dict_z2notNCC_loss =
-                    
+                    dict_z2notNCC_loss = dict_loss_GRLpreds['z']
+                    dict_xbarint2notNCC_loss = dict_loss_GRLpreds['xbarint']
+
                     loss_after_GRLs = 0.0
-                    for loss_name in dict_z2notNCC_loss.keys():
-                        loss_after_GRLs = loss_after_GRLs + 1.0 * dict_z2notNCC_loss[loss_name]['val']
+                    for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]:
+                        for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
+                            loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
                     loss_after_GRLs.backward()
                     optim_training.step()
@@ -1276,10 +1278,10 @@ class InFlowVarDist(nn.Module):
 
 
 
-    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xy_absolute, device, kwargs_dl):
+    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xbarint, ten_xy_absolute, device, kwargs_dl):
 
 
-        ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC)
+        ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC, ten_xbarint)
         dl = torch.utils.data.DataLoader(ds, shuffle=True, **kwargs_dl)
         iterpygdl_for_afterGRL = iter(dl)
 
@@ -1303,6 +1305,15 @@ class InFlowVarDist(nn.Module):
             dict_z2notNCC_loss = self.crit_loss_z2notNCC(
                 z=batch_afterGRLs[0].to(device),
                 module_NCCpredictor=self.module_predictor_z2notNCC,
+                ten_CT=batch_afterGRLs[1].detach().to(device),
+                ten_NCC=y.detach().to(device)
+            )
+
+            dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
+                z=predadjmat.grad_reverse(
+                    batch_afterGRLs[3]
+                ),
+                module_NCCpredictor=self.module_predictor_xbarint2notNCC,
                 ten_CT=batch_afterGRLs[1].detach().to(device),
                 ten_NCC=y.detach().to(device)
             )
