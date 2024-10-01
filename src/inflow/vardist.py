@@ -1310,7 +1310,7 @@ class InFlowVarDist(nn.Module):
             ) # NOTE: the first detach is important
 
             dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
-                z=batch_afterGRLs[3].detach(),
+                z=batch_afterGRLs[3].to(device).detach(),
                 module_NCCpredictor=self.module_predictor_xbarint2notNCC,
                 ten_CT=batch_afterGRLs[1].detach().to(device),
                 ten_NCC=y.detach().to(device)
