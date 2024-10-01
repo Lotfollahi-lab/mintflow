@@ -1189,11 +1189,11 @@ class InFlowVarDist(nn.Module):
                     loss_zzcloseness = 0.0
                     for ct in set_celltype_minibatch:
                         if np.sum(np_celltype_batch == ct) >= 2:  # if there are atleast two cells of that type.
-                            z_incelltype = dict_q_sample[varname][np_celltype_batch == ct, :]  # [n, dimz]
+                            z_incelltype = dict_q_sample[varname][np_celltype_batch == ct, :] + 0.0  # [n, dimz]
 
 
                             if varname == 'x_int':  # for x_int the counts are in the order of 1e4 --> defined the closeness loss on log1p value to avoid huge loss term.
-                                print("torch.max(dict_q_sample[{}][np_celltype_batch == ct, :]) = {}".format(varname, torch.max(dict_q_sample[varname][np_celltype_batch == ct, :])))
+                                # print("torch.max(dict_q_sample[{}][np_celltype_batch == ct, :]) = {}".format(varname, torch.max(dict_q_sample[varname][np_celltype_batch == ct, :]))): output: ~300 and <800
                                 z_incelltype = torch.log(z_incelltype + 1.0)
 
                             pairwise_dist = torch.sum(
@@ -1201,6 +1201,11 @@ class InFlowVarDist(nn.Module):
                                 2
                             )  # [n, n]
                             assert (len(pairwise_dist.size()) == 2)
+
+                            if varname == 'x_int':
+                                print("pairwise_dist.shape = {}".format(pairwise_dist.shape))
+                                print("    pairwise_dist.max() = {}".format(pairwise_dist.max()))
+
                             loss_zzcloseness += torch.sum(
                                 torch.tril(pairwise_dist, diagonal=-1)
                             )/(pairwise_dist.size()[0]*(pairwise_dist.size()[0]-1.0)/2 + 0.0)
