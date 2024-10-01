@@ -1026,7 +1026,7 @@ class InFlowVarDist(nn.Module):
 
                 rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ten_NCC = batch.y[
-                    :batch.batch_size,
+                    :,
                     rng_NCC:
                 ].to(ten_xy_absolute.device).float()
 
@@ -1038,11 +1038,11 @@ class InFlowVarDist(nn.Module):
 
                 dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
                     z=predadjmat.grad_reverse(
-                        dict_q_sample['param_q_xbarint'][:batch.batch_size]
+                        dict_q_sample['param_q_xbarint']
                     ),
                     module_NCCpredictor=self.module_predictor_xbarint2notNCC,
-                    ten_CT=batch.y[:batch.batch_size, rng_CT[0]:rng_CT[1]],
-                    ten_NCC=ten_NCC.detach()[:batch.batch_size]
+                    ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
+                    ten_NCC=ten_NCC.detach()
                 )
 
                 '''
@@ -1303,22 +1303,24 @@ class InFlowVarDist(nn.Module):
                 assert (self.str_modez2notNCCloss_regorclsorwassdist == 'reg')
 
             dict_z2notNCC_loss = self.crit_loss_z2notNCC(
-                z=batch_afterGRLs[0].to(device),
+                z=batch_afterGRLs[0].to(device).detach(),
                 module_NCCpredictor=self.module_predictor_z2notNCC,
                 ten_CT=batch_afterGRLs[1].detach().to(device),
                 ten_NCC=y.detach().to(device)
-            )
+            ) # NOTE: the first detach is important
 
             dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
-                z=predadjmat.grad_reverse(
-                    batch_afterGRLs[3]
-                ),
+                z=batch_afterGRLs[3].detach(),
                 module_NCCpredictor=self.module_predictor_xbarint2notNCC,
                 ten_CT=batch_afterGRLs[1].detach().to(device),
                 ten_NCC=y.detach().to(device)
-            )
+            ) # NOTE: the first detach is important
 
-            loss_after_GRLs = dict_z2notNCC_loss['loss_fminf']['coef'] * dict_z2notNCC_loss['loss_fminf']['val']
+            loss_after_GRLs = 0.0
+            for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]:
+                for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
+                    loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
+
             loss_after_GRLs.backward()
             optim_gradrevpreds.step()
             history_loss.append(
@@ -1394,12 +1396,12 @@ class InFlowVarDist(nn.Module):
 
             dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
                 z=predadjmat.grad_reverse(
-                    dict_q_sample['param_q_xbarint'][:batch.batch_size]
+                    dict_q_sample['param_q_xbarint'][:batch.batch_size].detach()
                 ),
                 module_NCCpredictor=self.module_predictor_xbarint2notNCC,
                 ten_CT=batch.y[:batch.batch_size, rng_CT[0]:rng_CT[1]],
                 ten_NCC=ten_NCC.detach()[:batch.batch_size]
-            )
+            )  # NOTE: the first detach is important
 
 
 
