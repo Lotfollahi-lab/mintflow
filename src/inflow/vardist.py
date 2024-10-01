@@ -1244,6 +1244,8 @@ class InFlowVarDist(nn.Module):
                         ten_xy_touse=ten_xy_touse,
                         prob_maskknowngenes=prob_maskknowngenes
                     )
+                    dict_z2notNCC_loss =
+                    
                     loss_after_GRLs = 0.0
                     for loss_name in dict_z2notNCC_loss.keys():
                         loss_after_GRLs = loss_after_GRLs + 1.0 * dict_z2notNCC_loss[loss_name]['val']
@@ -1355,11 +1357,7 @@ class InFlowVarDist(nn.Module):
                 module_NCCpredictor=self.module_predictor_z2notNCC,
                 ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
                 ten_NCC=ten_NCC.detach()
-            )
-            for loss_name in dict_z2notNCC_loss.keys():
-                loss = loss + dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']
-
-
+            )  # NOTE: the first detach is important
 
 
 
@@ -1369,28 +1367,30 @@ class InFlowVarDist(nn.Module):
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
             ]
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+
+            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF[
+                'dim_CT']
             ten_NCC = batch.y[
                 :batch.batch_size,
                 rng_NCC:
             ].to(ten_xy_absolute.device).float()
 
-            if self.str_modexbarint2notNCCloss_regorcls == 'cls':
+            if self.str_modexbarint2notNCCloss_regorcls in ['cls', 'wassdist']:
                 ten_NCC = ((ten_NCC > 0) + 0).float()
             else:
+                raise NotImplementedError("ddd")
                 assert (self.str_modexbarint2notNCCloss_regorcls == 'reg')
 
-            xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
-                self.module_predictor_xbarint2notNCC(
-                    x=predadjmat.grad_reverse(
-                        dict_q_sample['param_q_xbarint'][:batch.batch_size].detach()
-                    ),
-                    ten_CT=batch.y[:batch.batch_size, :][:, rng_CT[0]:rng_CT[1]]
+            dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
+                z=predadjmat.grad_reverse(
+                    dict_q_sample['param_q_xbarint'][:batch.batch_size]
                 ),
-                ten_NCC.detach()
-            )  # NOTE: the first .detach() is IMPORTANT
+                module_NCCpredictor=self.module_predictor_xbarint2notNCC,
+                ten_CT=batch.y[:batch.batch_size, rng_CT[0]:rng_CT[1]],
+                ten_NCC=ten_NCC.detach()[:batch.batch_size]
+            )
 
-            loss = loss + xbarint2notNCC_loss
+
 
 
 
@@ -1496,7 +1496,7 @@ class InFlowVarDist(nn.Module):
             loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
             loss = loss + loss_rank_XYpos_xbarint
 
-        return dict_z2notNCC_loss
+        return {'z':dict_z2notNCC_loss, 'xbarint':dict_xbarint2notNCC_loss}
 
 
 
