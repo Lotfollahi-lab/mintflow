@@ -1191,7 +1191,9 @@ class InFlowVarDist(nn.Module):
                         if np.sum(np_celltype_batch == ct) >= 2:  # if there are atleast two cells of that type.
                             z_incelltype = dict_q_sample[varname][np_celltype_batch == ct, :]  # [n, dimz]
 
-                            if varname == 'x_int':  # for x_int the counts are in the order of 1e4 --> defined the closeness loss on log1p value
+
+                            if varname == 'x_int':  # for x_int the counts are in the order of 1e4 --> defined the closeness loss on log1p value to avoid huge loss term.
+                                print("torch.max(dict_q_sample[{}][np_celltype_batch == ct, :]) = {}".format(varname, torch.max(dict_q_sample[varname][np_celltype_batch == ct, :])))
                                 z_incelltype = torch.log(z_incelltype + 1.0)
 
                             pairwise_dist = torch.sum(
