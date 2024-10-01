@@ -65,7 +65,7 @@ class InFlowVarDist(nn.Module):
             num_subsample_XYrankloss:int,
             coef_xbarint2notNCC_loss: float,
             module_predictor_xbarint2notNCC: nn.Module,
-            str_modexbarint2notNCCloss_regorcls: str,
+            str_modexbarint2notNCCloss_regorclsorwassdist: str,
             coef_z2notNCC_loss: float,
             module_predictor_z2notNCC: nn.Module,
             str_modez2notNCCloss_regorclsorwassdist: str
@@ -124,9 +124,7 @@ class InFlowVarDist(nn.Module):
         self.num_subsample_XYrankloss = num_subsample_XYrankloss
         self.coef_xbarint2notNCC_loss = coef_xbarint2notNCC_loss
         self.module_predictor_xbarint2notNCC = module_predictor_xbarint2notNCC
-        self.str_modexbarint2notNCCloss_regorcls = str_modexbarint2notNCCloss_regorcls
-
-
+        self.str_modexbarint2notNCCloss_regorclsorwassdist = str_modexbarint2notNCCloss_regorclsorwassdist
 
 
         assert (
@@ -173,8 +171,15 @@ class InFlowVarDist(nn.Module):
         self.crit_xbarint_rankloss = nn.MarginRankingLoss(margin=0.0)
 
         # related to xbraint 2 not NCC loss ===
-        assert (self.str_modexbarint2notNCCloss_regorcls in ['reg', 'cls'])
-        self.crit_loss_xbarint2notNCC = nn.MSELoss() if(self.str_modexbarint2notNCCloss_regorcls == 'reg') else nn.BCEWithLogitsLoss()
+        assert (self.str_modexbarint2notNCCloss_regorclsorwassdist in ['reg', 'cls', 'wassdist'])
+        if self.str_modexbarint2notNCCloss_regorclsorwassdist in ['reg', 'cls']:
+            raise NotImplementedError("reg or cls is replaced with wassdist")
+        else:
+            self.crit_loss_xbarint2notNCC = wassdist_utils.WassDist(
+                coef_fminf=self.coef_xbarint2notNCC_loss,
+                coef_smoothness=1.0 * self.coef_xbarint2notNCC_loss
+            )
+
 
         # related to z 2 not NCC loss ===
         self.coef_z2notNCC_loss = coef_z2notNCC_loss
@@ -187,7 +192,7 @@ class InFlowVarDist(nn.Module):
         else:
             self.crit_loss_z2notNCC = wassdist_utils.WassDist(
                 coef_fminf=self.coef_z2notNCC_loss,
-                coef_smoothness=10.0*self.coef_z2notNCC_loss
+                coef_smoothness=1.0*self.coef_z2notNCC_loss
             )
 
         # realted to rank loss for Z
@@ -1019,19 +1024,29 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ]
 
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + \
-                          batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ten_NCC = batch.y[
                     :batch.batch_size,
                     rng_NCC:
                 ].to(ten_xy_absolute.device).float()
 
-                if self.str_modexbarint2notNCCloss_regorcls == 'cls':
+                if self.str_modexbarint2notNCCloss_regorcls in ['cls', 'wassdist']:
                     ten_NCC = ((ten_NCC > 0) + 0).float()
                 else:
+                    raise NotImplementedError("ddd")
                     assert (self.str_modexbarint2notNCCloss_regorcls == 'reg')
 
-                xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
+                dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
+                    z=predadjmat.grad_reverse(
+                        dict_q_sample['param_q_xbarint'][:batch.batch_size]
+                    ),
+                    module_NCCpredictor=self.module_predictor_xbarint2notNCC,
+                    ten_CT=batch.y[:batch.batch_size, rng_CT[0]:rng_CT[1]],
+                    ten_NCC=ten_NCC.detach()[:batch.batch_size]
+                )
+
+                '''
+                dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
                     self.module_predictor_xbarint2notNCC(
                         x=predadjmat.grad_reverse(
                             dict_q_sample['param_q_xbarint'][:batch.batch_size]
@@ -1040,13 +1055,18 @@ class InFlowVarDist(nn.Module):
                     ),
                     ten_NCC.detach()
                 )
-                loss = loss + self.coef_xbarint2notNCC_loss * xbarint2notNCC_loss
+                '''
+
+                for loss_name in dict_xbarint2notNCC_loss.keys():
+                    loss = loss + dict_xbarint2notNCC_loss[loss_name]['coef'] * dict_xbarint2notNCC_loss[loss_name]['val']
+
                 if flag_tensorboardsave:
                     with torch.no_grad():
-                        wandb.log(
-                            {"Loss/xbarint-->notNCC (after mult by coef={})".format(self.coef_xbarint2notNCC_loss): self.coef_xbarint2notNCC_loss * xbarint2notNCC_loss},
-                            step=itrcount_wandb
-                        )
+                        for loss_name in dict_xbarint2notNCC_loss.keys():
+                            wandb.log(
+                                {"Loss/xbarint-->notNCC {} (after mult by coef={})".format(loss_name, dict_xbarint2notNCC_loss[loss_name]['coef']):dict_xbarint2notNCC_loss[loss_name]['coef'] * dict_xbarint2notNCC_loss[loss_name]['val']},
+                                step=itrcount_wandb
+                            )
 
             # add Z-->notNCC loss ===
             if self.coef_z2notNCC_loss > 0.0:
@@ -1064,6 +1084,7 @@ class InFlowVarDist(nn.Module):
                 if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
                     ten_NCC = ((ten_NCC > 0) + 0).float()
                 else:
+                    raise NotImplementedError("ddd")
                     assert (self.str_modez2notNCCloss_regorclsorwassdist == 'reg')
 
                 dict_z2notNCC_loss = self.crit_loss_z2notNCC(
