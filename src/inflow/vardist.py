@@ -1349,6 +1349,13 @@ class InFlowVarDist(nn.Module):
                 for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
                     loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
+            if not isinstance(loss_after_GRLs, torch.Tensor):
+                print("loss_after_GRLs = {}".format(loss_after_GRLs))
+                print("ten_Z.shape = {}".format(ten_Z.shape))
+                print("batch_afterGRLs[0].shape = {}".format(batch_afterGRLs[0].shape))
+                raise Exception("dddd")
+
+
             loss_after_GRLs.backward()
             optim_gradrevpreds.step()
             history_loss.append(
