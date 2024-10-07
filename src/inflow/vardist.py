@@ -1350,25 +1350,14 @@ class InFlowVarDist(nn.Module):
                     loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
             if not isinstance(loss_after_GRLs, torch.Tensor):
-                print("loss_after_GRLs = {}".format(loss_after_GRLs))
-                print("ten_Z.shape = {}".format(ten_Z.shape))
-                print("batch_afterGRLs[0].shape = {}".format(batch_afterGRLs[0].shape))
-                for name_d, d in zip(['z2notNCC', 'xbarint2notNCC'], [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]):
-                    for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
-                        print("name_d, loss_name, coef, val = {}, {}, {}, {}".format(
-                            name_d,
-                            lossterm_name,
-                            d[lossterm_name]['coef'],
-                            d[lossterm_name]['val']
-                        ))
-                raise Exception("dddd")
-
-
-            loss_after_GRLs.backward()
-            optim_gradrevpreds.step()
-            history_loss.append(
-                loss_after_GRLs.detach().cpu().numpy().tolist()
-            )
+                print(">>>>>>>>>> loss_after_GRLs not a torch.Tensor.")
+                #raise Exception("dddd")
+            else:
+                loss_after_GRLs.backward()
+                optim_gradrevpreds.step()
+                history_loss.append(
+                    loss_after_GRLs.detach().cpu().numpy().tolist()
+                )
 
         return history_loss
 
