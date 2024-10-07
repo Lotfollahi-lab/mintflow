@@ -1353,6 +1353,14 @@ class InFlowVarDist(nn.Module):
                 print("loss_after_GRLs = {}".format(loss_after_GRLs))
                 print("ten_Z.shape = {}".format(ten_Z.shape))
                 print("batch_afterGRLs[0].shape = {}".format(batch_afterGRLs[0].shape))
+                for name_d, d in zip(['z2notNCC', 'xbarint2notNCC'], [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]):
+                    for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
+                        print("name_d, loss_name, coef, val = {}, {}, {}, {}".format(
+                            name_d,
+                            lossterm_name,
+                            d[lossterm_name]['coef'],
+                            d[lossterm_name]['val']
+                        ))
                 raise Exception("dddd")
 
 
