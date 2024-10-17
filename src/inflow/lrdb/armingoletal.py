@@ -3,7 +3,7 @@
 import os, sys
 import numpy as np
 import pandas as pd
-from . import str_NA
+
 
 class LRPair:
     def __init__(self, Lname, Lid, Rname, Rid, confidence):
@@ -27,6 +27,9 @@ class LRPair:
         return self.__str__()
 
 
+str_NA = "N.A."
+
+
 def func_getLR_Qiao(path_files):
     df = pd.read_excel(
         os.path.join(
@@ -44,6 +47,7 @@ def func_getLR_Qiao(path_files):
         )
         for n in range(df.shape[0])
     ]
+
 
 def func_getLR_Pavlicev(path_files):
     df = pd.read_excel(
@@ -63,6 +67,7 @@ def func_getLR_Pavlicev(path_files):
         for n in range(df.shape[0])
     ]
 
+
 def func_getLR_Ramilowski(path_files):
     df = pd.read_csv(
         os.path.join(
@@ -81,7 +86,6 @@ def func_getLR_Ramilowski(path_files):
         )
         for n in range(df.shape[0])
     ]
-
 
 
 def func_getLR_Ximerakis(path_files):
@@ -122,6 +126,7 @@ def func_getLR_Cabello(path_files):
         for n in range(df.shape[0])
     ]
 
+
 def fun_getLR_Choi(path_files):
     df = pd.read_csv(
         os.path.join(
@@ -140,6 +145,7 @@ def fun_getLR_Choi(path_files):
         )
         for n in range(df.shape[0])
     ]
+
 
 def fun_getLR_Hou(path_files):
     df = pd.read_excel(
@@ -254,7 +260,6 @@ def fun_getLR_Wang(path_files):
     ]
 
 
-
 def fun_getLR_Jin(path_files):
     '''
     There are orpahn ligands
@@ -281,9 +286,7 @@ def fun_getLR_Jin(path_files):
                 )
             )
 
-
     return list_LR
-
 
 
 def fun_getLR_Shao(path_files):
@@ -309,6 +312,7 @@ def fun_getLR_Shao(path_files):
 def func_getLR_Zheng(path_files):
     raise NotImplementedError("The df doesn't seem to have matching L-R pairs?")
 
+
 def fun_getLR_Dimitrov(path_files):
     '''
     The "resource" column is entirely consensus.
@@ -330,6 +334,7 @@ def fun_getLR_Dimitrov(path_files):
         for n in range(df.shape[0])
     ]
 
+
 def func_getLR_Vento(path_files):
     raise NotImplementedError(
         "partner_b column contains both ligand and receptor gene names? So skipped this file."
@@ -346,7 +351,7 @@ def fun_getLR_Omnipath(path_files):
         delimiter='\t'
     )
     df = df[
-        (df['consensus_stimulation' ]==1) & (df['consensus_inhibition' ]==0) & (df['consensus_direction' ]==1)
+        (df['consensus_stimulation'] == 1) & (df['consensus_inhibition'] == 0) & (df['consensus_direction'] == 1)
         ]  # only the stimulations for which there is consensus (not to have L-R pairs with confusing direction)
 
     return [
@@ -380,22 +385,4 @@ def fun_getLR_NicheNet(path_files):
         for n in range(df.shape[0])
     ]
 
-
-dict_fname_to_funct = {
-    'Human-2014-Qiao-LR-pairs.xlsx':func_getLR_Qiao,
-    'Human-2017-Pavlicev-LR-pairs.xlsx':func_getLR_Pavlicev,
-    'Human-2015-Ramilowski-LR-pairs.txt':func_getLR_Ramilowski,
-    'Human-2015-Choi-LR-pairs.txt':fun_getLR_Choi,
-    'Human-2020-Hou-LR-pairs.xlsx':fun_getLR_Hou,
-    'Human-2010-Kirouac-LR-pairs.xlsx':fun_getLR_Kirouac,
-    'Human-2020-Noël-LR-pairs.xlsx':fun_getLR_Noel,
-    'Human-2019-Wang-LR-pairs.csv':fun_getLR_Wang,
-    'Human-2020-Jin-LR-pairs.csv':fun_getLR_Jin,
-    'Human-2020-Shao-LR-pairs.txt':fun_getLR_Shao,
-    'Human-2022-Dimitrov-LR-pairs.csv':fun_getLR_Dimitrov,
-    'Human-2019-Ximerakis-BaderLab-2017.txt':func_getLR_Ximerakis,
-    'Human-2020-Cabello-Aguilar-LR-pairs.csv':func_getLR_Cabello,
-    'Human-2021-OmniPath-Turei/OmniPathPPIs.tsv':fun_getLR_Omnipath,
-    'Human-2019-Browaeys-LR-pairs/NicheNet-LR-pairs.csv':fun_getLR_NicheNet
-}
 
