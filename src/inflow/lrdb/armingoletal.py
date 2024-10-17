@@ -6,6 +6,7 @@ import pandas as pd
 import re
 import math
 
+str_NA = "not_available"
 
 class LRPair:
     def __init__(self, group_ligname: list, group_ligID: list, group_recname: list, group_recID: list, confidence: str):
@@ -66,8 +67,6 @@ class LRPair:
             columns=pd_colname[0]
         )
 
-
-str_NA = "N.A."
 
 
 def func_getLR_Qiao(path_files):
