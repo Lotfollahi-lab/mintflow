@@ -324,7 +324,8 @@ class InFlowGenerativeModel(nn.Module):
         batch_size_feedforward,
         kwargs_dl_neighbourloader,
         ten_u_int : torch.Tensor | None,
-        ten_u_spl : torch.Tensor | None
+        ten_u_spl : torch.Tensor | None,
+        np_size_factor:np.ndarray
     ):
         '''
         Generates a single sample from all variables.
@@ -457,11 +458,13 @@ class InFlowGenerativeModel(nn.Module):
 
 
         #feed to NegativeBinomial distributions ===
+        assert len(np_size_factor.shape) == 1
+        assert np_size_factor.shape[0] == xbar_spl.size()[0]
         x_int = ZeroInflatedNegativeBinomial(
             **{**{'mu': utils.func_feed_x_to_module(
                     module_input=self.module_w_dec_int,
                     x=xbar_int,
-                    batch_size=batch_size_feedforward),
+                    batch_size=batch_size_feedforward) * torch.tensor(np_size_factor, device=device, requires_grad=False).unsqueeze(1),
                   'theta':torch.exp(self.theta_negbin_int)},
                 **self.kwargs_negbin_int}
         ).sample() #[num_cells, num_genes]
@@ -469,7 +472,7 @@ class InFlowGenerativeModel(nn.Module):
             **{**{'mu': utils.func_feed_x_to_module(
                     module_input=self.module_w_dec_spl,
                     x=xbar_spl,
-                    batch_size=batch_size_feedforward),
+                    batch_size=batch_size_feedforward) * torch.tensor(np_size_factor, device=device, requires_grad=False).unsqueeze(1),
                   'theta':torch.exp(self.theta_negbin_spl)},
                 **self.kwargs_negbin_spl}
         ).sample()  # [num_cells, num_genes]
