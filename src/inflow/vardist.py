@@ -553,11 +553,11 @@ class InFlowVarDist(nn.Module):
             dl:NeighborLoader | List[NeighborLoader],
             prob_maskknowngenes:float,
             t_num_steps:int,
-            ten_xy_absolute:torch.Tensor,
+            ten_xy_absolute:torch.Tensor | List[torch.Tensor],
             optim_training:torch.optim.Optimizer,
             tensorboard_stepsize_save:int,
             prob_applytfm_affinexy:float,
-            np_size_factor: np.ndarray,
+            np_size_factor: np.ndarray | List[np.ndarray],
             flag_lockencdec_duringtraining,
             numsteps_accumgrad:int,
             num_updateseparate_afterGRLs:int,
@@ -590,13 +590,25 @@ class InFlowVarDist(nn.Module):
         '''
 
         if isinstance(dl, list):
+            assert isinstance(ten_xy_absolute, list)
+            assert isinstance(np_size_factor, list)
             for u in dl:
                 assert isinstance(u, NeighborLoader)
+            for u in ten_xy_absolute:
+                assert isinstance(u, torch.Tensor)
+            for u in np_size_factor:
+                assert isinstance(u, np.ndarray)
             list_dl = dl
+            list_ten_xy_absolute = ten_xy_absolute
+            list_np_size_fator = np_size_factor
         else:
             assert isinstance(dl, NeighborLoader)
-            list_dl = [dl]  # to support the old-style calls with `dl` arg being a single dataloader.
+            assert isinstance(ten_xy_absolute, torch.Tensor)
+            assert isinstance(np_size_factor, np.ndarray)
 
+            list_dl = [dl]  # to support the old-style calls with `dl` arg being a single dataloader.
+            list_ten_xy_absolute = [ten_xy_absolute]  # to support the old-style calls with `dl` arg being a single dataloader.
+            list_np_size_fator = [np_size_factor]  # to support the old-style calls with `dl` arg being a single dataloader.
 
         if self.module_annealing is not None:
             self.coef_anneal = next(self.module_annealing)
@@ -660,10 +672,7 @@ class InFlowVarDist(nn.Module):
                 "dim_NCC":self.module_genmodel.dict_varname_to_dim['NCC']
             }  # how batch.y is split between u_int, u_spl, CT, and NCC
 
-            ten_xy_touse = ten_xy_absolute + 0.0
-            if prob_applytfm_affinexy > 0.0:
-                with torch.no_grad():
-                    ten_xy_touse = tfm_affinexy.forward(ten_xy=ten_xy_absolute).detach()
+            ten_xy_touse = list_ten_xy_absolute[idx_current_dl_normal]
 
             self.module_genmodel.clamp_thetanegbins()
 
@@ -680,50 +689,11 @@ class InFlowVarDist(nn.Module):
                 dict_qsamples=dict_q_sample,
                 batch=batch,
                 t_num_steps=t_num_steps,
-                np_size_factor=np_size_factor,
+                np_size_factor=list_np_size_fator[idx_current_dl_normal],
                 coef_anneal=self.coef_anneal
             )
             list_coef_anneal.append(dict_otherinf['coef_anneal'])
 
-            # for debug
-            '''
-            print("batch.x.shape = {}".format(batch.x.shape))
-            for k in dict_q_sample.keys():
-                if isinstance(dict_q_sample[k], torch.Tensor):
-                    print("{}: {}".format(k, dict_q_sample[k].shape))
-            assert False
-            OUTPUT:
-            batch.x.shape = torch.Size([274, 2000])
-            param_q_xbarint: torch.Size([274, 100])
-            param_q_xbarspl: torch.Size([274, 100])
-            x_int: torch.Size([274, 2000])
-            x_spl: torch.Size([274, 2000])
-            xbar_int: torch.Size([274, 100])
-            xbar_spl: torch.Size([274, 100])
-            z: torch.Size([274, 100])
-            s_in: torch.Size([274, 100])
-            s_out: torch.Size([274, 100])
-            ten_u_int: torch.Size([274, 8])
-            ten_u_spl: torch.Size([274, 8])
-            '''
-
-            '''
-            # fordebug
-            print("batch.x.shape = {}".format(batch.x.shape))
-            for k in dict_logp.keys():
-                print("{}: {}".format(k, dict_logp[k].shape))
-            assert False
-            OUTPUT:
-            batch.x.shape = torch.Size([308, 2000])
-            logp_s_out: torch.Size([308, 100])
-            logp_z: torch.Size([308, 100])
-            logp_s_in: torch.Size([249, 100])
-            logp_xbarint: torch.Size([249, 100])
-            logp_xbarspl: torch.Size([249, 100])
-            logp_x_int: torch.Size([249, 2000])
-            logp_x_spl: torch.Size([249, 2000])
-            logp_x: torch.Size([1, 1])
-            '''
 
             # make the loss
             loss = 0.0
@@ -740,7 +710,7 @@ class InFlowVarDist(nn.Module):
                             lossterm_logp = dict_logp[k].sum(1).mean()
                             loss = loss - lossterm_logp
                         else:
-                            x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach()[:batch.batch_size] + 0.0
+                            x_cnt = batch.x.to_dense().to(list_ten_xy_absolute[0].device).detach()[:batch.batch_size] + 0.0
                             lossterm_logp_pos = dict_logp[k][x_cnt > 0]
                             lossterm_logp_zero = dict_logp[k][x_cnt == 0]
                             lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos.sum() + self.weight_logprob_zinbzero*lossterm_logp_zero.sum()
@@ -765,7 +735,7 @@ class InFlowVarDist(nn.Module):
                             # q(x_int|x) and q(x_spl|x) handled on non-zero elements.
                             assert k in ['logq_xint', 'logq_xspl']
 
-                            x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
+                            x_cnt = batch.x.to_dense().to(list_ten_xy_absolute[0].device).detach() + 0.0
                             lossterm_logq = (dict_logq[k][x_cnt > 0].sum())/(x_cnt.size()[0]+0.0)
                             loss = loss + lossterm_logq
                         else:
@@ -829,7 +799,7 @@ class InFlowVarDist(nn.Module):
                         dict_q_sample['param_q_cond4flow']['mu_z']
                     ),
                     torch.argmax(
-                        batch.y[:, rng_CT[0]:rng_CT[1]].to(ten_xy_absolute.device),
+                        batch.y[:, rng_CT[0]:rng_CT[1]].to(list_ten_xy_absolute[0].device),
                         1
                     )
                 )
@@ -848,7 +818,7 @@ class InFlowVarDist(nn.Module):
                 ten_NCC = batch.y[
                     :,
                     rng_NCC:
-                ].to(ten_xy_absolute.device).float()
+                ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modeP3loss_regorcls == 'cls':
                     ten_NCC = ((ten_NCC > 0) + 0).float()
@@ -879,7 +849,7 @@ class InFlowVarDist(nn.Module):
                         dict_q_sample['xbar_int'][:batch.batch_size]
                     ),
                     torch.argmax(
-                        batch.y[:batch.batch_size, rng_CT[0]:rng_CT[1]].to(ten_xy_absolute.device),
+                        batch.y[:batch.batch_size, rng_CT[0]:rng_CT[1]].to(list_ten_xy_absolute[0].device),
                         1
                     )
                 )
@@ -898,7 +868,7 @@ class InFlowVarDist(nn.Module):
                 ten_NCC = batch.y[
                     :batch.batch_size,
                     rng_NCC:
-                ].to(ten_xy_absolute.device).float()
+                ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modexbarsplNCCloss_regorcls == 'cls':
                     ten_NCC = ((ten_NCC > 0) + 0).float()
@@ -1052,7 +1022,7 @@ class InFlowVarDist(nn.Module):
                 ten_NCC = batch.y[
                     :,
                     rng_NCC:
-                ].to(ten_xy_absolute.device).float()
+                ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modexbarint2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
                     ten_NCC = ((ten_NCC > 0) + 0).float()
@@ -1069,17 +1039,7 @@ class InFlowVarDist(nn.Module):
                     ten_NCC=ten_NCC.detach()
                 )
 
-                '''
-                dict_xbarint2notNCC_loss = self.crit_loss_xbarint2notNCC(
-                    self.module_predictor_xbarint2notNCC(
-                        x=predadjmat.grad_reverse(
-                            dict_q_sample['param_q_xbarint'][:batch.batch_size]
-                        ),
-                        ten_CT=batch.y[:batch.batch_size, :][:, rng_CT[0]:rng_CT[1]]
-                    ),
-                    ten_NCC.detach()
-                )
-                '''
+
 
                 for loss_name in dict_xbarint2notNCC_loss.keys():
                     loss = loss + dict_xbarint2notNCC_loss[loss_name]['coef'] * dict_xbarint2notNCC_loss[loss_name]['val']
@@ -1103,7 +1063,7 @@ class InFlowVarDist(nn.Module):
                 ten_NCC = batch.y[
                     :,
                     rng_NCC:
-                ].to(ten_xy_absolute.device).float()
+                ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
                     ten_NCC = ((ten_NCC > 0) + 0).float()
