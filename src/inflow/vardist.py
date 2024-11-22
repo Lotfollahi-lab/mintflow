@@ -893,8 +893,8 @@ class InFlowVarDist(nn.Module):
                 # print("batch.input_id.shape = {}".format(batch.input_id.shape))
                 # print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
                 assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
-                assert (ten_xy_absolute.size()[1] == 2)
-                ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+                assert (list_ten_xy_absolute[idx_current_dl_normal].size()[1] == 2)
+                ten_x, ten_y = list_ten_xy_absolute[idx_current_dl_normal][batch.input_id.tolist(), 0].detach(), list_ten_xy_absolute[idx_current_dl_normal][batch.input_id.tolist(), 1].detach()  # [N], [N]
 
                 # subsample the mini-batch to define the rank loss
                 rng_N = tuple(range(ten_x.size()[0]))
@@ -955,8 +955,8 @@ class InFlowVarDist(nn.Module):
                 #print("batch.input_id.shape = {}".format(batch.input_id.shape))
                 #print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
                 assert(batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
-                assert (ten_xy_absolute.size()[1] == 2)
-                ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
+                assert (list_ten_xy_absolute[idx_current_dl_normal].size()[1] == 2)
+                ten_x, ten_y = list_ten_xy_absolute[idx_current_dl_normal][batch.input_id.tolist(), 0].detach(), list_ten_xy_absolute[idx_current_dl_normal][batch.input_id.tolist(), 1].detach()  # [N], [N]
 
                 # subsample the mini-batch to define the rank loss
                 rng_N = tuple(range(ten_x.size()[0]))
@@ -1243,7 +1243,7 @@ class InFlowVarDist(nn.Module):
                 postGRL_index_dl = -1
 
                 #list_iter_dl_afterGRL
-                for idx_iter_afterGRL in range(num_updateseparate_afterGRLs):
+                for _ in range(num_updateseparate_afterGRLs):
                     postGRL_index_dl = (postGRL_index_dl + 1)%len(list_iter_dl_afterGRL)
 
                     optim_training.zero_grad()
@@ -1259,7 +1259,7 @@ class InFlowVarDist(nn.Module):
 
                     dict_loss_GRLpreds = self._getloss_GradRevPredictors(
                         batch=batch_afterGRLs,
-                        ten_xy_absolute=ten_xy_absolute,
+                        ten_xy_absolute=list_ten_xy_absolute[postGRL_index_dl],
                         ten_xy_touse=ten_xy_touse,
                         prob_maskknowngenes=prob_maskknowngenes
                     )
