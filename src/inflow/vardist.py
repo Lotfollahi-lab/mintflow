@@ -1297,7 +1297,18 @@ class InFlowVarDist(nn.Module):
 
 
 
-    def _trainsep_GradRevPreds(self, optim_gradrevpreds, numiters, ten_Z, ten_CT, ten_NCC, ten_xbarint, ten_xy_absolute, device, kwargs_dl):
+    def _trainsep_GradRevPreds(
+        self,
+        optim_gradrevpreds,
+        numiters,
+        ten_Z,
+        ten_CT,
+        ten_NCC,
+        ten_xbarint,
+        ten_xy_absolute,
+        device,
+        kwargs_dl
+    ):
 
 
         ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC, ten_xbarint)
