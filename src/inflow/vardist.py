@@ -1,5 +1,5 @@
 import random
-
+from typing import List
 import numpy as np
 import torch
 import torch.nn as nn
@@ -550,7 +550,7 @@ class InFlowVarDist(nn.Module):
 
     def training_epoch(
             self,
-            dl:NeighborLoader,
+            dl:NeighborLoader | List[NeighborLoader],
             prob_maskknowngenes:float,
             t_num_steps:int,
             ten_xy_absolute:torch.Tensor,
@@ -571,7 +571,7 @@ class InFlowVarDist(nn.Module):
         One epoch of the training.
         :param flag_lockencdec_duringtraining: if set to True, the encoder/decoder moduels are kept frozen. Because they are assumed to be trained separately (as done in latent diffusion).
             Since the optimizer if fed as an arg, `flag_lockencdec_duringtraining` is only used to check if the frozen parameters are not in optimizer's list.
-        :param dl: pyg's neighborloader.
+        :param dl: pyg's neighborloader of a list of neighbour loaders.
         :param prob_maskknowngenes: probability of masking some known gene expressions (per-cell)
             to define the self-supervised loss.
         :param t_num_steps: the number of time-steps to be used by the NeuralODE module.
@@ -588,6 +588,14 @@ class InFlowVarDist(nn.Module):
         :param num_updateseparate_afterGRLs
         :return:
         '''
+
+        if isinstance(dl, list):
+            for u in dl:
+                assert isinstance(u, NeighborLoader)
+            list_dl = dl
+        else:
+            assert isinstance(dl, NeighborLoader)
+            list_dl = [dl]  # to support the old-style calls with `dl` arg being a single dataloader.
 
 
         if self.module_annealing is not None:
@@ -619,10 +627,26 @@ class InFlowVarDist(nn.Module):
 
         num_backwards = 0
 
-        iterpygdl_for_afterGRL = iter(dl)
+        # iterpygdl_for_afterGRL = iter(dl)
+
+        list_iter_dl_normal = [iter(u) for u in list_dl]
+        list_iterfinished_normal = [False for u in list_dl]
+        idx_current_dl_normal = -1
+
+        list_iter_dl_afterGRL = [iter(u) for u in list_dl]  # for updating the dual functions separately.
 
         optim_training.zero_grad()
-        for batch in tqdm(dl):
+        while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
+
+            idx_current_dl_normal = (idx_current_dl_normal + 1)%len(list_dl)
+            try:
+                itr = list_iter_dl_normal[idx_current_dl_normal]
+                batch = next(itr)
+            except StopIteration:
+                list_iterfinished_normal[idx_current_dl_normal] = True
+                list_iter_dl_normal[idx_current_dl_normal] = iter(list_dl[idx_current_dl_normal])
+                itr = list_iter_dl_normal[idx_current_dl_normal]
+                batch = next(itr)
 
             wandb.log(
                 {"InspectVals/annealing_coefficient": self.coef_anneal},
@@ -1242,7 +1266,7 @@ class InFlowVarDist(nn.Module):
                 num_backwards += 1
 
                 if flag_verbose:
-                    print("Backward()-----")
+                    print("Backward()----- with dl {}".format(idx_current_dl_normal))
 
                 #loss.backward()
                 #optim_training.step()
@@ -1256,13 +1280,20 @@ class InFlowVarDist(nn.Module):
                     print("      optim.step() and zero_grad()")
 
                 # update the predictors after GRLs ----
+                postGRL_index_dl = -1
+
+                #list_iter_dl_afterGRL
                 for idx_iter_afterGRL in range(num_updateseparate_afterGRLs):
+                    postGRL_index_dl = (postGRL_index_dl + 1)%len(list_iter_dl_afterGRL)
+
                     optim_training.zero_grad()
+
                     try:
-                        batch_afterGRLs = next(iterpygdl_for_afterGRL)
+                        batch_afterGRLs = next(list_iter_dl_afterGRL[postGRL_index_dl])
                     except StopIteration:
-                        iterpygdl_for_afterGRL = iter(dl)
-                        batch_afterGRLs = next(iterpygdl_for_afterGRL)
+                        list_iter_dl_afterGRL[postGRL_index_dl] = iter(list_dl[postGRL_index_dl])
+                        batch_afterGRLs = next(list_iter_dl_afterGRL[postGRL_index_dl])
+
 
                     batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
 
@@ -1284,7 +1315,7 @@ class InFlowVarDist(nn.Module):
                     optim_training.step()
 
                     if flag_verbose:
-                        print("              >>>> after GRLs update.")
+                        print("              >>>> after GRLs update. (with dl {})".format(postGRL_index_dl))
 
                     if False: #idx_iter_afterGRL%5 == 0:
                         with torch.no_grad():
