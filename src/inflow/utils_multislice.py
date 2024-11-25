@@ -5,7 +5,11 @@ while some info is still shared among all slices, like the set of cell types.
 '''
 
 from typing import List
+import numpy as np
+import squidpy as sq
 import scanpy as sc
+import torch_geometric as pyg
+from torch_geometric.utils.convert import from_scipy_sparse_matrix
 import torch
 
 
@@ -17,7 +21,8 @@ class Slice:
         kwargs_compute_graph:dict,
         flag_use_custompygsampler:bool,
         kwargs_pygdl_train:dict,
-        kwargs_pygdl_test:dict
+        kwargs_pygdl_test:dict,
+        kwargs_sq_pl_spatial_scatter:dict = None
     ):
         """
 
@@ -40,6 +45,7 @@ class Slice:
         --- num_neighbors: List[int]
         --- batch_size: int
         :param kwargs_pygdl_test: there are two cases (same as above)
+        :param kwargs_sq_pl_spatial_scatter: the kwargs to show the scatter using squidpy. Optional, default=None.
         ...
 
         """
@@ -49,8 +55,31 @@ class Slice:
         self.flag_use_custompygsampler = flag_use_custompygsampler
         self.kwargs_pygdl_train = kwargs_pygdl_train
         self.kwargs_pygdl_test = kwargs_pygdl_test
+        self.kwargs_sq_pl_spatial_scatter = kwargs_sq_pl_spatial_scatter
+
         self._check_args()
 
+    def _show_scatter(self):
+        if self.kwargs_sq_pl_spatial_scatter is None:
+            raise Exception(
+                "To call this funciton, the arg `kwargs_sq_pl_spatial_scatter` should be passed in.\n"+\
+                "For more info reffer to the documentation for TODO."
+            )
+
+        self.adata.uns['spatial'] = self.adata.uns['spatial_neighbors']
+        crop_coord = None
+        sq.pl.spatial_scatter(
+            self.adata,
+            spatial_key='spatial',
+            img=False,
+            connectivity_key="spatial_connectivities",
+            library_id='connectivities_key',  # 'connectivities_key',
+            color=[
+                "inflow_CT",
+            ],
+            crop_coord=crop_coord,
+            **self.kwargs_sq_pl_spatial_scatter
+        )
 
     def _get_set_CT(self):
         """
@@ -66,6 +95,36 @@ class Slice:
     def _add_inflowCTcol(self, dict_rename):
         assert ("inflow_CT" not in self.adata.obs.columns)
         self.adata.obs['inflow_CT'] = self.adata.obs[self.dict_obskey['cell_type']].map(dict_rename)
+
+    def _add_spatial_neighbours(self):
+        """
+        Creates `self.edge_index`, a tensor of shape [num_edges x 2].
+        :return:
+        """
+        key_x, key_y = self.dict_obskey['x'], self.dict_obskey['y']
+        self.adata.obsm['spatial'] = np.stack(
+            [np.array(self.adata.obs[key_x].tolist()), np.array(self.adata.obs[key_y].tolist())],
+            1
+        )
+        sq.gr.spatial_neighbors(
+            adata=self.adata,
+            **self.kwargs_compute_graph
+        )
+        with torch.no_grad():
+            edge_index, _ = from_scipy_sparse_matrix(self.adata.obsp['spatial_connectivities'])  # [2, num_edges]
+            edge_index = torch.Tensor(pyg.utils.remove_self_loops(pyg.utils.to_undirected(edge_index))[0])
+
+            assert (
+                torch.all(
+                    torch.eq(
+                        torch.tensor(edge_index),
+                        pyg.utils.to_undirected(edge_index)
+                    )
+                )
+            )
+
+            self.edge_index = edge_index
+
 
 
     def _check_args(self):
@@ -146,7 +205,9 @@ class ListSlice:
             sl._add_inflowCTcol(self.map_CT_to_inflowCT)
 
 
-
+    def show_scatters(self):
+        for sl in self.list_slice:
+            sl._show_scatter()
 
     def _check_args(self):
         assert isinstance(self.list_slice, list)
