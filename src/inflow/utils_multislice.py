@@ -12,6 +12,9 @@ import torch_geometric as pyg
 from torch_geometric.utils.convert import from_scipy_sparse_matrix
 import torch
 
+from . import modules
+from .modules import gnn
+
 
 class Slice:
     def __init__(
@@ -22,6 +25,7 @@ class Slice:
         flag_use_custompygsampler:bool,
         kwargs_pygdl_train:dict,
         kwargs_pygdl_test:dict,
+        batchsize_compute_NCC:int,
         device,
         kwargs_sq_pl_spatial_scatter:dict = None
     ):
@@ -46,6 +50,7 @@ class Slice:
         --- num_neighbors: List[int]
         --- batch_size: int
         :param kwargs_pygdl_test: there are two cases (same as above)
+        :param batchsize_compute_NCC: the batch-size to compute NCC vectors from CT vectors.
         :param device: the device to be used to compute NCC vectors (i.e. neighbourhoold cell type composition) from cell types.
         :param kwargs_sq_pl_spatial_scatter: the kwargs to show the scatter using squidpy. Optional, default=None.
         ...
@@ -57,6 +62,7 @@ class Slice:
         self.flag_use_custompygsampler = flag_use_custompygsampler
         self.kwargs_pygdl_train = kwargs_pygdl_train
         self.kwargs_pygdl_test = kwargs_pygdl_test
+        self.batchsize_compute_NCC = batchsize_compute_NCC
         self.device = device
         self.kwargs_sq_pl_spatial_scatter = kwargs_sq_pl_spatial_scatter
 
@@ -79,7 +85,27 @@ class Slice:
                 int(str_ct.split("_")[1])
             )
 
-        ten_CT = torch.eye(1 + self)[list_celltype_int, :]  # TODO:HERE
+        ten_CT = torch.eye(self._global_num_CT)[list_celltype_int, :] + 0.0
+        module_compNCC = modules.gnn.KhopAvgPoolWithoutselfloop(
+            num_hops=1,
+            dim_input=None,
+            dim_output=None
+        )
+        module_compNCC = module_compNCC.to(self.device)
+
+        ten_NCC = module_compNCC.evaluate_layered(
+            x=(ten_CT + 0.0).to(self.device),
+            edge_index=(self.edge_index + 0.0).to(self.device),
+            kwargs_dl={
+                'batch_size': self.batchsize_compute_NCC,
+                'num_workers': 0,
+                'num_neighbors': [-1]
+            }
+        )
+
+        self.ten_CT  = ten_CT.to("cpu")
+        self.ten_NCC = ten_NCC.to("cpu")
+        
 
     def _add_pygdls(self):
         pass
@@ -143,6 +169,7 @@ class Slice:
             adata=self.adata,
             **self.kwargs_compute_graph
         )
+
         with torch.no_grad():
             edge_index, _ = from_scipy_sparse_matrix(self.adata.obsp['spatial_connectivities'])  # [2, num_edges]
             edge_index = torch.Tensor(pyg.utils.remove_self_loops(pyg.utils.to_undirected(edge_index))[0])
@@ -223,6 +250,12 @@ class ListSlice:
         self._create_CTmapping_and_inflowCT()
         self._create_neighgraphs()
 
+
+
+    def _create_CT_NCC_Vectors(self):
+        for sl in self.list_slice:
+            sl : Slice
+            sl._add_CT_NCC()
 
 
     def _create_neighgraphs(self):
