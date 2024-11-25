@@ -94,8 +94,8 @@ class Slice:
         module_compNCC = module_compNCC.to(self.device)
 
         ten_NCC = module_compNCC.evaluate_layered(
-            x=(ten_CT + 0.0).to(self.device),
-            edge_index=(self.edge_index + 0.0).to(self.device),
+            x=(ten_CT + 0.0).float().to(self.device),
+            edge_index=(self.edge_index + 0).to(self.device),
             kwargs_dl={
                 'batch_size': self.batchsize_compute_NCC,
                 'num_workers': 0,
