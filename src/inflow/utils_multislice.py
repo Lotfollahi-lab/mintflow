@@ -111,7 +111,7 @@ class Slice:
         self.ten_CT  = ten_CT.to("cpu")
         self.ten_NCC = ten_NCC.to("cpu")
 
-
+    @torch.no_grad()
     def _add_pygds_pygdl(self):
         """
         Creates
@@ -147,6 +147,15 @@ class Slice:
                 1
             )
         )
+
+        if self.adata.X.shape[0] * self.adata.X.shape[1] < 1e9:
+            assert (
+                torch.all(
+                    torch.isclose(self.pyg_ds.to_dense(), torch.tensor(self.adata.X.toarray()).float())
+                )
+            )
+            print("assertion was passed.")
+
         if self.flag_use_custompygsampler:
             print("Using the custom sampler for pygloader.")
             self.pyg_dl_train = NeighborLoader(
