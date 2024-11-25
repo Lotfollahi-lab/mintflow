@@ -6,6 +6,7 @@ while some info is still shared among all slices, like the set of cell types.
 
 from typing import List
 import numpy as np
+import gc
 import squidpy as sq
 import scanpy as sc
 import torch_geometric as pyg
@@ -107,6 +108,9 @@ class Slice:
                 'num_neighbors': [-1]
             }
         )
+
+        del module_compNCC
+        gc.collect()
 
         self.ten_CT  = ten_CT.to("cpu")
         self.ten_NCC = ten_NCC.to("cpu")
