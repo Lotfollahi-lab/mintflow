@@ -282,6 +282,12 @@ class Slice:
     def _check_args(self):
 
         if self.flag_use_custompygsampler:
+            if self.kwargs_pygdl_train['neighgraph_num_hops'] != self.kwargs_pygdl_test['width_window']:
+                raise Exception(
+                    "kwargs_pygdl_train['neighgraph_num_hops'] is not equal to self.kwargs_pygdl_test['width_window']."
+                )
+
+        if self.flag_use_custompygsampler:
             if self.kwargs_pygdl_train.keys() != {'num_neighbors', 'width_window', 'min_numpoints_ingrid', 'flag_disable_randoffset'}:
                 raise Exception(
                     "The passed `kwargs_pygdl_train` has redundant or missing keys. Refer to documentation for requirements."
