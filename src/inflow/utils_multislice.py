@@ -284,7 +284,7 @@ class Slice:
         if self.flag_use_custompygsampler:
             if self.kwargs_pygdl_train['width_window'] != self.kwargs_pygdl_test['width_window']:
                 raise Exception(
-                    "kwargs_pygdl_train['neighgraph_num_hops'] is not equal to self.kwargs_pygdl_test['width_window']."
+                    "kwargs_pygdl_train['width_window'] is not equal to self.kwargs_pygdl_test['width_window']."
                 )
 
         if self.flag_use_custompygsampler:
