@@ -105,7 +105,7 @@ class Slice:
 
         self.ten_CT  = ten_CT.to("cpu")
         self.ten_NCC = ten_NCC.to("cpu")
-        
+
 
     def _add_pygdls(self):
         pass
@@ -249,6 +249,7 @@ class ListSlice:
         # make internals
         self._create_CTmapping_and_inflowCT()
         self._create_neighgraphs()
+        self._create_CT_NCC_Vectors()
 
 
 
