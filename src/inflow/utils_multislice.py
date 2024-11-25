@@ -188,6 +188,7 @@ class ListSlice:
 
         # make internals
         self._create_CTmapping_and_inflowCT()
+        self._create_neighgraphs()
 
 
 
