@@ -59,6 +59,13 @@ class Slice:
 
         self._check_args()
 
+    def _add_pygdls(self):
+        pass
+        # TODO: check: handle shuffle=True/False when custom sampler is disabled.
+        # TODO: check: handle num_workers=0 in both cases.
+        
+
+
     def _show_scatter(self):
         if self.kwargs_sq_pl_spatial_scatter is None:
             raise Exception(
