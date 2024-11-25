@@ -19,7 +19,7 @@ class Slice:
         kwargs_pygdl_train:dict,
         kwargs_pygdl_test:dict
     ):
-        '''
+        """
 
         :param adata: the anndata corresponding to "only" the slice of concernt.
         :param dict_obskey: a dictionary containing the column names of interest in the input anndata
@@ -42,7 +42,7 @@ class Slice:
         :param kwargs_pygdl_test: there are two cases (same as above)
         ...
 
-        '''
+        """
         self.adata = adata
         self.dict_obskey = dict_obskey
         self.kwargs_compute_graph = kwargs_compute_graph
@@ -52,6 +52,20 @@ class Slice:
         self._check_args()
 
 
+    def _get_set_CT(self):
+        """
+        Returns the set of cell type labels.
+        :return:
+        """
+        return set(
+            self.adata.obs[
+                self.dict_obskey['cell_type']
+            ].tolist()
+        )
+
+    def _add_inflowCTcol(self, dict_rename):
+        assert ("inflow_CT" not in self.adata.obs.columns)
+        self.adata.obs['inflow_CT'] = self.adata.obs[self.dict_obskey['cell_type']].map(dict_rename)
 
 
     def _check_args(self):
@@ -105,6 +119,32 @@ class ListSlice:
     ):
         self.list_slice = list_slice
         self._check_args()
+
+
+    def _create_CT_mapping(self):
+        """
+        - Creates `self.map_CT_to_inflowCT`
+        - Adds `inflow_CT` (i.e. inflow cell type) column to each anndata in the list.
+        :return:
+        """
+        # create the mapping
+        set_all_CT = []
+        for sl in self.list_slice:
+            set_all_CT = set_all_CT + list(sl._get_set_CT())
+
+        set_all_CT = list(set(set_all_CT))
+        set_all_CT.sort()
+
+        self.map_CT_to_inflowCT = {
+            ct:"inflowCT_{}".format(idx_ct)
+            for idx_ct, ct in enumerate(set_all_CT)
+        }
+
+        # add the column "inflow_CT"
+        for sl in self.list_slice:
+            sl : Slice
+            sl._add_inflowCTcol(self.map_CT_to_inflowCT)
+
 
 
 
