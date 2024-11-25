@@ -63,7 +63,7 @@ class Slice:
         pass
         # TODO: check: handle shuffle=True/False when custom sampler is disabled.
         # TODO: check: handle num_workers=0 in both cases.
-        
+
 
 
     def _show_scatter(self):
@@ -186,8 +186,16 @@ class ListSlice:
         self.list_slice = list_slice
         self._check_args()
 
+        # make internals
+        self._create_CTmapping_and_inflowCT()
 
-    def _create_CT_mapping(self):
+
+
+    def _create_neighgraphs(self):
+        for sl in self.list_slice:
+            sl._add_spatial_neighbours()
+
+    def _create_CTmapping_and_inflowCT(self):
         """
         - Creates `self.map_CT_to_inflowCT`
         - Adds `inflow_CT` (i.e. inflow cell type) column to each anndata in the list.
