@@ -11,6 +11,8 @@ import scanpy as sc
 import torch_geometric as pyg
 from torch_geometric.utils.convert import from_scipy_sparse_matrix
 import torch
+from torch_geometric.loader import NeighborLoader
+from . import utils_pyg
 
 from . import modules
 from .modules import gnn
@@ -107,11 +109,85 @@ class Slice:
         self.ten_NCC = ten_NCC.to("cpu")
 
 
-    def _add_pygdls(self):
-        pass
-        # TODO: check: handle shuffle=True/False when custom sampler is disabled.
-        # TODO: check: handle num_workers=0 in both cases.
+    def _add_pygds_pygdl(self):
+        """
+        Creates
+        - `self.pyg_ds`
+        - `self.pyg_dl_train`
+        - `self.pyg_dl_test`
+        - `self.ten_xy_absolute`
 
+        :return:
+        """
+
+        ten_u_z = self.ten_CT + 0.0
+        ten_u_s = self.ten_CT + 0.0
+
+        key_x, key_y = self.dict_obskey['x'], self.dict_obskey['y']
+        self.ten_xy_absolute = torch.tensor(
+            np.stack(
+                [np.array(self.adata.obs[key_x].tolist()), np.array(self.adata.obs[key_y].tolist())],
+                1
+            )
+        ).float().to(self.device)
+
+
+        self.pyg_ds = pyg.data.Data(
+            x=torch.sparse_coo_tensor(
+                indices=self.adata.X.tocoo().nonzero(),
+                values=self.adata.X.tocoo().data,
+                size=self.adata.X.tocoo().shape
+            ).float(),
+            edge_index=self.edge_index,
+            y=torch.cat(
+                [ten_u_z, ten_u_s, self.ten_CT, self.ten_NCC],
+                1
+            )
+        )
+        if self.flag_use_custompygsampler:
+            print("Using the custom sampler for pygloader.")
+            self.pyg_dl_train = NeighborLoader(
+                self.pyg_ds,
+                num_neighbors=self.kwargs_pygdl_train['num_neighbors'],
+                batch_sampler=utils_pyg.PygSTDataGridBatchSampler(
+                    ten_xy=self.ten_xy_absolute,
+                    width_window=self.kwargs_pygdl_train['width_window'],
+                    min_numpoints_ingrid=self.kwargs_pygdl_train['min_numpoints_ingrid'],
+                    flag_disable_randoffset=self.kwargs_pygdl_train['flag_disable_randoffset']
+                ),
+                num_workers=0
+            )
+            self.pyg_dl_test = NeighborLoader(
+                self.pyg_ds,
+                num_neighbors=self.kwargs_pygdl_test['num_neighbors'],
+                batch_sampler=utils_pyg.PygSTDataGridBatchSampler(
+                    ten_xy=self.ten_xy_absolute,
+                    width_window=self.kwargs_pygdl_test['width_window'],
+                    min_numpoints_ingrid=self.kwargs_pygdl_test['min_numpoints_ingrid'],
+                    flag_disable_randoffset=self.kwargs_pygdl_test['flag_disable_randoffset']
+                ),
+                num_workers=0
+            )
+
+            assert not self.kwargs_pygdl_train['flag_disable_randoffset']
+            assert self.kwargs_pygdl_test['flag_disable_randoffset']
+
+        else:
+            print("using the default sampler.")
+            self.pyg_dl_train = NeighborLoader(
+                self.pyg_ds,
+                num_neighbors=self.kwargs_pygdl_train['num_neighbors'],
+                batch_size=self.kwargs_pygdl_train['batch_size'],
+                shuffle=True,
+                num_workers=0
+            )
+            self.pyg_dl_test = NeighborLoader(
+                self.pyg_ds,
+                num_neighbors=self.kwargs_pygdl_test['num_neighbors'],
+                batch_size=self.kwargs_pygdl_test['batch_size'],
+                shuffle=False,
+                num_workers=0
+            )
 
 
     def _show_scatter(self):
@@ -250,6 +326,12 @@ class ListSlice:
         self._create_CTmapping_and_inflowCT()
         self._create_neighgraphs()
         self._create_CT_NCC_Vectors()
+        self._add_pygds_pygdl()
+
+    def _add_pygds_pygdl(self):
+        for sl in self.list_slice:
+            sl : Slice
+            sl._add_pygds_pygdl()
 
 
 
