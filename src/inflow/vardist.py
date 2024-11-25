@@ -1260,7 +1260,7 @@ class InFlowVarDist(nn.Module):
                     dict_loss_GRLpreds = self._getloss_GradRevPredictors(
                         batch=batch_afterGRLs,
                         ten_xy_absolute=list_ten_xy_absolute[postGRL_index_dl],
-                        ten_xy_touse=ten_xy_touse,
+                        ten_xy_touse=list_ten_xy_absolute[postGRL_index_dl],
                         prob_maskknowngenes=prob_maskknowngenes
                     )
                     dict_z2notNCC_loss = dict_loss_GRLpreds['z']
