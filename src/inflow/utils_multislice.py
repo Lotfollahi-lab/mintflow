@@ -70,6 +70,7 @@ class Slice:
         - `self.ten_NCC`
         :return:
         """
+
         list_celltype_int = []
         for idx_row in range(self.adata.shape[0]):
             str_ct = self.adata.obs['inflow_CT'].iloc[idx_row]
@@ -119,6 +120,10 @@ class Slice:
                 self.dict_obskey['cell_type']
             ].tolist()
         )
+
+    def _set_global_num_CT(self, global_num_CT:int):
+        self._global_num_CT = global_num_CT + 0
+
 
     def _add_inflowCTcol(self, dict_rename):
         assert ("inflow_CT" not in self.adata.obs.columns)
@@ -247,6 +252,12 @@ class ListSlice:
         for sl in self.list_slice:
             sl : Slice
             sl._add_inflowCTcol(self.map_CT_to_inflowCT)
+
+        # set the global number of CTs
+        for sl in self.list_slice:
+            sl : Slice
+            sl._set_global_num_CT(len(set_all_CT))
+
 
 
     def show_scatters(self):
