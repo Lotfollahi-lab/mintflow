@@ -28,7 +28,7 @@ class Slice:
         flag_use_custompygsampler:bool,
         kwargs_pygdl_train:dict,
         kwargs_pygdl_test:dict,
-        neighgraph_num_hops:int,
+        neighgraph_num_hops_computeNCC:int,
         batchsize_compute_NCC:int,
         device,
         kwargs_sq_pl_spatial_scatter:dict = None
@@ -54,7 +54,7 @@ class Slice:
         --- num_neighbors: List[int]
         --- batch_size: int
         :param kwargs_pygdl_test: there are two cases (same as above)
-        :param neighgraph_num_hops: number of hopes in the neighbourhood graph, to compute NCC vectors from CT vectors.
+        :param neighgraph_num_hops_computeNCC: number of hopes in the neighbourhood graph, to compute NCC vectors from CT vectors.
         :param batchsize_compute_NCC: the batch-size to compute NCC vectors from CT vectors.
         :param device: the device to be used to compute NCC vectors (i.e. neighbourhoold cell type composition) from cell types.
         :param kwargs_sq_pl_spatial_scatter: the kwargs to show the scatter using squidpy. Optional, default=None.
@@ -67,7 +67,7 @@ class Slice:
         self.flag_use_custompygsampler = flag_use_custompygsampler
         self.kwargs_pygdl_train = kwargs_pygdl_train
         self.kwargs_pygdl_test = kwargs_pygdl_test
-        self.neighgraph_num_hops = neighgraph_num_hops
+        self.neighgraph_num_hops_computeNCC = neighgraph_num_hops_computeNCC
         self.batchsize_compute_NCC = batchsize_compute_NCC
         self.device = device
         self.kwargs_sq_pl_spatial_scatter = kwargs_sq_pl_spatial_scatter
@@ -93,7 +93,7 @@ class Slice:
 
         ten_CT = torch.eye(self._global_num_CT)[list_celltype_int, :] + 0.0
         module_compNCC = modules.gnn.KhopAvgPoolWithoutselfloop(
-            num_hops=self.neighgraph_num_hops,
+            num_hops=self.neighgraph_num_hops_computeNCC,
             dim_input=None,
             dim_output=None
         )
@@ -306,8 +306,8 @@ class Slice:
         assert isinstance(self.dict_obskey, dict)
         assert isinstance(self.kwargs_compute_graph, dict)
         assert isinstance(self.flag_use_custompygsampler, bool)
-        assert isinstance(self.neighgraph_num_hops, int)
-        assert self.neighgraph_num_hops >= 1
+        assert isinstance(self.neighgraph_num_hops_computeNCC, int)
+        assert self.neighgraph_num_hops_computeNCC >= 1
 
         for k in ['x', 'y', 'cell_type', 'sliceid_to_checkUnique']:
             if k not in self.dict_obskey.keys():
