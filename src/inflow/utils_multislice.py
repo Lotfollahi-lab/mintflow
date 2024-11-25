@@ -22,6 +22,7 @@ class Slice:
         flag_use_custompygsampler:bool,
         kwargs_pygdl_train:dict,
         kwargs_pygdl_test:dict,
+        device,
         kwargs_sq_pl_spatial_scatter:dict = None
     ):
         """
@@ -45,6 +46,7 @@ class Slice:
         --- num_neighbors: List[int]
         --- batch_size: int
         :param kwargs_pygdl_test: there are two cases (same as above)
+        :param device: the device to be used to compute NCC vectors (i.e. neighbourhoold cell type composition) from cell types.
         :param kwargs_sq_pl_spatial_scatter: the kwargs to show the scatter using squidpy. Optional, default=None.
         ...
 
@@ -55,9 +57,28 @@ class Slice:
         self.flag_use_custompygsampler = flag_use_custompygsampler
         self.kwargs_pygdl_train = kwargs_pygdl_train
         self.kwargs_pygdl_test = kwargs_pygdl_test
+        self.device = device
         self.kwargs_sq_pl_spatial_scatter = kwargs_sq_pl_spatial_scatter
 
         self._check_args()
+
+    @torch.no_grad()
+    def _add_CT_NCC(self):
+        """
+        Adds
+        - `self.ten_CT`
+        - `self.ten_NCC`
+        :return:
+        """
+        list_celltype_int = []
+        for idx_row in range(self.adata.shape[0]):
+            str_ct = self.adata.obs['inflow_CT'].iloc[idx_row]
+            assert str_ct[0:len('inflowCT_')] == 'inflowCT_'
+            list_celltype_int.append(
+                int(str_ct.split("_")[1])
+            )
+
+        ten_CT = torch.eye(1 + self)[list_celltype_int, :]  # TODO:HERE
 
     def _add_pygdls(self):
         pass
@@ -124,7 +145,7 @@ class Slice:
             assert (
                 torch.all(
                     torch.eq(
-                        torch.tensor(edge_index),
+                        edge_index,
                         pyg.utils.to_undirected(edge_index)
                     )
                 )
@@ -176,6 +197,13 @@ class Slice:
                         self.dict_obskey[k]
                     )
                 )
+
+        if len(set(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])) > 1:
+            raise Exception(
+                "The anndata passed in has more than tissue IDs according to column {}. \n This may indicate not a single slice is passed in.".format(
+                    self.dict_obskey['sliceid_to_checkUnique']
+                )
+            )
 
 
 class ListSlice:
