@@ -1405,6 +1405,7 @@ class InFlowVarDist(nn.Module):
                 ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
                 ten_NCC=ten_NCC.detach()
             )  # NOTE: the first detach is important
+            # TODO: should it be on non-cental nodes as well?
 
 
 
@@ -1436,6 +1437,7 @@ class InFlowVarDist(nn.Module):
                 ten_CT=batch.y[:batch.batch_size, rng_CT[0]:rng_CT[1]],
                 ten_NCC=ten_NCC.detach()[:batch.batch_size]
             )  # NOTE: the first detach is important
+            # TODO: should it be on non-cental nodes as well?
 
 
 
