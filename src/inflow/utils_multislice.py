@@ -261,6 +261,11 @@ class Slice:
     def _set_global_num_Batch(self, global_num_Batch:int):
         self._global_num_Batch = global_num_Batch + 0
 
+        if self._global_num_Batch == 1:
+            raise NotImplementedError(
+                "When there is one batch --> all batch embeddings should be '0' instead of the current case of '1'."
+            )
+
 
     def _add_inflowCTcol(self, dict_rename):
         assert ("inflow_CT" not in self.adata.obs.columns)

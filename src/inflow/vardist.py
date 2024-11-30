@@ -253,6 +253,9 @@ class InFlowVarDist(nn.Module):
                 ))
 
         else:
+            raise NotImplementedError(
+                "Only the distangler implementation in modules.gnn_disentangler.GNNDisentangler is tested."
+            )
             x_int = probutils.ExtenededNormal(
                 loc=params_q_impanddisentgl['muxint'],
                 scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['scale'],
@@ -309,9 +312,12 @@ class InFlowVarDist(nn.Module):
 
         #set ten_u_int and ten_u_spl ===
         assert (
-            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']  + batch.INFLOWMETAINF['dim_NCC'])
+            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']  + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb'])
         )
-        ten_u_int = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
+        ten_u_int = batch.y[
+            :,
+            0:batch.INFLOWMETAINF['dim_u_int']
+        ].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
         ten_u_spl = batch.y[
             :,
             batch.INFLOWMETAINF['dim_u_int']:batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']
@@ -355,6 +361,9 @@ class InFlowVarDist(nn.Module):
 
 
         else:
+            raise NotImplementedError(
+                "The disentangler has to be an instance of inflow.modules.gnn_disentangler import GNNDisentangler"
+            )
             # xint
             logq_xint = probutils.ExtenededNormal(
                 loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
@@ -669,8 +678,9 @@ class InFlowVarDist(nn.Module):
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
                 "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
                 "dim_CT":self.module_genmodel.dict_varname_to_dim['CT'],
-                "dim_NCC":self.module_genmodel.dict_varname_to_dim['NCC']
-            }  # how batch.y is split between u_int, u_spl, CT, and NCC
+                "dim_NCC":self.module_genmodel.dict_varname_to_dim['NCC'],
+                "dim_BatchEmb":self.module_genmodel.dict_varname_to_dim['BatchEmb']
+            }  # how batch.y is split between u_int, u_spl, CT, NCC, BatchEmb
 
             ten_xy_touse = list_ten_xy_absolute[idx_current_dl_normal]
 
@@ -691,7 +701,7 @@ class InFlowVarDist(nn.Module):
                 t_num_steps=t_num_steps,
                 np_size_factor=list_np_size_fator[idx_current_dl_normal],
                 coef_anneal=self.coef_anneal
-            )
+            )  # TODO:backtrace
             list_coef_anneal.append(dict_otherinf['coef_anneal'])
 
 

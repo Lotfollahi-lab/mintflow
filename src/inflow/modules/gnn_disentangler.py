@@ -1,5 +1,8 @@
 
 
+# Checked for newly added batch emdb in `batch.batch_emb`.
+# The disentangler only looks (potentially) for CT and NCC in batch.y, so all such cases were checked.
+
 import os, sys
 import numpy as np
 import torch
@@ -476,11 +479,14 @@ class GNNDisentangler(nn.Module):
             )
 
         if self.dict_CTNNC_usage['NCC'] == key_inspoint:
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            rng_NCC = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+            ]
             output.append(
                 batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(device)
             )
 

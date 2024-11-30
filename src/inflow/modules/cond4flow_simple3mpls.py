@@ -1,4 +1,8 @@
 
+# Checked for newly added batch emdb in `batch.batch_emb`.
+# The disentangler only looks (potentially) for CT and NCC in batch.y, so all such cases were checked.
+
+
 '''
 The q(z,s | xbar_int, xbar_spl) with simple MLP heads.
 '''
@@ -123,11 +127,14 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
             )
 
         if self.dict_varname_to_takeCT_takeNCC[varname][1]:
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            rng_NCC = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+            ]
             output.append(
                 batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(x.device)
             )
 
@@ -178,7 +185,7 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
         num_celltypes = self.kwargs_genmodel['dict_varname_to_dim']['cell-types']
 
         assert (
-            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'])
+            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb'])
         )
 
 

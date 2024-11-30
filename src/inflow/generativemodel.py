@@ -100,10 +100,12 @@ class InFlowGenerativeModel(nn.Module):
                 **kwargs_theta_aggr
             }
         ) #TODO: add note about requiring the `dim_input` and `dim_output` arguments.
+        # TODO: `dim_input` and `dim_output` arguments were removed after adding batch token. Any issues?
         self.module_Vflow_unwrapped = type_moduleflow(
             **{**{
-                'dim_input': self.dict_varname_to_dim['s'] + self.dict_varname_to_dim['z'],
-                'dim_output': self.dict_varname_to_dim['s'] + self.dict_varname_to_dim['z']},
+                'dim_b':self.dict_varname_to_dim['BatchEmb'],
+                'dim_z': self.dict_varname_to_dim['z'],
+                'dim_s': self.dict_varname_to_dim['s']},
                **kwargs_moduleflow
             }
         )
@@ -117,7 +119,7 @@ class InFlowGenerativeModel(nn.Module):
         )
         self.module_w_dec_int = type_w_dec(
             **{**{
-                'dim_input': self.dict_varname_to_dim['z'],
+                'dim_input': self.dict_varname_to_dim['BatchEmb'] + self.dict_varname_to_dim['z'],
                 'dim_output': self.dict_varname_to_dim['x']},
                **kwargs_w_dec
                }
@@ -583,9 +585,17 @@ class InFlowGenerativeModel(nn.Module):
 
 
         # xbar_int, xbar_spl
+        rng_batchemb = [
+            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+        ]
         output_neuralODE = self.module_flow(
             torch.cat(
-                [dict_qsamples['z'][:batch.batch_size], dict_qsamples['s_in'][:batch.batch_size]],
+                [
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size],
+                    dict_qsamples['z'][:batch.batch_size],
+                    dict_qsamples['s_in'][:batch.batch_size]
+                ],
                 1
             ),
             torch.linspace(0, 1, t_num_steps).to(device)
@@ -610,15 +620,34 @@ class InFlowGenerativeModel(nn.Module):
 
 
         # x_int
+        netout_w_dec_int = self.module_w_dec_int(
+            torch.cat(
+                [
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size],
+                    dict_qsamples['xbar_int'][:batch.batch_size]
+                ],
+                1
+            )
+        )
         logp_x_int = self.coef_zinb_int_loglik * ZeroInflatedNegativeBinomial(
-            **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
+            **{**{'mu': netout_w_dec_int * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
                   'theta': torch.exp(self.theta_negbin_int)},
                   **self.kwargs_negbin_int}
         ).log_prob(dict_qsamples['x_int'][:batch.batch_size])  # [b, num_genes]
 
+
         # x_spl
+        netout_w_dec_spl = self.module_w_dec_spl(
+            torch.cat(
+                [
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size],
+                    dict_qsamples['xbar_spl'][:batch.batch_size]
+                ],
+                1
+            )
+        )
         logp_x_spl = self.coef_zinb_spl_loglik * ZeroInflatedNegativeBinomial(
-            **{**{'mu': self.module_w_dec_spl(dict_qsamples['xbar_spl'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
+            **{**{'mu': netout_w_dec_spl * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
                   'theta': torch.exp(self.theta_negbin_spl)},
                **self.kwargs_negbin_spl}
         ).log_prob(dict_qsamples['x_spl'][:batch.batch_size])  # [b, num_genes]
