@@ -59,7 +59,7 @@ class Slice:
         :param device: the device to be used to compute NCC vectors (i.e. neighbourhoold cell type composition) from cell types.
         :param kwargs_sq_pl_spatial_scatter: the kwargs to show the scatter using squidpy. Optional, default=None.
         ...
-
+        sdfsdfsdf sdf sf sd fs dfs
         """
         self.adata = adata
         self.dict_obskey = dict_obskey
