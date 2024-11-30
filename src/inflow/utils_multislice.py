@@ -128,7 +128,7 @@ class Slice:
 
         assert len(set(list_batchid_int)) == 1
         self.ten_BatchEmb = (torch.eye(self._global_num_Batch)[list_batchid_int, :] + 0.0).to("cpu")
-        
+
 
 
     @torch.no_grad()
@@ -397,7 +397,7 @@ class ListSlice:
     def _create_CT_NCC_Vectors(self):
         for sl in self.list_slice:
             sl : Slice
-            sl._add_CT_NCC()  # TODO:HERE
+            sl._add_CT_NCC_BatchEmb()
 
 
     def _create_neighgraphs(self):
