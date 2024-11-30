@@ -42,6 +42,7 @@ class Slice:
             - y: the y position
             - cell_type: to be used to obtain, CT and NCC tensors.
             - sliceid_to_checkUnique: the ID of each slice, to double check they are unique in the anndata list.
+            - biological_batch_key: the key name batch (batch in the biological sense).
         :param kwargs_compute_graph: kwargs to pass to `sq.gr.spatial_neighbors`
         :param flag_use_custompygsampler: whether to use the custom (i.e. window-based) sampler for pyg.NeighbourLoader.
         :param kwargs_pygdl_train: there are two cases
@@ -59,7 +60,7 @@ class Slice:
         :param device: the device to be used to compute NCC vectors (i.e. neighbourhoold cell type composition) from cell types.
         :param kwargs_sq_pl_spatial_scatter: the kwargs to show the scatter using squidpy. Optional, default=None.
         ...
-        sdfsdfsdf sdf sf sd fs dfs
+
         """
         self.adata = adata
         self.dict_obskey = dict_obskey
@@ -75,11 +76,12 @@ class Slice:
         self._check_args()
 
     @torch.no_grad()
-    def _add_CT_NCC(self):
+    def _add_CT_NCC_BatchEmb(self):
         """
         Adds
         - `self.ten_CT`
         - `self.ten_NCC`
+        - `self.ten_BatchEmb`
         :return:
         """
 
@@ -114,6 +116,20 @@ class Slice:
 
         self.ten_CT  = ten_CT.to("cpu")
         self.ten_NCC = ten_NCC.to("cpu")
+
+        # add `self.ten_BatchEmb`
+        list_batchid_int = []
+        for idx_row in range(self.adata.shape[0]):
+            str_batchid = self.adata.obs['inflow_BatchID'].iloc(idx_row)
+            assert str_batchid[0:len('inflow_BatchID_')] == 'inflow_BatchID_'
+            list_batchid_int.append(
+                int(str_batchid.split("_")[2])
+            )
+
+        assert len(set(list_batchid_int)) == 1
+        self.ten_BatchEmb = (torch.eye(self._global_num_Batch)[list_batchid_int, :] + 0.0).to("cpu")
+        
+
 
     @torch.no_grad()
     def _add_pygds_pygdl(self):
@@ -242,6 +258,9 @@ class Slice:
     def _set_global_num_CT(self, global_num_CT:int):
         self._global_num_CT = global_num_CT + 0
 
+    def _set_global_num_Batch(self, global_num_Batch:int):
+        self._global_num_Batch = global_num_Batch + 0
+
 
     def _add_inflowCTcol(self, dict_rename):
         assert ("inflow_CT" not in self.adata.obs.columns)
@@ -277,7 +296,22 @@ class Slice:
 
             self.edge_index = edge_index
 
+    def _get_batchid(self):
+        bid = set(self.adata.obs[self.dict_obskey['biological_batch_key']])
+        if len(bid) != 1:
+            raise Exception(
+                "Column {} is chosen to specify batch ID, but the values in this column are not unique.".format(
+                    self.dict_obskey['biological_batch_key']
+                )
+            )
 
+        bid = list(bid)[0]
+        return bid
+
+
+    def _add_inflowBatchIDcol(self, dict_rename):
+        assert ("inflow_BatchID" not in self.adata.obs.columns)
+        self.adata.obs['inflow_BatchID'] = self.adata.obs[self.dict_obskey['biological_batch_key']].map(dict_rename)
 
     def _check_args(self):
 
@@ -315,7 +349,7 @@ class Slice:
         assert isinstance(self.neighgraph_num_hops_computeNCC, int)
         assert self.neighgraph_num_hops_computeNCC >= 1
 
-        for k in ['x', 'y', 'cell_type', 'sliceid_to_checkUnique']:
+        for k in ['x', 'y', 'cell_type', 'sliceid_to_checkUnique', 'biological_batch_key']:
             if k not in self.dict_obskey.keys():
                 raise Exception(
                     "The input dictionary `dict_obskey` is expected to have {} key.".format(k)
@@ -348,6 +382,7 @@ class ListSlice:
 
         # make internals
         self._create_CTmapping_and_inflowCT()
+        self._create_Batchmapping_and_inflowBatchID()
         self._create_neighgraphs()
         self._create_CT_NCC_Vectors()
         self._add_pygds_pygdl()
@@ -362,7 +397,7 @@ class ListSlice:
     def _create_CT_NCC_Vectors(self):
         for sl in self.list_slice:
             sl : Slice
-            sl._add_CT_NCC()
+            sl._add_CT_NCC()  # TODO:HERE
 
 
     def _create_neighgraphs(self):
@@ -397,6 +432,40 @@ class ListSlice:
         for sl in self.list_slice:
             sl : Slice
             sl._set_global_num_CT(len(set_all_CT))
+
+
+    def _create_Batchmapping_and_inflowBatchID(self):
+        """
+        - Creates `self.matp_Batchname_to_inflowBatchID`
+        - Adds `inflow_BatchID` (i.e. inflow batch ID) column to each anndata in the list.
+        :return:
+        """
+        set_all_BatchID = []
+        for sl in self.list_slice:
+            sl : Slice
+            set_all_BatchID = set_all_BatchID + [sl._get_batchid()]
+
+        for u in set_all_BatchID:
+            assert set_all_BatchID.count(u) == 1
+
+        set_all_BatchID = list(set(set_all_BatchID))
+        assert len(set_all_BatchID) == len(self.list_slice)
+        set_all_BatchID.sort()
+
+        self.map_Batchname_to_inflowBatchID = {
+            bid: "inflow_BatchID_{}".format(idx_bid)
+            for idx_bid, bid in enumerate(set_all_BatchID)
+        }
+
+        # add the column "inflow_BatchID"
+        for sl in self.list_slice:
+            sl: Slice
+            sl._add_inflowBatchIDcol(self.map_Batchname_to_inflowBatchID)
+
+        # set the global number of BatchIDs
+        for sl in self.list_slice:
+            sl: Slice
+            sl._set_global_num_Batch(len(set_all_BatchID))
 
 
 
