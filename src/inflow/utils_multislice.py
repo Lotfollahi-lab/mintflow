@@ -163,7 +163,7 @@ class Slice:
             ).float(),
             edge_index=self.edge_index,
             y=torch.cat(
-                [ten_u_z, ten_u_s, self.ten_CT, self.ten_NCC],
+                [ten_u_z, ten_u_s, self.ten_CT, self.ten_NCC, self.ten_BatchEmb],
                 1
             )
         )
@@ -384,7 +384,7 @@ class ListSlice:
         self._create_CTmapping_and_inflowCT()
         self._create_Batchmapping_and_inflowBatchID()
         self._create_neighgraphs()
-        self._create_CT_NCC_Vectors()
+        self._create_CT_NCC_BatchEmb_Vectors()
         self._add_pygds_pygdl()
 
     def _add_pygds_pygdl(self):
@@ -394,7 +394,7 @@ class ListSlice:
 
 
 
-    def _create_CT_NCC_Vectors(self):
+    def _create_CT_NCC_BatchEmb_Vectors(self):
         for sl in self.list_slice:
             sl : Slice
             sl._add_CT_NCC_BatchEmb()
