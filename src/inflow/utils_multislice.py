@@ -120,7 +120,7 @@ class Slice:
         # add `self.ten_BatchEmb`
         list_batchid_int = []
         for idx_row in range(self.adata.shape[0]):
-            str_batchid = self.adata.obs['inflow_BatchID'].iloc(idx_row)
+            str_batchid = self.adata.obs['inflow_BatchID'].iloc[idx_row]
             print("str_batchid = {}".format(str_batchid))
             assert str_batchid[0:len('inflow_BatchID_')] == 'inflow_BatchID_'
             list_batchid_int.append(
