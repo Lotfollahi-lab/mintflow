@@ -983,7 +983,7 @@ class InFlowVarDist(nn.Module):
 
             # add xbarint rank loss  ===
             if self.coef_rankloss_xbarint > 0.0:
-                #TODO:backtrace
+
                 #print("batch.input_id.shape = {}".format(batch.input_id.shape))
                 #print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
                 assert(batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
@@ -1000,12 +1000,13 @@ class InFlowVarDist(nn.Module):
                 list_j_subsample = [u[1] for u in list_ij_subsample]
 
 
-
-
                 netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :], dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
+                            [
+                                dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :],
+                                dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]
+                            ],
                             1
                         )
                     )
@@ -1014,7 +1015,10 @@ class InFlowVarDist(nn.Module):
                 netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :], dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
+                            [
+                                dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :],
+                                dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]
+                            ],
                             1
                         )
                     )
@@ -1050,10 +1054,14 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ]
 
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+                ]
+
                 ten_NCC = batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modexbarint2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1070,7 +1078,6 @@ class InFlowVarDist(nn.Module):
                     ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
                     ten_NCC=ten_NCC.detach()
                 )
-
 
 
                 for loss_name in dict_xbarint2notNCC_loss.keys():
@@ -1091,10 +1098,14 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ]
 
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+                ]
+
                 ten_NCC = batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1189,7 +1200,6 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ]
-
 
 
                 np_celltype_batch = torch.argmax(
@@ -1417,10 +1427,14 @@ class InFlowVarDist(nn.Module):
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
             ]
 
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            rng_NCC = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+            ]
+
             ten_NCC = batch.y[
                 :,
-                rng_NCC:
+                rng_NCC[0]:rng_NCC[1]
             ].to(ten_xy_absolute.device).float()
 
             if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1448,11 +1462,13 @@ class InFlowVarDist(nn.Module):
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
             ]
 
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF[
-                'dim_CT']
+            rng_NCC = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+            ]
             ten_NCC = batch.y[
                 :batch.batch_size,
-                rng_NCC:
+                rng_NCC[0]:rng_NCC[1]
             ].to(ten_xy_absolute.device).float()
 
             if self.str_modexbarint2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1477,6 +1493,9 @@ class InFlowVarDist(nn.Module):
 
         # add Z rank loss  ======================================================================================
         if self.coef_rankloss_Z > 0.0:
+            raise NotImplementedError(
+                "This function is not implemented for `coef_rankloss_Z > 0`"
+            )
             assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
             assert (ten_xy_absolute.size()[1] == 2)
             ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
@@ -1493,8 +1512,10 @@ class InFlowVarDist(nn.Module):
             netout_rank_Xpos = self.module_predictor_ranklossZ_X(
                 predadjmat.grad_reverse(
                     torch.cat(
-                        [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
-                         dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
+                        [
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()
+                        ],
                         1
                     )
                 )
@@ -1504,8 +1525,10 @@ class InFlowVarDist(nn.Module):
             netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
                 predadjmat.grad_reverse(
                     torch.cat(
-                        [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
-                         dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
+                        [
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()
+                        ],
                         1
                     )
                 )
@@ -1528,6 +1551,9 @@ class InFlowVarDist(nn.Module):
 
         # add xbarint rank loss  =====================================================
         if self.coef_rankloss_xbarint:
+            raise NotImplementedError(
+                "This function is not implemented for `coef_rankloss_xbarint > 0`"
+            )
             assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
             assert (ten_xy_absolute.size()[1] == 2)
             ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
@@ -1544,8 +1570,10 @@ class InFlowVarDist(nn.Module):
             netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
                 predadjmat.grad_reverse(
                     torch.cat(
-                        [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
-                         dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
+                        [
+                            dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
+                            dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()
+                        ],
                         1
                     )
                 )
@@ -1555,8 +1583,10 @@ class InFlowVarDist(nn.Module):
             netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
                 predadjmat.grad_reverse(
                     torch.cat(
-                        [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
-                         dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
+                        [
+                            dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
+                            dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()
+                        ],
                         1
                     )
                 )
@@ -1578,8 +1608,6 @@ class InFlowVarDist(nn.Module):
             loss = loss + loss_rank_XYpos_xbarint
 
         return {'z':dict_z2notNCC_loss, 'xbarint':dict_xbarint2notNCC_loss}
-
-
 
 
 
@@ -1609,6 +1637,10 @@ class InFlowVarDist(nn.Module):
         :param prob_applytfm_affinexy: the probability that the xy positions go through an affine augmentation.
         :return:
         '''
+        raise NotImplementedError(
+            "Not implemented."
+        )
+
         # make the affine xy augmenter
         tfm_affinexy = utils_imputer.RandomGeometricTfm(
             prob_applytfm=prob_applytfm_affinexy,
