@@ -597,7 +597,7 @@ class InFlowGenerativeModel(nn.Module):
         output_neuralODE = self.module_flow(
             torch.cat(
                 [
-                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size],
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size].float().to(device),
                     dict_qsamples['z'][:batch.batch_size],
                     dict_qsamples['s_in'][:batch.batch_size]
                 ],
@@ -628,7 +628,7 @@ class InFlowGenerativeModel(nn.Module):
         netout_w_dec_int = self.module_w_dec_int(
             torch.cat(
                 [
-                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size],
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size].float().to(device),
                     dict_qsamples['xbar_int'][:batch.batch_size]
                 ],
                 1
@@ -645,7 +645,7 @@ class InFlowGenerativeModel(nn.Module):
         netout_w_dec_spl = self.module_w_dec_spl(
             torch.cat(
                 [
-                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size],
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size].float().to(device),
                     dict_qsamples['xbar_spl'][:batch.batch_size]
                 ],
                 1
