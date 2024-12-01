@@ -701,7 +701,7 @@ class InFlowVarDist(nn.Module):
                 t_num_steps=t_num_steps,
                 np_size_factor=list_np_size_fator[idx_current_dl_normal],
                 coef_anneal=self.coef_anneal
-            )  # TODO:backtrace
+            )
             list_coef_anneal.append(dict_otherinf['coef_anneal'])
 
 
@@ -779,6 +779,11 @@ class InFlowVarDist(nn.Module):
 
             # add the flow-matching loss ===
             if coef_flowmatchingloss > 0.0:
+                rng_batchemb = [
+                    pyg_batch.INFLOWMETAINF['dim_u_int']+pyg_batch.INFLOWMETAINF['dim_u_spl']+pyg_batch.INFLOWMETAINF['dim_CT']+pyg_batch.INFLOWMETAINF['dim_NCC'],
+                    pyg_batch.INFLOWMETAINF['dim_u_int']+pyg_batch.INFLOWMETAINF['dim_u_spl']+pyg_batch.INFLOWMETAINF['dim_CT']+pyg_batch.INFLOWMETAINF['dim_NCC']+pyg_batch.INFLOWMETAINF['dim_BatchEmb']
+                ]
+
                 fm_loss = self.module_conditionalflowmatcher.get_fmloss(
                     module_v=self.module_genmodel.module_Vflow_unwrapped,
                     x1=torch.cat(
@@ -788,7 +793,11 @@ class InFlowVarDist(nn.Module):
                     x0_frominflow=torch.cat(
                     [dict_q_sample['z'][:batch.batch_size], dict_q_sample['s_in'][:batch.batch_size]],
                     1
-                    )
+                    ),
+                    ten_batchEmb=batch.y[
+                        :,
+                        rng_batchemb[0]:rng_batchemb[1]
+                    ][:batch.batch_size]
                 )
                 loss = loss + coef_flowmatchingloss*fm_loss
 
@@ -798,6 +807,7 @@ class InFlowVarDist(nn.Module):
                             {"Loss/FMloss (after mult by coef={})".format(coef_flowmatchingloss): coef_flowmatchingloss*fm_loss},
                             step=itrcount_wandb
                         )
+
             # add P1 loss ===
             if self.coef_P1loss > 0.0:
                 rng_CT = [
@@ -824,10 +834,13 @@ class InFlowVarDist(nn.Module):
 
             # add P3 loss ===
             if self.coef_P3loss > 0.0:
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+                ]
                 ten_NCC = batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modeP3loss_regorcls == 'cls':
@@ -874,10 +887,13 @@ class InFlowVarDist(nn.Module):
 
             # add xbarspl-->NCC loss ===
             if self.coef_xbarsplNCC_loss > 0.0:
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+                ]
                 ten_NCC = batch.y[
                     :batch.batch_size,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modexbarsplNCCloss_regorcls == 'cls':
@@ -918,18 +934,23 @@ class InFlowVarDist(nn.Module):
                 netout_rank_Xpos = self.module_predictor_ranklossZ_X(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
-                             dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                            [
+                                dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
+                                dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]
+                            ],
                             1
                         )
                     )
                 )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+
                 assert (netout_rank_Xpos.size()[1] == 2)
                 netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
-                             dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                            [
+                                dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
+                                dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]
+                            ],
                             1
                         )
                     )
@@ -962,6 +983,7 @@ class InFlowVarDist(nn.Module):
 
             # add xbarint rank loss  ===
             if self.coef_rankloss_xbarint > 0.0:
+                #TODO:backtrace
                 #print("batch.input_id.shape = {}".format(batch.input_id.shape))
                 #print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
                 assert(batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])

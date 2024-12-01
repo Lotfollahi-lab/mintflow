@@ -337,6 +337,11 @@ class InFlowGenerativeModel(nn.Module):
             batch by batch, where each batch is determined by this argument.
         :return:
         '''
+
+        raise NotImplementedError(
+            "Check the implementation after batch tokens are added."
+        )
+
         assert(
             not pyg.utils.contains_self_loops(edge_index)
         )

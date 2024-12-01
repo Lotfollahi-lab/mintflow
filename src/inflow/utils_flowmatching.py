@@ -96,7 +96,7 @@ class ConditionalFlowMatcher:
         else:
             raise NotImplementedError("ddd")
 
-    def _get_fmloss(self, module_v:neuralODE.MLP, x0, x1, xt, t):
+    def _get_fmloss(self, module_v:neuralODE.MLP, x0, x1, xt, t, ten_batchEmb):
         # make ut
         if self.mode_fmloss == ModeFMLoss.NOISEDIR:
             ut = x1 - x0
@@ -105,14 +105,27 @@ class ConditionalFlowMatcher:
         else:
             raise NotImplementedError("ddd")
 
-        vt = module_v(torch.cat([xt, t.flatten()[:, None]], dim=-1))
+
+        vt = module_v(
+            torch.cat(
+                [ten_batchEmb, xt, t.flatten()[:, None]],
+                dim=-1
+            )
+        )
         return torch.mean((vt - ut) ** 2)
 
-    def get_fmloss(self, module_v:neuralODE.MLP, x1:torch.Tensor, x0_frominflow:torch.Tensor):
+    def get_fmloss(
+        self,
+        module_v:neuralODE.MLP,
+        x1:torch.Tensor,
+        x0_frominflow:torch.Tensor,
+        ten_batchEmb:torch.Tensor
+    ):
         '''
         :param module_v: the V(.) module.
         :param x1: a mini-batch of samples from p_1(.).
         :param x0_frominflow: inflow decides x0, but **only** for ablation study x0 could be generated compltely randomly.
+        :param ten_batchEmb: the batch embeddings (as stored in the pyg batch).
         :return:
         '''
         assert (isinstance(module_v, neuralODE.MLP))
@@ -133,7 +146,8 @@ class ConditionalFlowMatcher:
             x0=x0,
             x1=x1,
             xt=xt,
-            t=t
+            t=t,
+            ten_batchEmb=ten_batchEmb
         )
 
 
