@@ -171,6 +171,12 @@ class WrapperTorchDiffEq(torch.nn.Module):
         self.kwargs_odeint = kwargs_odeint
 
     def forward(self, t_in, x_in, ten_BatchEmb_in):
+        print("args passed to `WrapperTorchDiffEq`")
+        print("   t_in.shape = {}".format(t_in.shape))
+        print("   x_in.shape = {}".format(x_in.shape))
+        print("   ten_BatchEmb_in.shape = {}".format(ten_BatchEmb_in.shape))
+        print("==========\n\n\n")
+
         traj = torchdiffeq.odeint(
             lambda t, x: self.model.forward_4torchdiffeq(t, x, ten_BatchEmb_in),
             y0=x_in,

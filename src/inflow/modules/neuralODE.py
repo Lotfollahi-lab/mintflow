@@ -70,13 +70,24 @@ class MLP(torch.nn.Module):
         :param ten_BatchEmb: of shape [b x dim_b]
         :return: a tensor of shape [num_tsteps x b x dim_z+dim_s]
         """
-        print("Input shapes (as passed in by torchdiffeq")
+        print("Input shapes (as passed in by torchdiffeq)")
         print("   t.shape = {}".format(t.shape))  # t.shape = torch.Size([]) --> as if dim is zero ???
         print("   t = {}".format(t))
         print("   type(t) = {}".format(type(t)))
         print("   t.shape = {}".format(t.shape))
         print("   x.shape = {}".format(x.shape))  # x.shape = torch.Size([856, 200])
         print("   ten_BatchEmb.shape = {}".format(ten_BatchEmb.shape))  # ten_BatchEmb.shape = torch.Size([856, 4])
+
+        '''
+        Input shapes (as passed in by torchdiffeq)
+               t.shape = torch.Size([])
+               t = 0.0
+               type(t) = <class 'torch.Tensor'>
+               t.shape = torch.Size([])
+               x.shape = torch.Size([856, 200])
+               ten_BatchEmb.shape = torch.Size([856, 4])
+        '''
+
 
         assert t.dim() == 1
         num_tsteps = t.size()[0]
