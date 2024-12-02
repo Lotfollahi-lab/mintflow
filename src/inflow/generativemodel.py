@@ -453,6 +453,7 @@ class InFlowGenerativeModel(nn.Module):
             batch_size=batch_size_feedforward,
             t_span=torch.linspace(0, 1, t_num_steps).to(device)
         )  # [num_cell, dim_z+dim_s]
+        # TODO:backtrace the flow module is totally changed, so here must be changed.
 
         xbar_int = probutils.ExtenededNormal(
             loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],

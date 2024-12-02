@@ -780,18 +780,24 @@ class InFlowVarDist(nn.Module):
             # add the flow-matching loss ===
             if coef_flowmatchingloss > 0.0:
                 rng_batchemb = [
-                    pyg_batch.INFLOWMETAINF['dim_u_int']+pyg_batch.INFLOWMETAINF['dim_u_spl']+pyg_batch.INFLOWMETAINF['dim_CT']+pyg_batch.INFLOWMETAINF['dim_NCC'],
-                    pyg_batch.INFLOWMETAINF['dim_u_int']+pyg_batch.INFLOWMETAINF['dim_u_spl']+pyg_batch.INFLOWMETAINF['dim_CT']+pyg_batch.INFLOWMETAINF['dim_NCC']+pyg_batch.INFLOWMETAINF['dim_BatchEmb']
+                    batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']+batch.INFLOWMETAINF['dim_CT']+batch.INFLOWMETAINF['dim_NCC'],
+                    batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']+batch.INFLOWMETAINF['dim_CT']+batch.INFLOWMETAINF['dim_NCC']+batch.INFLOWMETAINF['dim_BatchEmb']
                 ]
 
                 fm_loss = self.module_conditionalflowmatcher.get_fmloss(
                     module_v=self.module_genmodel.module_Vflow_unwrapped,
                     x1=torch.cat(
-                    [dict_q_sample['xbar_int'][:batch.batch_size], dict_q_sample['xbar_spl'][:batch.batch_size]],
+                    [
+                        dict_q_sample['xbar_int'][:batch.batch_size],
+                        dict_q_sample['xbar_spl'][:batch.batch_size]
+                    ],
                     1
                     ),
                     x0_frominflow=torch.cat(
-                    [dict_q_sample['z'][:batch.batch_size], dict_q_sample['s_in'][:batch.batch_size]],
+                    [
+                        dict_q_sample['z'][:batch.batch_size],
+                        dict_q_sample['s_in'][:batch.batch_size]
+                    ],
                     1
                     ),
                     ten_batchEmb=batch.y[
