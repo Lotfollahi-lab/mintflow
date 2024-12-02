@@ -803,7 +803,7 @@ class InFlowVarDist(nn.Module):
                     ten_batchEmb=batch.y[
                         :,
                         rng_batchemb[0]:rng_batchemb[1]
-                    ][:batch.batch_size]
+                    ][:batch.batch_size].to(list_ten_xy_absolute[0].device)
                 )
                 loss = loss + coef_flowmatchingloss*fm_loss
 
