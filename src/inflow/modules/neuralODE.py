@@ -61,12 +61,41 @@ class MLP(torch.nn.Module):
             torch.nn.Linear(w, dim_s)
         )
 
+    def forward_4torchdiffeq(self, t, x, ten_BatchEmb):
+        """
+        The forward function compatible with torchdiffeq.
+        The main difference is the shape of `t`, where `t`-s dimension doesn't have to be equal to `x.size()[0]`
+        :param t: a 1-D tensor of shape [num_tsteps]
+        :param x: of shape [b x dim_z+dim_s]
+        :param ten_BatchEmb: of shape [b x dim_b]
+        :return: a tensor of shape [num_tsteps x b x dim_z+dim_s]
+        """
+        print("Input shapes (as passed in by torchdiffeq")
+        print("   t.shape = {}".format(t.shape))
+        print("   x.shape = {}".format(x.shape))
+        print("   ten_BatchEmb.shape = {}".format(ten_BatchEmb.shape))
+        
+        assert t.dim() == 1
+        num_tsteps = t.size()[0]
+        batc_size = x.size()[0]
+
+        list_toret = [
+            self.forward(
+                t=t[idx_t].repeat(batc_size),
+                x=x,
+                ten_BatchEmb=ten_BatchEmb
+            )
+            for idx_t in range(num_tsteps)
+        ]
+        return torch.stack(list_toret, 0)  # [num_tsteps x b x dim_z+dim_s]
+
+
     def forward(self, t, x, ten_BatchEmb):
         """
         :param t: a 1-D tensor of time-steps, of shape [b].
         :param x: of shape [b x dim_z+dim_s]
         :param ten_BatchEmb: of shape [b x dim_b]
-        :return:
+        :return: of shape [b x dim_z+dim_s]
         """
         # torchcfm's sample label-conditioned forward was used
         # https://github.com/atong01/conditional-flow-matching/blob/62c44affd877a01b7838d408b5dc4cbcbf83e3ad/torchcfm/models/unet/unet.py#L599
