@@ -171,11 +171,20 @@ class WrapperTorchDiffEq(torch.nn.Module):
         self.kwargs_odeint = kwargs_odeint
 
     def forward(self, t_in, x_in, ten_BatchEmb_in):
+
+        '''
         print("args passed to `WrapperTorchDiffEq`")
         print("   t_in.shape = {}".format(t_in.shape))
         print("   x_in.shape = {}".format(x_in.shape))
         print("   ten_BatchEmb_in.shape = {}".format(ten_BatchEmb_in.shape))
         print("==========\n\n\n")
+
+        args passed to `WrapperTorchDiffEq`
+           t_in.shape = torch.Size([10])
+           x_in.shape = torch.Size([13, 200])
+           ten_BatchEmb_in.shape = torch.Size([13, 4])
+        ==========
+        '''
 
         traj = torchdiffeq.odeint(
             lambda t, x: self.model.forward_4torchdiffeq(t, x, ten_BatchEmb_in),
@@ -183,6 +192,9 @@ class WrapperTorchDiffEq(torch.nn.Module):
             t=t_in,
             **self.kwargs_odeint
         )
+
+        print("traj.shape = {}".format(traj.shape))
+
         return traj
 
 

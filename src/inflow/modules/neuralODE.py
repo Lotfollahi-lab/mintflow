@@ -65,11 +65,13 @@ class MLP(torch.nn.Module):
         """
         The forward function compatible with torchdiffeq.
         The main difference is the shape of `t`, where `t`-s dimension doesn't have to be equal to `x.size()[0]`
-        :param t: a 1-D tensor of shape [num_tsteps]
+        :param t: a 0-D tensor (since torchdiffeq calls this func with a single time-step)
         :param x: of shape [b x dim_z+dim_s]
         :param ten_BatchEmb: of shape [b x dim_b]
-        :return: a tensor of shape [num_tsteps x b x dim_z+dim_s]
+        :return: a tensor of shape [b x dim_z+dim_s]
         """
+
+        '''
         print("Input shapes (as passed in by torchdiffeq)")
         print("   t.shape = {}".format(t.shape))  # t.shape = torch.Size([]) --> as if dim is zero ???
         print("   t = {}".format(t))
@@ -78,30 +80,25 @@ class MLP(torch.nn.Module):
         print("   x.shape = {}".format(x.shape))  # x.shape = torch.Size([856, 200])
         print("   ten_BatchEmb.shape = {}".format(ten_BatchEmb.shape))  # ten_BatchEmb.shape = torch.Size([856, 4])
 
-        '''
+
         Input shapes (as passed in by torchdiffeq)
-               t.shape = torch.Size([])
-               t = 0.0
-               type(t) = <class 'torch.Tensor'>
-               t.shape = torch.Size([])
-               x.shape = torch.Size([856, 200])
-               ten_BatchEmb.shape = torch.Size([856, 4])
+           t.shape = torch.Size([])
+           t = 0.0
+           type(t) = <class 'torch.Tensor'>
+           t.shape = torch.Size([])
+           x.shape = torch.Size([13, 200])
+           ten_BatchEmb.shape = torch.Size([13, 4])
         '''
 
-
-        assert t.dim() == 1
-        num_tsteps = t.size()[0]
+        assert t.dim() == 0
         batc_size = x.size()[0]
 
-        list_toret = [
-            self.forward(
-                t=t[idx_t].repeat(batc_size),
+
+        return self.forward(
+                t=t.repeat(batc_size),
                 x=x,
                 ten_BatchEmb=ten_BatchEmb
             )
-            for idx_t in range(num_tsteps)
-        ]
-        return torch.stack(list_toret, 0)  # [num_tsteps x b x dim_z+dim_s]
 
 
     def forward(self, t, x, ten_BatchEmb):
@@ -111,8 +108,9 @@ class MLP(torch.nn.Module):
         :param ten_BatchEmb: of shape [b x dim_b]
         :return: of shape [b x dim_z+dim_s]
         """
-        # torchcfm's sample label-conditioned forward was used
+        # torchcfm's sample label-conditioned forward was used in
         # https://github.com/atong01/conditional-flow-matching/blob/62c44affd877a01b7838d408b5dc4cbcbf83e3ad/torchcfm/models/unet/unet.py#L599
+        # in that function `t` is a tensor of dim=0, so here another forward `forward_4torchdiffeq` is created.
 
         assert t.dim() == 1
         assert x.dim() == 2
