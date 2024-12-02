@@ -61,14 +61,42 @@ class MLP(torch.nn.Module):
             torch.nn.Linear(w, dim_s)
         )
 
-    def forward(self, x):
+    def forward(self, t, x, ten_BatchEmb):
+        """
+        :param t: a 1-D tensor of time-steps, of shape [b].
+        :param x: of shape [b x dim_z+dim_s]
+        :param ten_BatchEmb: of shape [b x dim_b]
+        :return:
+        """
+        # torchcfm's sample label-conditioned forward was used
+        # https://github.com/atong01/conditional-flow-matching/blob/62c44affd877a01b7838d408b5dc4cbcbf83e3ad/torchcfm/models/unet/unet.py#L599
+
+        assert t.dim() == 1
+        assert x.dim() == 2
+        assert ten_BatchEmb.dim() == 2
+        assert x.size()[1] == (self.dim_z + self.dim_s)
+        assert ten_BatchEmb.size()[1] == self.dim_b
+
         dim_z, dim_s, dim_b = self.dim_z, self.dim_s, self.dim_b
         output_z = self.net_z(
             torch.cat(
-                [x[:, 0:(dim_b+dim_z)], x[:,-1].unsqueeze(1)],
+                [
+                    ten_BatchEmb,
+                    x[:, 0:dim_z],
+                    t.unsqueeze(1)
+                ],
                 1
             )
         )  # [N, dim_z]
-        output_s = self.net_s(x)  # [N, dim_s]
+        output_s = self.net_s(
+            torch.cat(
+                [
+                    ten_BatchEmb,
+                    x,
+                    t.unsqueeze(1)
+                ],
+                1
+            )
+        )  # [N, dim_s]
         output = torch.cat([output_z, output_s], 1)  # [N, dim_z+dim_s]
         return output

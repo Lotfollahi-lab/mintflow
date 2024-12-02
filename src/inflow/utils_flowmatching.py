@@ -2,12 +2,15 @@
 Utilities for conditional flow matching
 '''
 
-from typing import Dict
+from typing import Dict, Union, Callable, Tuple, Any, Optional
 import torch
 import torchcfm
+from torch.nn.modules.module import T
+from torch.utils.hooks import RemovableHandle
 from torchcfm.optimal_transport import OTPlanSampler
 from .modules import neuralODE
 from enum import Enum
+import torchdiffeq
 
 
 class ModeSampleX0(Enum):
@@ -105,12 +108,18 @@ class ConditionalFlowMatcher:
         else:
             raise NotImplementedError("ddd")
 
-
+        '''
         vt = module_v(
             torch.cat(
                 [ten_batchEmb, xt, t.flatten()[:, None]],
                 dim=-1
             )
+        )
+        '''
+        vt = module_v(
+            t=t,
+            x=xt,
+            ten_BatchEmb=ten_batchEmb
         )
         return torch.mean((vt - ut) ** 2)
 
@@ -146,9 +155,31 @@ class ConditionalFlowMatcher:
             x0=x0,
             x1=x1,
             xt=xt,
-            t=t,
+            t=t[:,0],
             ten_batchEmb=ten_batchEmb
         )
+
+
+
+
+
+class WrapperTorchDiffEq(torch.nn.Module):
+    def __init__(self, model:neuralODE.MLP, kwargs_odeint:dict):
+        super(WrapperTorchDiffEq, self).__init__()
+        assert isinstance(model, neuralODE.MLP)
+        self.model = model
+        self.kwargs_odeint = kwargs_odeint
+
+    def forward(self, t_in, x_in, ten_BatchEmb_in):
+        traj = torchdiffeq.odeint(
+            lambda t, x: self.model.forward(t, x, ten_BatchEmb_in),
+            y0=x_in,
+            t=t_in,
+            **self.kwargs_odeint
+        )
+        return traj
+
+
 
 
 

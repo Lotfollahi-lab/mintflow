@@ -13,6 +13,7 @@ from . import utils
 from . import probutils
 from .modules import mlp
 from . import zs_samplers
+from . import utils_flowmatching
 
 
 
@@ -109,14 +110,17 @@ class InFlowGenerativeModel(nn.Module):
                **kwargs_moduleflow
             }
         )
-        self.module_flow = NeuralODE(
-            torch_wrapper(
-                self.module_Vflow_unwrapped
-            ),
-            solver="dopri5",
-            sensitivity="adjoint",
-            return_t_eval=True
+
+        self.module_flow = utils_flowmatching.WrapperTorchDiffEq(
+            model=self.module_Vflow_unwrapped,
+            kwargs_odeint={
+                'atol':1e-4,
+                'rtol':1e-4,
+                'method':"dopri5"
+            }
         )
+        # torch_wrapper is not needed:
+        # https://github.com/atong01/conditional-flow-matching/blob/62c44affd877a01b7838d408b5dc4cbcbf83e3ad/examples/images/conditional_mnist.ipynb
         self.module_w_dec_int = type_w_dec(
             **{**{
                 'dim_input': self.dict_varname_to_dim['BatchEmb'] + self.dict_varname_to_dim['z'],
@@ -594,6 +598,7 @@ class InFlowGenerativeModel(nn.Module):
             batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
             batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
         ]
+        '''
         output_neuralODE = self.module_flow(
             torch.cat(
                 [
@@ -605,6 +610,18 @@ class InFlowGenerativeModel(nn.Module):
             ),
             torch.linspace(0, 1, t_num_steps).to(device)
         )[1][-1, :, :]  # [b, dim_z+dim_s]
+        '''
+        output_neuralODE = self.module_flow(
+            t_in=torch.linspace(0, 1, t_num_steps).to(device),
+            x_in=torch.cat(
+                [
+                    dict_qsamples['z'][:batch.batch_size],
+                    dict_qsamples['s_in'][:batch.batch_size]
+                ],
+                1
+            ),
+            ten_BatchEmb_in=batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size].float().to(device)
+        )
 
         logp_xbarint = probutils.ExtenededNormal(
             loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
