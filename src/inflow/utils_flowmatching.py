@@ -193,9 +193,13 @@ class WrapperTorchDiffEq(torch.nn.Module):
             **self.kwargs_odeint
         )
 
+        '''
         print("traj.shape = {}".format(traj.shape))
 
-        return traj
+        traj.shape = torch.Size([10, 351, 200])  Note: with `tnum_steps` eqaul to 10.
+        '''
+
+        return traj[-1, :, :]  # [batchsize x dim_z+dim_s]
 
 
 
