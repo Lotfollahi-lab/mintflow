@@ -641,6 +641,8 @@ class InFlowGenerativeModel(nn.Module):
         )  # [b, dim_s]
 
 
+        # FLAG_MODE_DEC_SIZEFACTOR_XSUM ====
+        FLAG_MODE_DEC_SIZEFACTOR_XSUM = True
 
         # x_int
         netout_w_dec_int = self.module_w_dec_int(
@@ -652,8 +654,15 @@ class InFlowGenerativeModel(nn.Module):
                 1
             )
         )
+
+        if FLAG_MODE_DEC_SIZEFACTOR_XSUM:
+            with torch.no_grad():
+                sizefactor_int = dict_qsamples['x_int'][:batch.batch_size].sum(1).unsqueeze(-1)  # [b, num_genes]
+        else:
+            sizefactor_int = torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1)
+
         logp_x_int = self.coef_zinb_int_loglik * ZeroInflatedNegativeBinomial(
-            **{**{'mu': netout_w_dec_int * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
+            **{**{'mu': netout_w_dec_int * sizefactor_int.detach(),
                   'theta': torch.exp(self.theta_negbin_int)},
                   **self.kwargs_negbin_int}
         ).log_prob(dict_qsamples['x_int'][:batch.batch_size])  # [b, num_genes]
@@ -669,8 +678,15 @@ class InFlowGenerativeModel(nn.Module):
                 1
             )
         )
+
+        if FLAG_MODE_DEC_SIZEFACTOR_XSUM:
+            with torch.no_gread():
+                sizefactor_spl = dict_qsamples['x_spl'][:batch.batch_size].sum(1).unsqueeze(-1)  # [b, num_genes]
+        else:
+            sizefactor_spl = torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1)
+
         logp_x_spl = self.coef_zinb_spl_loglik * ZeroInflatedNegativeBinomial(
-            **{**{'mu': netout_w_dec_spl * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
+            **{**{'mu': netout_w_dec_spl * sizefactor_spl.detach(),
                   'theta': torch.exp(self.theta_negbin_spl)},
                **self.kwargs_negbin_spl}
         ).log_prob(dict_qsamples['x_spl'][:batch.batch_size])  # [b, num_genes]
