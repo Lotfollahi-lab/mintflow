@@ -680,7 +680,7 @@ class InFlowGenerativeModel(nn.Module):
         )
 
         if FLAG_MODE_DEC_SIZEFACTOR_XSUM:
-            with torch.no_gread():
+            with torch.no_grad():
                 sizefactor_spl = dict_qsamples['x_spl'][:batch.batch_size].sum(1).unsqueeze(-1)  # [b, num_genes]
         else:
             sizefactor_spl = torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1)
