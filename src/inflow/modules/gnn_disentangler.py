@@ -633,11 +633,23 @@ class GNNDisentangler(nn.Module):
         sigmaxspl = torch.clamp(sigmaxspl_raw, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
 
         sigmaxint = torch.concat(
-            [sigmaxint[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
+            [
+                sigmaxint[:,0:batch.batch_size]+0.0,
+                torch.clamp(
+                    sigmaxint[:,batch.batch_size::]+0.0,
+                    min=self.clipval_cov_noncentralnodes,
+                    max=4.0
+                )],
             1
         ).sqrt()
         sigmaxspl = torch.concat(
-            [sigmaxspl[:, 0:batch.batch_size]+0.0, torch.clamp(sigmaxspl[:, batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
+            [
+                sigmaxspl[:, 0:batch.batch_size]+0.0,
+                torch.clamp(
+                    sigmaxspl[:, batch.batch_size::]+0.0,
+                    min=self.clipval_cov_noncentralnodes,
+                    max=4.0
+                )],
             1
         ).sqrt()
 

@@ -657,13 +657,17 @@ class InFlowVarDist(nn.Module):
         list_iter_dl_afterGRL = [iter(u) for u in list_dl]  # for updating the dual functions separately.
 
         optim_training.zero_grad()
+        temp_print_whilecount = -1
         while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
-
+            temp_print_whilecount += 1
             idx_current_dl_normal = (idx_current_dl_normal + 1)%len(list_dl)
             try:
                 itr = list_iter_dl_normal[idx_current_dl_normal]
                 batch = next(itr)
             except StopIteration:
+                if flag_verbose:
+                    print("<><><><><><><><><><><><><><><><><> stop-iteration occured at while-loop {}".format(temp_print_whilecount))
+
                 list_iterfinished_normal[idx_current_dl_normal] = True
                 list_iter_dl_normal[idx_current_dl_normal] = iter(list_dl[idx_current_dl_normal])
                 itr = list_iter_dl_normal[idx_current_dl_normal]
