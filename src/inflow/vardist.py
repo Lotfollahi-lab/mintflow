@@ -660,6 +660,9 @@ class InFlowVarDist(nn.Module):
                 itr = list_iter_dl_normal[idx_current_dl_normal]
                 batch = next(itr)
 
+            if np.all(list_iterfinished_normal):
+                break
+
             wandb.log(
                 {"InspectVals/annealing_coefficient": self.coef_anneal},
                 step=itrcount_wandb
