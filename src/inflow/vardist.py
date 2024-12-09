@@ -1245,6 +1245,8 @@ class InFlowVarDist(nn.Module):
 
                 #loss.backward()
                 #optim_training.step()
+            else:
+                assert False
 
             if (num_backwards > 0) and (num_backwards%numsteps_accumgrad == 0):
                 optim_training.step()
