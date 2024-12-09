@@ -136,7 +136,7 @@ class Slice:
                 [np.array(self.adata.obs[key_x].tolist()), np.array(self.adata.obs[key_y].tolist())],
                 1
             )
-        ).float().to(self.device)
+        ).float().to(self.device).detach()
 
 
         self.pyg_ds = pyg.data.Data(

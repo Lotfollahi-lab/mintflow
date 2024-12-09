@@ -1242,6 +1242,7 @@ class InFlowVarDist(nn.Module):
                 if flag_verbose:
                     print("      optim.step() and zero_grad()")
 
+
                 # update the predictors after GRLs ----
                 postGRL_index_dl = -1
 
@@ -1279,6 +1280,10 @@ class InFlowVarDist(nn.Module):
 
                     if flag_verbose:
                         print("              >>>> after GRLs update. (with dl {})".format(postGRL_index_dl))
+                        print("              ---- GPU usage: {}   {}".format(
+                            torch.cuda.memory_allocated(),
+                            torch.cuda.max_memory_allocated()
+                        ))
 
                     if False: #idx_iter_afterGRL%5 == 0:
                         with torch.no_grad():
