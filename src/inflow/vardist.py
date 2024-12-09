@@ -645,7 +645,6 @@ class InFlowVarDist(nn.Module):
         list_iterfinished_normal = [False for u in list_dl]
         idx_current_dl_normal = -1
 
-        list_iter_dl_afterGRL = [iter(u) for u in list_dl]  # for updating the dual functions separately.
 
         optim_training.zero_grad()
         while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
@@ -1260,6 +1259,7 @@ class InFlowVarDist(nn.Module):
 
                 # update the predictors after GRLs ----
                 postGRL_index_dl = -1
+                list_iter_dl_afterGRL = [iter(u) for u in list_dl]  # for updating the dual functions separately, to imitate the for loop in the old version.
 
                 #list_iter_dl_afterGRL
                 for _ in range(num_updateseparate_afterGRLs):
@@ -1300,14 +1300,7 @@ class InFlowVarDist(nn.Module):
                             torch.cuda.max_memory_allocated()
                         ))
 
-                    if False: #idx_iter_afterGRL%5 == 0:
-                        with torch.no_grad():
-                            for loss_name in dict_z2notNCC_loss.keys():
-                                wandb.log(
-                                    {"Loss/Z-->notNCC {} (after mult by coef={})".format(loss_name,dict_z2notNCC_loss[loss_name]['coef']):dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']},
-                                    step=itrcount_wandb
-                                )
-                                itrcount_wandb += 1
+                del list_iter_dl_afterGRL
 
                 optim_training.zero_grad()  # for next accumgrad iters
 
