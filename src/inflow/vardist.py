@@ -1171,6 +1171,9 @@ class InFlowVarDist(nn.Module):
                 set_celltype_minibatch = list(set(np_celltype_batch.tolist()))
                 set_celltype_minibatch.sort()
 
+                MODE_COMP_PAIRWISEDIST = 'pytorchcdist'
+                assert MODE_COMP_PAIRWISEDIST in ['pytorchcdist', 'vanila']
+
                 for varname in ['z', 'x_int', 'xbar_int']:
                     loss_zzcloseness = 0.0
                     for ct in set_celltype_minibatch:
@@ -1187,10 +1190,20 @@ class InFlowVarDist(nn.Module):
                                 # print("torch.max(dict_q_sample[{}][np_celltype_batch == ct, :]) = {}".format(varname, torch.max(dict_q_sample[varname][np_celltype_batch == ct, :]))): output: ~300 and <800
                                 z_incelltype = torch.log(z_incelltype + 1.0)
 
-                            pairwise_dist = torch.sum(
-                                (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)) * (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)),
-                                2
-                            )  # [n, n]
+                            if MODE_COMP_PAIRWISEDIST == 'vanila':
+                                pairwise_dist = torch.sum(
+                                    (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)) * (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)),
+                                    2
+                                )  # [n, n]
+                            else:
+                                assert MODE_COMP_PAIRWISEDIST == 'pytorchcdist'
+                                pairwise_dist = torch.cdist(
+                                    z_incelltype.unsqueeze(0),
+                                    z_incelltype.unsqueeze(0),
+                                    p=2
+                                )[0, :, :] # [n, n]
+                                pairwise_dist = pairwise_dist * pairwise_dist
+
                             assert (len(pairwise_dist.size()) == 2)
 
 
