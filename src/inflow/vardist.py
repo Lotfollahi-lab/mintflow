@@ -1225,11 +1225,23 @@ class InFlowVarDist(nn.Module):
             # update params
             if isinstance(loss, torch.Tensor):  # to handle 1. only imputed loss is active and 2. there is no masking
                 loss = loss/(numsteps_accumgrad+0.0)
+
+                if flag_verbose:
+                    print(" Before backward() ----- with dl {}".format(idx_current_dl_normal))
+                    print("              ---- GPU usage: {}   {}".format(
+                        torch.cuda.memory_allocated(),
+                        torch.cuda.max_memory_allocated()
+                    ))
+
                 loss.backward()
                 num_backwards += 1
 
                 if flag_verbose:
-                    print("Backward()----- with dl {}".format(idx_current_dl_normal))
+                    print(" After backward()----- with dl {}".format(idx_current_dl_normal))
+                    print("              ---- GPU usage: {}   {}".format(
+                        torch.cuda.memory_allocated(),
+                        torch.cuda.max_memory_allocated()
+                    ))
 
                 #loss.backward()
                 #optim_training.step()
@@ -1241,6 +1253,7 @@ class InFlowVarDist(nn.Module):
 
                 if flag_verbose:
                     print("      optim.step() and zero_grad()")
+
 
 
                 # update the predictors after GRLs ----
