@@ -35,15 +35,20 @@ class MLP(torch.nn.Module):
     The first half of output depends only on the `dim_b + dim_z` dimensions.
     The send half of output depends on the `dim_b + dim_s` dimensions.
     '''
-    def __init__(self, dim_b, dim_z, dim_s, w=64):
+    def __init__(self, dim_b, dim_z, dim_s, flag_enable_batchtoken_flowmodule, w=64):
         # TODO: `dim_input` and `dim_output` arguments were removed after adding batch token. Any issues?
         super().__init__()
         assert(dim_z == dim_s)
         self.dim_z = dim_z
         self.dim_s = dim_s
         self.dim_b = dim_b
+        self.flag_enable_batchtoken_flowmodule = flag_enable_batchtoken_flowmodule
+
         self.net_z = torch.nn.Sequential(
-            torch.nn.Linear(dim_b + dim_z + 1, w),
+            torch.nn.Linear(
+                (dim_b + dim_z + 1) if self.flag_enable_batchtoken_flowmodule else (dim_z + 1),
+                w
+            ),
             torch.nn.SELU(),
             torch.nn.Linear(w, w),
             torch.nn.SELU(),
@@ -52,7 +57,10 @@ class MLP(torch.nn.Module):
             torch.nn.Linear(w, dim_z)
         )
         self.net_s = torch.nn.Sequential(
-            torch.nn.Linear(dim_b + dim_z + dim_s + 1, w),
+            torch.nn.Linear(
+                (dim_b + dim_z + dim_s + 1) if self.flag_enable_batchtoken_flowmodule else (dim_z + dim_s + 1),
+                w
+            ),
             torch.nn.SELU(),
             torch.nn.Linear(w, w),
             torch.nn.SELU(),
@@ -119,25 +127,47 @@ class MLP(torch.nn.Module):
         assert ten_BatchEmb.size()[1] == self.dim_b
 
         dim_z, dim_s, dim_b = self.dim_z, self.dim_s, self.dim_b
-        output_z = self.net_z(
-            torch.cat(
-                [
-                    ten_BatchEmb,
-                    x[:, 0:dim_z],
-                    t.unsqueeze(1)
-                ],
-                1
-            )
-        )  # [N, dim_z]
-        output_s = self.net_s(
-            torch.cat(
-                [
-                    ten_BatchEmb,
-                    x,
-                    t.unsqueeze(1)
-                ],
-                1
-            )
-        )  # [N, dim_s]
+        if self.flag_enable_batchtoken_flowmodule:
+            output_z = self.net_z(
+                torch.cat(
+                    [
+                        ten_BatchEmb,
+                        x[:, 0:dim_z],
+                        t.unsqueeze(1)
+                    ],
+                    1
+                )
+            )  # [N, dim_z]
+            output_s = self.net_s(
+                torch.cat(
+                    [
+                        ten_BatchEmb,
+                        x,
+                        t.unsqueeze(1)
+                    ],
+                    1
+                )
+            )  # [N, dim_s]
+        else:
+            assert (self.flag_enable_batchtoken_flowmodule == False)
+            output_z = self.net_z(
+                torch.cat(
+                    [
+                        x[:, 0:dim_z],
+                        t.unsqueeze(1)
+                    ],
+                    1
+                )
+            )  # [N, dim_z]
+            output_s = self.net_s(
+                torch.cat(
+                    [
+                        x,
+                        t.unsqueeze(1)
+                    ],
+                    1
+                )
+            )  # [N, dim_s]
+
         output = torch.cat([output_z, output_s], 1)  # [N, dim_z+dim_s]
         return output

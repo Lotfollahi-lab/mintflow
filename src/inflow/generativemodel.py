@@ -38,7 +38,8 @@ class InFlowGenerativeModel(nn.Module):
             flag_use_int_u: bool, module_int_mu_u: nn.Module | None, module_int_cov_u: mlp.SimpleMLPandExp | None,
             flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
             coef_zinb_int_loglik: float,
-            coef_zinb_spl_loglik: float
+            coef_zinb_spl_loglik: float,
+            dict_config_batchtoken : dict
     ):
         '''
 
@@ -70,6 +71,9 @@ class InFlowGenerativeModel(nn.Module):
             the mean and cov of p(z|u).
         :param flag_use_spl_u, module_spl_mu_u, module_spl_cov_u: whether the u-label (with the notation of iVAE) is used for s_out, and modules to produce
             the mean and cov of p(s_out|u).
+        :dict_config_batchtoken: the configdict for how/if batchtoken is used. Containing keys
+            - flag_enable_batchtoken_flowmodule: whether the flow part of decoder is conditioned on batch token.
+            - TODO: maybe add more?
         :param TODO:complete
 
 
@@ -90,6 +94,8 @@ class InFlowGenerativeModel(nn.Module):
         self.flag_use_spl_u, self.module_spl_mu_u, self.module_spl_cov_u = flag_use_spl_u, module_spl_mu_u, module_spl_cov_u
         self.coef_zinb_int_loglik = coef_zinb_int_loglik
         self.coef_zinb_spl_loglik = coef_zinb_spl_loglik
+        self.dict_config_batchtoken = dict_config_batchtoken
+
 
 
 
@@ -104,6 +110,7 @@ class InFlowGenerativeModel(nn.Module):
         # TODO: `dim_input` and `dim_output` arguments were removed after adding batch token. Any issues?
         self.module_Vflow_unwrapped = type_moduleflow(
             **{**{
+                'flag_enable_batchtoken_flowmodule':self.dict_config_batchtoken['flag_enable_batchtoken_flowmodule'],
                 'dim_b':self.dict_varname_to_dim['BatchEmb'],
                 'dim_z': self.dict_varname_to_dim['z'],
                 'dim_s': self.dict_varname_to_dim['s']},
