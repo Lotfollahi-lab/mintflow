@@ -39,7 +39,7 @@ class InFlowGenerativeModel(nn.Module):
             flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
             coef_zinb_int_loglik: float,
             coef_zinb_spl_loglik: float,
-            dict_config_batchtoken : dict
+            dict_config_batchtoken: dict
     ):
         '''
 
