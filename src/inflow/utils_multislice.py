@@ -144,10 +144,10 @@ class Slice:
                 indices=self.adata.X.tocoo().nonzero(),
                 values=self.adata.X.tocoo().data,
                 size=self.adata.X.tocoo().shape
-            ).float().detach(),
-            edge_index=self.edge_index.detach(),
+            ).float(),
+            edge_index=self.edge_index,
             y=torch.cat(
-                [ten_u_z.detach(), ten_u_s.detach(), self.ten_CT.detach(), self.ten_NCC.detach()],
+                [ten_u_z, ten_u_s, self.ten_CT, self.ten_NCC],
                 1
             )
         )
