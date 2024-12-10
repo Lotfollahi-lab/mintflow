@@ -160,12 +160,12 @@ class Slice:
                 indices=self.adata.X.tocoo().nonzero(),
                 values=self.adata.X.tocoo().data,
                 size=self.adata.X.tocoo().shape
-            ).float(),
-            edge_index=self.edge_index,
+            ).float().detach(),
+            edge_index=self.edge_index.detach(),
             y=torch.cat(
                 [ten_u_z, ten_u_s, self.ten_CT, self.ten_NCC, self.ten_BatchEmb],
                 1
-            )
+            ).detach()
         )
 
         if self.adata.X.shape[0] * self.adata.X.shape[1] < 1e9:
