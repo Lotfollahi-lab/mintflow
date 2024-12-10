@@ -654,7 +654,6 @@ class InFlowVarDist(nn.Module):
         list_iterfinished_normal = [False for u in list_dl]
         idx_current_dl_normal = -1
 
-        list_iter_dl_afterGRL = [iter(u) for u in list_dl]  # for updating the dual functions separately.
 
         optim_training.zero_grad()
         temp_print_whilecount = -1
@@ -672,6 +671,9 @@ class InFlowVarDist(nn.Module):
                 list_iter_dl_normal[idx_current_dl_normal] = iter(list_dl[idx_current_dl_normal])
                 itr = list_iter_dl_normal[idx_current_dl_normal]
                 batch = next(itr)
+
+            if np.all(list_iterfinished_normal):
+                break
 
             wandb.log(
                 {"InspectVals/annealing_coefficient": self.coef_anneal},
@@ -1274,14 +1276,28 @@ class InFlowVarDist(nn.Module):
             # update params
             if isinstance(loss, torch.Tensor):  # to handle 1. only imputed loss is active and 2. there is no masking
                 loss = loss/(numsteps_accumgrad+0.0)
+
+                if flag_verbose:
+                    print(" Before backward() ----- with dl {}".format(idx_current_dl_normal))
+                    print("              ---- GPU usage: {}   {}".format(
+                        torch.cuda.memory_allocated(),
+                        torch.cuda.max_memory_allocated()
+                    ))
+
                 loss.backward()
                 num_backwards += 1
 
                 if flag_verbose:
-                    print("Backward()----- with dl {}".format(idx_current_dl_normal))
+                    print(" After backward()----- with dl {}".format(idx_current_dl_normal))
+                    print("              ---- GPU usage: {}   {}".format(
+                        torch.cuda.memory_allocated(),
+                        torch.cuda.max_memory_allocated()
+                    ))
 
                 #loss.backward()
                 #optim_training.step()
+            else:
+                assert False
 
             if (num_backwards > 0) and (num_backwards%numsteps_accumgrad == 0):
                 optim_training.step()
@@ -1291,8 +1307,11 @@ class InFlowVarDist(nn.Module):
                 if flag_verbose:
                     print("      optim.step() and zero_grad()")
 
+
+
                 # update the predictors after GRLs ----
                 postGRL_index_dl = -1
+                list_iter_dl_afterGRL = [iter(u) for u in list_dl]  # for updating the dual functions separately, to imitate the for loop in the old version.
 
                 #list_iter_dl_afterGRL
                 for _ in range(num_updateseparate_afterGRLs):
@@ -1328,15 +1347,12 @@ class InFlowVarDist(nn.Module):
 
                     if flag_verbose:
                         print("              >>>> after GRLs update. (with dl {})".format(postGRL_index_dl))
+                        print("              ---- GPU usage: {}   {}".format(
+                            torch.cuda.memory_allocated(),
+                            torch.cuda.max_memory_allocated()
+                        ))
 
-                    if False: #idx_iter_afterGRL%5 == 0:
-                        with torch.no_grad():
-                            for loss_name in dict_z2notNCC_loss.keys():
-                                wandb.log(
-                                    {"Loss/Z-->notNCC {} (after mult by coef={})".format(loss_name,dict_z2notNCC_loss[loss_name]['coef']):dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']},
-                                    step=itrcount_wandb
-                                )
-                                itrcount_wandb += 1
+                del list_iter_dl_afterGRL
 
                 optim_training.zero_grad()  # for next accumgrad iters
 
