@@ -136,7 +136,7 @@ class Slice:
                 [np.array(self.adata.obs[key_x].tolist()), np.array(self.adata.obs[key_y].tolist())],
                 1
             )
-        ).float().to(self.device)
+        ).float().to(self.device).detach()
 
 
         self.pyg_ds = pyg.data.Data(
@@ -144,10 +144,10 @@ class Slice:
                 indices=self.adata.X.tocoo().nonzero(),
                 values=self.adata.X.tocoo().data,
                 size=self.adata.X.tocoo().shape
-            ).float(),
-            edge_index=self.edge_index,
+            ).float().detach(),
+            edge_index=self.edge_index.detach(),
             y=torch.cat(
-                [ten_u_z, ten_u_s, self.ten_CT, self.ten_NCC],
+                [ten_u_z.detach(), ten_u_s.detach(), self.ten_CT.detach(), self.ten_NCC.detach()],
                 1
             )
         )
