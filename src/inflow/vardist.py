@@ -379,6 +379,7 @@ class InFlowVarDist(nn.Module):
             ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
 
         # xbarint
+        # TODO: loc should be re-computed with encoder ?
         logq_xbarint = probutils.ExtenededNormal(
             loc=dict_retvalrsample['param_q_xbarint'],
             scale=self.dict_qname_to_scaleandunweighted['varphi_enc_int']['scale'],
@@ -386,6 +387,7 @@ class InFlowVarDist(nn.Module):
         ).log_prob(dict_retvalrsample['xbar_int'])  # [N, dim_latent]
 
         # xbarspl
+        # TODO: loc should be re-computed with encoder ?
         logq_xbarspl = probutils.ExtenededNormal(
             loc=dict_retvalrsample['param_q_xbarspl'],
             scale=self.dict_qname_to_scaleandunweighted['varphi_enc_spl']['scale'],

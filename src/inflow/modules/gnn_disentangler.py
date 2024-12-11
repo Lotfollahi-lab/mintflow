@@ -28,7 +28,7 @@ class ArchInsertionPoint:
 class GNNDisentangler(nn.Module):
     def __init__(self, kwargs_genmodel, str_mode_normalizex:str, maxsize_subgraph, dict_general_args, mode_headxint_headxspl_headboth_twosep,
                  gnn_list_dim_hidden, kwargs_sageconv, clipval_cov_noncentralnodes:float, dict_CTNNC_usage:dict, std_minval_finalclip:float, std_maxval_finalclip:float,
-                 flag_use_layernorm:bool, flag_use_dropout:bool):
+                 flag_use_layernorm:bool, flag_use_dropout:bool, flag_enable_batchtoken:bool):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
         :param str_mode_normalizex: in ['counts', 'logp1'], whether the GNN works on counts or log1p
@@ -46,6 +46,7 @@ class GNNDisentangler(nn.Module):
         :param clipval_cov_noncentralnodes: the value by which the covariance for non-central nodes is clipped.
         :param dict_CTNNC_usage: a dictionary that specifies wheteher/how CT and NCC are used.
         :param std_minval_finalclip, std_maxval_finalclip: values for the final clip. Can also be used to freez the std to a fixed value.
+        :param flag_enable_batchtoken: if set to True, the inferred `muxint` and `muxspl` are shifted by batch-specific tensors.
         '''
 
         super(GNNDisentangler, self).__init__()
@@ -63,6 +64,7 @@ class GNNDisentangler(nn.Module):
         self.std_maxval_finalclip = std_maxval_finalclip
         self.flag_use_layernorm = flag_use_layernorm
         self.flag_use_dropout = flag_use_dropout
+        self.flag_enable_batchtoken = flag_enable_batchtoken
 
         self._check_dict_CTNCCusage()
         self._check_args()
@@ -308,6 +310,14 @@ class GNNDisentangler(nn.Module):
                 "Uknown value {} for str_mode_headxint_headxspl_headboth.".format(self.mode_headxint_headxspl_headboth_twosep)
             )
 
+        # add the batch-specific shifts
+        if self.flag_enable_batchtoken:
+            raise NotImplementedError(
+                "Conditioning the disentagler (i.e. 1st stage of encoder) on batch token is not implemented yet."
+            )
+            # kwargs_genmodel['dict_varname_to_dim']['BatchEmb']  # TODO:HERE
+
+
 
 
 
@@ -352,6 +362,9 @@ class GNNDisentangler(nn.Module):
 
 
     def _check_args(self):
+        assert (
+            self.flag_enable_batchtoken in [True, False]
+        )
         assert (
             self.flag_use_dropout in [True, False]
         )
