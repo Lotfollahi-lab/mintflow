@@ -32,11 +32,12 @@ class EncX2Xbar(nn.Module):
         if self.flag_enable_batchEmb:
             self.param_batchshift = nn.Parameter(
                 torch.randn(
-                    [self.num_batches, self.dim_xbar],
+                    [self.num_batches-1, self.dim_xbar],
                     requires_grad=True
                 ),
                 requires_grad=True
-            )  # [num_batches x dim_xbar]  # TODO: upperbound the shift by 1. tanh(.) layer followed by 2. some bounded coefficients.
+            )  # [num_batches-1 x dim_xbar] one minus num_batches because the 1st batch is considered as the reference --> no shift for the 1st batch.
+            # TODO: upperbound the shift by 1. tanh(.) layer followed by 2. some bounded coefficients.
 
         if self.num_batches == 1:
             raise NotImplementedError(
@@ -66,7 +67,13 @@ class EncX2Xbar(nn.Module):
             ]  # [N x num_batches], the one-hot encoded batch token.
             assert ten_batchEmb.size()[1] == self.num_batches
 
-            output = output + torch.mm(ten_batchEmb.detach().to(x.device), self.param_batchshift)
+            output = output + torch.mm(
+                ten_batchEmb.detach().to(x.device),
+                torch.cat(
+                    [torch.zeros(self.dim_xbar, device=x.device).unsqueeze(0).detach(), self.param_batchshift],
+                    0
+                )
+            )
 
         return output
 
