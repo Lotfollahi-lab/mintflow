@@ -20,6 +20,7 @@ from . import kl_annealing
 from .modules import predictorperCT
 import predadjmat
 from . import wassdist_utils
+from .modules import varphienc4xbar
 #from tqdm.auto import tqdm
 from tqdm.notebook import tqdm, trange
 import wandb
@@ -1842,6 +1843,8 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+        assert isinstance(self.module_varphi_enc_int, varphienc4xbar.EncX2Xbar)
+        assert isinstance(self.module_varphi_enc_spl, varphienc4xbar.EncX2Xbar)
 
         assert isinstance(self.coef_rankloss_Z, float)
         assert(self.coef_rankloss_Z >= 0.0)
