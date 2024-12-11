@@ -1526,13 +1526,14 @@ class InFlowVarDist(nn.Module):
         ten_CT,
         ten_NCC,
         ten_xbarint,
+        ten_BatchEmb,
+        ten_xbarspl,
         ten_xy_absolute,
         device,
         kwargs_dl
     ):
 
-
-        ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC, ten_xbarint)
+        ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC, ten_xbarint, ten_BatchEmb, ten_xbarspl)
         dl = torch.utils.data.DataLoader(ds, shuffle=True, **kwargs_dl)
         iterpygdl_for_afterGRL = iter(dl)
 
@@ -1567,8 +1568,21 @@ class InFlowVarDist(nn.Module):
                 ten_NCC=y.detach().to(device)
             ) # NOTE: the first detach is important
 
+            dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
+                z=batch_afterGRLs[3].to(device).detach(),
+                module_BatchIDpredictor=self.module_predictor_xbarint2notbatchID,
+                ten_BatchID=batch_afterGRLs[4].to(device).detach()
+            ) # NOTE: the first detach is important
+
+            dict_xbarspl2notbatchID_loss = self.crit_loss_xbarspl2notbatchID(
+                z=batch_afterGRLs[5].to(device).detach(),
+                module_BatchIDpredictor=self.module_predictor_xbarspl2notbatchID,
+                ten_BatchID=batch_afterGRLs[4].to(device).detach()
+            ) # NOTE: the first detach is important
+
+
             loss_after_GRLs = 0.0
-            for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]:
+            for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss, dict_xbarint2notbatchID_loss, dict_xbarspl2notbatchID_loss]:
                 for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
                     loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
