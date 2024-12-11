@@ -1213,7 +1213,36 @@ class InFlowVarDist(nn.Module):
 
             # add xbarspl-->notBatchID loss ===
             if self.coef_xbarspl2notbatchID_loss > 0.0:
-                assert False  # TODO: complete
+
+                rng_batchemb = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+                ]
+
+                dict_xbarspl2notbatchID_loss = self.crit_loss_xbarspl2notbatchID(
+                    z=predadjmat.grad_reverse(
+                        dict_q_sample['param_q_xbarspl']
+                    ),
+                    module_BatchIDpredictor=self.module_predictor_xbarspl2notbatchID,
+                    ten_BatchID=batch.y[
+                        :,
+                        rng_batchemb[0]:rng_batchemb[1]
+                    ].to(list_ten_xy_absolute[0].device)
+                )
+
+                for loss_name in dict_xbarspl2notbatchID_loss.keys():
+                    loss = loss + dict_xbarspl2notbatchID_loss[loss_name]['coef'] * dict_xbarspl2notbatchID_loss[loss_name]['val']
+
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        for loss_name in dict_xbarspl2notbatchID_loss.keys():
+                            wandb.log(
+                                {"Loss/xbarspl-->notBatchID {} (after mult by coef={})".format(loss_name, dict_xbarspl2notbatchID_loss[loss_name]['coef']):
+                                     dict_xbarspl2notbatchID_loss[loss_name]['coef'] * dict_xbarspl2notbatchID_loss[loss_name]['val']
+                                 },
+                                step=itrcount_wandb
+                            )
+
 
 
 
