@@ -1447,10 +1447,12 @@ class InFlowVarDist(nn.Module):
                     )
                     dict_z2notNCC_loss = dict_loss_GRLpreds['z']
                     dict_xbarint2notNCC_loss = dict_loss_GRLpreds['xbarint']
+                    dict_xbarint2notbatchID_loss_forGRL = dict_loss_GRLpreds['xbarint2notbatchID']
+                    dict_xbarspl2notbatchID_loss_forGRL = dict_loss_GRLpreds['xbarspl2notbatchID']
+
 
                     loss_after_GRLs = 0.0
-                    for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]:
-                        assert False  # TODO: add xbarint2notbatchID and xbarspl2notbatchID losses as well.
+                    for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss, dict_xbarint2notbatchID_loss_forGRL, dict_xbarspl2notbatchID_loss_forGRL]:
                         for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
                             loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
@@ -1625,12 +1627,46 @@ class InFlowVarDist(nn.Module):
             )  # NOTE: the first detach is important
             # TODO: should it be on non-cental nodes as well?
 
-
+        # add xbarint-->notBatchID loss ===
         if self.coef_xbarint2notbatchID_loss > 0.0:
-            assert False  # TODO: complete
+            rng_batchemb = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+            ]
+
+            dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
+                z=predadjmat.grad_reverse(
+                    dict_q_sample['param_q_xbarint'].detach()
+                ),
+                module_BatchIDpredictor=self.module_predictor_xbarint2notbatchID,
+                ten_BatchID=batch.y[
+                    :,
+                    rng_batchemb[0]:rng_batchemb[1]
+                ].to(list_ten_xy_absolute[0].device).detach()
+            )  # NOTE: the first detach is important
+            # TODO: should it be only on central nodes?
+
+
 
         if self.coef_xbarspl2notbatchID_loss > 0.0:
-            assert False  # TODO: complete
+            rng_batchemb = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+            ]
+
+            dict_xbarspl2notbatchID_loss = self.crit_loss_xbarspl2notbatchID(
+                z=predadjmat.grad_reverse(
+                    dict_q_sample['param_q_xbarspl'].detach()
+                ),
+                module_BatchIDpredictor=self.module_predictor_xbarspl2notbatchID,
+                ten_BatchID=batch.y[
+                    :,
+                    rng_batchemb[0]:rng_batchemb[1]
+                ].to(list_ten_xy_absolute[0].device).detach()
+            )  # NOTE: the first detach is important
+            # TODO: should it be only on central nodes?
+
+
 
 
 
@@ -1751,7 +1787,12 @@ class InFlowVarDist(nn.Module):
             loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
             loss = loss + loss_rank_XYpos_xbarint
 
-        return {'z':dict_z2notNCC_loss, 'xbarint':dict_xbarint2notNCC_loss}
+        return {
+            'z':dict_z2notNCC_loss,
+            'xbarint':dict_xbarint2notNCC_loss,
+            'xbarint2notbatchID':dict_xbarint2notbatchID_loss,
+            'xbarspl2notbatchID':dict_xbarspl2notbatchID_loss
+        }
 
 
 
