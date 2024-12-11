@@ -66,7 +66,7 @@ class EncX2Xbar(nn.Module):
             ]  # [N x num_batches], the one-hot encoded batch token.
             assert ten_batchEmb.size()[1] == self.num_batches
 
-            output = output + torch.mm(ten_batchEmb.detach(), self.param_batchshift)
+            output = output + torch.mm(ten_batchEmb.detach().to(x.device), self.param_batchshift)
 
         return output
 
