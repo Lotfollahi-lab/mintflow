@@ -1189,7 +1189,7 @@ class InFlowVarDist(nn.Module):
 
                 dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
                     z=predadjmat.grad_reverse(
-                        dict_q_sample['param_q_cond4flow']['param_q_xbarint']
+                        dict_q_sample['param_q_xbarint']
                     ),
                     module_BatchIDpredictor=self.module_predictor_xbarint2notbatchID,
                     ten_BatchID=batch.y[
@@ -1211,7 +1211,11 @@ class InFlowVarDist(nn.Module):
                                 step=itrcount_wandb
                             )
 
-                # TODO:HERE
+            # add xbarspl-->notBatchID loss ===
+            if self.coef_xbarspl2notbatchID_loss > 0.0:
+                assert False  # TODO: complete
+
+
 
             # log int_cov_u and spl_cov_u ===
             if flag_tensorboardsave:
@@ -1417,6 +1421,7 @@ class InFlowVarDist(nn.Module):
 
                     loss_after_GRLs = 0.0
                     for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]:
+                        assert False  # TODO: add xbarint2notbatchID and xbarspl2notbatchID losses as well.
                         for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
                             loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
@@ -1591,6 +1596,12 @@ class InFlowVarDist(nn.Module):
             )  # NOTE: the first detach is important
             # TODO: should it be on non-cental nodes as well?
 
+
+        if self.coef_xbarint2notbatchID_loss > 0.0:
+            assert False  # TODO: complete
+
+        if self.coef_xbarspl2notbatchID_loss > 0.0:
+            assert False  # TODO: complete
 
 
 
