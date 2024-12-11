@@ -275,8 +275,8 @@ class InFlowVarDist(nn.Module):
             )  # [N, num_genes]  # [N, num_genes]
 
         # step 2, rsample from encoders to the low-dim embedding space.
-        param_q_xbarint = self.module_varphi_enc_int(x_int)  # [N, dim_latent]
-        param_q_xbarspl = self.module_varphi_enc_spl(x_spl)  # [N, dim_latent]
+        param_q_xbarint = self.module_varphi_enc_int(x_int, batch)  # [N, dim_latent]
+        param_q_xbarspl = self.module_varphi_enc_spl(x_spl, batch)  # [N, dim_latent]
         xbar_int = probutils.ExtenededNormal(
             loc=param_q_xbarint,
             scale=self.dict_qname_to_scaleandunweighted['varphi_enc_int']['scale'],
@@ -432,6 +432,11 @@ class InFlowVarDist(nn.Module):
             - log1p: log(1+x) is fed to end/dec
         :return:
         '''
+
+        raise NotImplementedError(
+            "train_separately_encdec is not implemented when having batch tokens"
+        )
+
         # get x
         x = torch.sparse_coo_tensor(
             indices=adata.X.tocoo().nonzero(),

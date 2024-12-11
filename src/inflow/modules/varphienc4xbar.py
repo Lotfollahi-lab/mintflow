@@ -36,7 +36,12 @@ class EncX2Xbar(nn.Module):
                     requires_grad=True
                 ),
                 requires_grad=True
-            )  # [num_batches x dim_xbar]
+            )  # [num_batches x dim_xbar]  # TODO: upperbound the shift by 1. tanh(.) layer followed by 2. some bounded coefficients.
+
+        if self.num_batches == 1:
+            raise NotImplementedError(
+                "Not implemented for 1 batch. TODO: makes the shift non-trainable and zero in that case."
+            )
 
 
     def forward(self, x, batch):
@@ -70,6 +75,7 @@ class EncX2Xbar(nn.Module):
     def _check_args(self):
         assert isinstance(self.module_encX, nn.Module)
         assert isinstance(self.num_batches, int)
+        assert self.num_batches > 0
         assert isinstance(self.flag_enable_batchEmb, bool)
         assert isinstance(self.dim_xbar, int)
 
