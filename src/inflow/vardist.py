@@ -1642,12 +1642,11 @@ class InFlowVarDist(nn.Module):
                 ten_BatchID=batch.y[
                     :,
                     rng_batchemb[0]:rng_batchemb[1]
-                ].to(list_ten_xy_absolute[0].device).detach()
+                ].to(ten_xy_absolute.device).detach()
             )  # NOTE: the first detach is important
             # TODO: should it be only on central nodes?
 
-
-
+        # add xbarspl-->notBatchID loss ===
         if self.coef_xbarspl2notbatchID_loss > 0.0:
             rng_batchemb = [
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
@@ -1662,7 +1661,7 @@ class InFlowVarDist(nn.Module):
                 ten_BatchID=batch.y[
                     :,
                     rng_batchemb[0]:rng_batchemb[1]
-                ].to(list_ten_xy_absolute[0].device).detach()
+                ].to(ten_xy_absolute.device).detach()
             )  # NOTE: the first detach is important
             # TODO: should it be only on central nodes?
 
