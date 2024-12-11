@@ -21,6 +21,8 @@ from .modules import predictorperCT
 import predadjmat
 from . import wassdist_utils
 from .modules import varphienc4xbar
+from .modules import predictorbatchID
+from . import wassdist_utils_batchID
 #from tqdm.auto import tqdm
 from tqdm.notebook import tqdm, trange
 import wandb
@@ -69,7 +71,11 @@ class InFlowVarDist(nn.Module):
             str_modexbarint2notNCCloss_regorclsorwassdist: str,
             coef_z2notNCC_loss: float,
             module_predictor_z2notNCC: nn.Module,
-            str_modez2notNCCloss_regorclsorwassdist: str
+            str_modez2notNCCloss_regorclsorwassdist: str,
+            module_predictor_xbarint2notbatchID:predictorbatchID.PredictorBatchID,
+            coef_xbarint2notbatchID_loss:float,
+            module_predictor_xbarspl2notbatchID: predictorbatchID.PredictorBatchID,
+            coef_xbarspl2notbatchID_loss: float,
     ):
         '''
 
@@ -205,6 +211,22 @@ class InFlowVarDist(nn.Module):
         # make internals
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
         self.module_cond4flowvarphi0 = type_cond4flowvarphi0(**kwargs_cond4flowvarphi0)
+
+        # related to xbarint2notbatchID
+        self.module_predictor_xbarint2notbatchID = module_predictor_xbarint2notbatchID
+        self.coef_xbarint2notbatchID_loss = coef_xbarint2notbatchID_loss
+        self.crit_loss_xbarint2notbatchID = wassdist_utils_batchID.WassDistBatchID(
+            coef_fminf=self.coef_xbarint2notbatchID_loss,
+            coef_smoothness=1.0 * self.coef_xbarint2notbatchID_loss
+        )
+
+        # related to xbarspl2notbatchID
+        self.module_predictor_xbarspl2notbatchID = module_predictor_xbarspl2notbatchID
+        self.coef_xbarspl2notbatchID_loss = coef_xbarspl2notbatchID_loss
+        self.crit_loss_xbarspl2notbatchID = wassdist_utils_batchID.WassDistBatchID(
+            coef_fminf=self.coef_xbarspl2notbatchID_loss,
+            coef_smoothness=1.0 * self.coef_xbarspl2notbatchID_loss
+        )
 
 
         self._check_args()
@@ -1156,6 +1178,41 @@ class InFlowVarDist(nn.Module):
                                 step=itrcount_wandb
                             )
 
+
+            # add xbarint-->notBatchID loss ===
+            if self.coef_xbarint2notbatchID_loss > 0.0:
+
+                rng_batchemb = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+                ]
+
+                dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
+                    z=predadjmat.grad_reverse(
+                        dict_q_sample['param_q_cond4flow']['param_q_xbarint']
+                    ),
+                    module_BatchIDpredictor=self.module_predictor_xbarint2notbatchID,
+                    ten_BatchID=batch.y[
+                        :,
+                        rng_batchemb[0]:rng_batchemb[1]
+                    ].to(list_ten_xy_absolute[0].device)
+                )
+
+                for loss_name in dict_xbarint2notbatchID_loss.keys():
+                    loss = loss + dict_xbarint2notbatchID_loss[loss_name]['coef'] * dict_xbarint2notbatchID_loss[loss_name]['val']
+
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        for loss_name in dict_xbarint2notbatchID_loss.keys():
+                            wandb.log(
+                                {"Loss/xbarint-->notBatchID {} (after mult by coef={})".format(loss_name, dict_xbarint2notbatchID_loss[loss_name]['coef']):
+                                  dict_xbarint2notbatchID_loss[loss_name]['coef'] * dict_xbarint2notbatchID_loss[loss_name]['val']
+                                },
+                                step=itrcount_wandb
+                            )
+
+                # TODO:HERE
+
             # log int_cov_u and spl_cov_u ===
             if flag_tensorboardsave:
                 with torch.no_grad():
@@ -1848,6 +1905,14 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        # related to xbarint2notbatchID and xbarsplt2notbatchID
+        assert isinstance(self.module_predictor_xbarint2notbatchID, predictorbatchID.PredictorBatchID)
+        assert isinstance(self.coef_xbarint2notbatchID_loss, float)
+        assert isinstance(self.module_predictor_xbarspl2notbatchID, predictorbatchID.PredictorBatchID)
+        assert isinstance(self.coef_xbarspl2notbatchID_loss, float)
+
+
         assert isinstance(self.module_varphi_enc_int, varphienc4xbar.EncX2Xbar)
         assert isinstance(self.module_varphi_enc_spl, varphienc4xbar.EncX2Xbar)
 
