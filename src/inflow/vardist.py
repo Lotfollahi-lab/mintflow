@@ -1467,8 +1467,7 @@ class InFlowVarDist(nn.Module):
                     try:
                         batch_2ndpygbatch_postGRL = next(list_iter_dl_2ndpygbatch[(postGRL_index_dl + 1) % len(list_dl)])
                     except StopIteration:
-                        list_iter_dl_2ndpygbatch[(postGRL_index_dl + 1) % len(list_dl)] = iter(
-                            list_dl[list_iter_dl_2ndpygbatch[(postGRL_index_dl + 1) % len(list_dl)]])
+                        list_iter_dl_2ndpygbatch[(postGRL_index_dl + 1) % len(list_dl)] = iter(list_dl[(postGRL_index_dl + 1) % len(list_dl)])
                         batch_2ndpygbatch_postGRL = next(list_iter_dl_2ndpygbatch[(postGRL_index_dl + 1) % len(list_dl)])
 
                     batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
