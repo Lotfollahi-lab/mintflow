@@ -1190,6 +1190,8 @@ class InFlowVarDist(nn.Module):
                 list_iter_dl_2ndpygbatch[(idx_current_dl_normal + 1) % len(list_dl)] = iter(list_dl[list_iter_dl_2ndpygbatch[(idx_current_dl_normal + 1)%len(list_dl)]])
                 batch_2ndpygbatch = next(list_iter_dl_2ndpygbatch[(idx_current_dl_normal + 1) % len(list_dl)])
 
+            batch_2ndpygbatch.INFLOWMETAINF = batch.INFLOWMETAINF
+
             dict_q_sample_2ndpygbatch = self.rsample(
                 batch=batch_2ndpygbatch,
                 prob_maskknowngenes=prob_maskknowngenes,
@@ -1716,7 +1718,7 @@ class InFlowVarDist(nn.Module):
                 ).to(ten_xy_absolute.device).detach()
             )  # NOTE: the first detach is important
             # TODO: should it be only on central nodes?
-            
+
 
 
 
