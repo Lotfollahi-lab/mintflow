@@ -79,6 +79,11 @@ class GNNDisentangler(nn.Module):
             # assert self.mode_headxint_headxspl_headboth_twosep != ModeArch.TWOSEP  # twosep --> backbone not defined
             dim_gnnin += kwargs_genmodel['dict_varname_to_dim']['NCC']
 
+        # add the batch token
+        if self.flag_enable_batchtoken:
+            dim_gnnin += kwargs_genmodel['dict_varname_to_dim']['BatchEmb']
+
+
         '''
         if self.mode_headxint_headxspl_headboth_twosep == ModeArch.TWOSEP:
             if self.dict_CTNNC_usage['CT'] == ArchInsertionPoint.HEADSPL:
@@ -95,14 +100,27 @@ class GNNDisentangler(nn.Module):
         }[self.mode_headxint_headxspl_headboth_twosep]  # backward comtblity (to be used only by the outer modules)
 
 
-
-
         self.module_gnn = gnn.SAGE(
             dim_input=dim_gnnin,
             dim_output=100,  # TODO:TUNE 100
             list_dim_hidden=self.gnn_list_dim_hidden,
             kwargs_sageconv=self.kwargs_sageconv
         )
+
+        # add the batch-specific shifts (to be applied on GNN's output)
+        if self.flag_enable_batchtoken:
+            if kwargs_genmodel['dict_varname_to_dim']['BatchEmb'] == 1:
+                raise NotImplementedError(
+                    "Not implemented for a single batch yet."
+                )
+
+            self.param_batchshifts_4_gnnoutput = torch.nn.Parameter(
+                torch.randn(
+                    [kwargs_genmodel['dict_varname_to_dim']['BatchEmb']-1, self.module_gnn.dim_output],
+                    requires_grad=True
+                ),
+                requires_grad=True
+            )  # [num_batch-1 x gnnoutput]
 
         # assert that the GNN backbone has as many hops as the generative model
         cnt_sage_conv = 0
@@ -310,12 +328,7 @@ class GNNDisentangler(nn.Module):
                 "Uknown value {} for str_mode_headxint_headxspl_headboth.".format(self.mode_headxint_headxspl_headboth_twosep)
             )
 
-        # add the batch-specific shifts
-        if self.flag_enable_batchtoken:
-            raise NotImplementedError(
-                "Conditioning the disentagler (i.e. 1st stage of encoder) on batch token is not implemented yet."
-            )
-            # kwargs_genmodel['dict_varname_to_dim']['BatchEmb']  # TODO:HERE
+
 
 
 
@@ -395,11 +408,35 @@ class GNNDisentangler(nn.Module):
             device=device
         )
 
-        return self.module_gnn(
+        # add the batch-token
+        if self.flag_enable_batchtoken:
+            rng_batchemb = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+            ]
+            ten_input_gnn = torch.cat(
+                [ten_input_gnn, batch.y[:, rng_batchemb[0]:rng_batchemb[1]].to(device).detach()],
+                1
+            )
+
+        gnn_output = self.module_gnn(
             ten_input_gnn,
             batch.edge_index.to(device)
         )
 
+        if self.flag_enable_batchtoken:
+            extended_batchemb = torch.cat(
+                [torch.zeros(self.module_gnn.dim_output, requires_grad=False).to(gnn_output.device).unsqueeze(0), self.param_batchshifts_4_gnnoutput],
+                0
+            )  # [num_batch x dim_out]
+
+            ten_shift = torch.mm(
+                batch.y[:, rng_batchemb[0]:rng_batchemb[1]].to(device).detach(),
+                extended_batchemb
+            )  # [N x dim_out]
+            gnn_output = gnn_output + ten_shift
+
+        return gnn_output
 
     def _feed_to_head(self, str_int_or_spl, output_gnn, batch, device):
         '''
