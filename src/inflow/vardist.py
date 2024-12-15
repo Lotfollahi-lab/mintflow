@@ -682,7 +682,7 @@ class InFlowVarDist(nn.Module):
 
         list_iter_dl_normal = [iter(u) for u in list_dl]
 
-        list_iter_dl_2ndpygbatch = [iter(u) for u in list_dl]  # the 2nd pygbatch for batch mixing (i.e. xbarint/xbarspl --> notbatchID losses)
+        iter_dl_2ndpygbatch = iter(list_dl[0])  # [iter(u) for u in list_dl]  # the 2nd pygbatch for batch mixing (i.e. xbarint/xbarspl --> notbatchID losses)
 
         list_iterfinished_normal = [False for u in list_dl]
 
@@ -1185,10 +1185,10 @@ class InFlowVarDist(nn.Module):
 
             # get a 2nd pygdl and q_samples for the below two losses
             try:
-                batch_2ndpygbatch = next(list_iter_dl_2ndpygbatch[(idx_current_dl_normal + 1)%len(list_dl)])
+                batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
             except StopIteration:
-                list_iter_dl_2ndpygbatch[(idx_current_dl_normal + 1) % len(list_dl)] = iter(list_dl[(idx_current_dl_normal + 1)%len(list_dl)])
-                batch_2ndpygbatch = next(list_iter_dl_2ndpygbatch[(idx_current_dl_normal + 1) % len(list_dl)])
+                iter_dl_2ndpygbatch = iter(list_dl[0])
+                batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
 
             batch_2ndpygbatch.INFLOWMETAINF = batch.INFLOWMETAINF
 
@@ -1465,10 +1465,10 @@ class InFlowVarDist(nn.Module):
 
                     # get a 2nd pygdl and q_samples for the below two losses
                     try:
-                        batch_2ndpygbatch_postGRL = next(list_iter_dl_2ndpygbatch[(postGRL_index_dl + 1) % len(list_dl)])
+                        batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
                     except StopIteration:
-                        list_iter_dl_2ndpygbatch[(postGRL_index_dl + 1) % len(list_dl)] = iter(list_dl[(postGRL_index_dl + 1) % len(list_dl)])
-                        batch_2ndpygbatch_postGRL = next(list_iter_dl_2ndpygbatch[(postGRL_index_dl + 1) % len(list_dl)])
+                        iter_dl_2ndpygbatch = iter(list_dl[0])
+                        batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
 
                     batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
                     batch_2ndpygbatch_postGRL.INFLOWMETAINF = batch.INFLOWMETAINF
