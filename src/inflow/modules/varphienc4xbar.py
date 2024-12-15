@@ -2,7 +2,7 @@
 
 '''
 Encoder module for x-->xbar. The \varphi(.) functions with the notaion of paper.
-The output xbar-s are shifted by some batch-specific shifts, similar to scArches.
+Batch token is concatenated if `flag_enable_batchEmb` is set to True, otherwise all-zero vectors are concatenated.
 '''
 from typing import Union, Callable, Tuple, Any, Optional, Dict
 
@@ -29,6 +29,7 @@ class EncX2Xbar(nn.Module):
         self.flag_enable_batchEmb = flag_enable_batchEmb
         self._check_args()
 
+        '''
         if self.flag_enable_batchEmb:
             self.param_batchshift = nn.Parameter(
                 torch.randn(
@@ -38,7 +39,8 @@ class EncX2Xbar(nn.Module):
                 requires_grad=True
             )  # [num_batches-1 x dim_xbar] one minus num_batches because the 1st batch is considered as the reference --> no shift for the 1st batch.
             # TODO: upperbound the shift by 1. tanh(.) layer followed by 2. some bounded coefficients.
-
+        '''
+        
         if self.num_batches == 1:
             raise NotImplementedError(
                 "Not implemented for 1 batch. TODO: makes the shift non-trainable and zero in that case."
@@ -51,7 +53,6 @@ class EncX2Xbar(nn.Module):
         :param batch: pyg.NeighbourLoader batch, `batch.y` is to be used to get batch embeddings.
         :return: xbar
         """
-        output = self.module_encX(x)  # [N x dim_xbar]
 
         if self.flag_enable_batchEmb:
             assert (
@@ -66,14 +67,12 @@ class EncX2Xbar(nn.Module):
                 rng_batchEmb[0]:rng_batchEmb[1]
             ]  # [N x num_batches], the one-hot encoded batch token.
             assert ten_batchEmb.size()[1] == self.num_batches
+        else:
+            ten_batchEmb = torch.zeros([x.size()[0], self.num_batches]).float().to(x.device).detach()  # [N x num_batches], all-zero vectors.
 
-            output = output + torch.mm(
-                ten_batchEmb.detach().to(x.device),
-                torch.cat(
-                    [torch.zeros(self.dim_xbar, device=x.device).unsqueeze(0).detach(), self.param_batchshift],
-                    0
-                )
-            )
+        output = self.module_encX(
+            torch.cat([ten_batchEmb, x], 1)
+        )  # [N x dim_xbar]
 
         return output
 
