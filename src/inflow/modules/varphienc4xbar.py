@@ -40,7 +40,7 @@ class EncX2Xbar(nn.Module):
             )  # [num_batches-1 x dim_xbar] one minus num_batches because the 1st batch is considered as the reference --> no shift for the 1st batch.
             # TODO: upperbound the shift by 1. tanh(.) layer followed by 2. some bounded coefficients.
         '''
-        
+
         if self.num_batches == 1:
             raise NotImplementedError(
                 "Not implemented for 1 batch. TODO: makes the shift non-trainable and zero in that case."
@@ -65,7 +65,7 @@ class EncX2Xbar(nn.Module):
             ten_batchEmb = batch.y[
                 :,
                 rng_batchEmb[0]:rng_batchEmb[1]
-            ]  # [N x num_batches], the one-hot encoded batch token.
+            ].float().to(x.device).detach()  # [N x num_batches], the one-hot encoded batch token.
             assert ten_batchEmb.size()[1] == self.num_batches
         else:
             ten_batchEmb = torch.zeros([x.size()[0], self.num_batches]).float().to(x.device).detach()  # [N x num_batches], all-zero vectors.
