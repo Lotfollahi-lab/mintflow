@@ -602,7 +602,9 @@ class InFlowVarDist(nn.Module):
             num_updateseparate_afterGRLs:int,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
-            coef_loss_closeness_zz_xbarintxbarint_xintxint:float=0.0,
+            coef_loss_closeness_zz:float=0.0,
+            coef_loss_closeness_xbarintxbarint: float = 0.0,
+            coef_loss_closeness_xintxint: float = 0.0,
             coef_flowmatchingloss:float=0.0,
             flag_verbose:bool=False
     ):
@@ -619,7 +621,9 @@ class InFlowVarDist(nn.Module):
         :param tensorboard_stepsize_save
         :param itrcount_wandbstep_input
         :param list_flag_elboloss_imputationloss
-        :param coef_loss_closeness_zz_xbarintxbarint_xintxint
+        :param coef_loss_closeness_zz
+        :param coef_loss_closeness_xbarintxbarint
+        :param coef_loss_closeness_xintxint
         :param prob_applytfm_affinexy: with this probability the [xy] positions go throug an affined transformation.
         :param coef_flowmatchingloss: the coefficient for flow-matching loss.
         :param np_size_factor: a tensor of shape [num_cells], containing the size factors.
@@ -1184,22 +1188,28 @@ class InFlowVarDist(nn.Module):
 
 
             # get a 2nd pygdl and q_samples for the below two losses
-            try:
-                batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
-            except StopIteration:
-                iter_dl_2ndpygbatch = iter(list_dl[0])
-                batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
+            if (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0):
+                try:
+                    batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
+                except StopIteration:
+                    iter_dl_2ndpygbatch = iter(list_dl[0])
+                    batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
 
-            batch_2ndpygbatch.INFLOWMETAINF = batch.INFLOWMETAINF
+                batch_2ndpygbatch.INFLOWMETAINF = batch.INFLOWMETAINF
 
-            dict_q_sample_2ndpygbatch = self.rsample(
-                batch=batch_2ndpygbatch,
-                prob_maskknowngenes=prob_maskknowngenes,
-                ten_xy_absolute=list_ten_xy_absolute[(idx_current_dl_normal + 1) % len(list_dl)]
-            )
+                dict_q_sample_2ndpygbatch = self.rsample(
+                    batch=batch_2ndpygbatch,
+                    prob_maskknowngenes=prob_maskknowngenes,
+                    ten_xy_absolute=list_ten_xy_absolute[0]
+                )
 
             # add xbarint-->notBatchID loss ===
             if self.coef_xbarint2notbatchID_loss > 0.0:
+
+                if len(list_dl) == 1:
+                    raise Exception(
+                        "There is a single batch, but `coef_xbarint2notbatchID_loss` is set to a positive value."
+                    )
 
                 rng_batchemb = [
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
@@ -1236,6 +1246,11 @@ class InFlowVarDist(nn.Module):
 
             # add xbarspl-->notBatchID loss ===
             if self.coef_xbarspl2notbatchID_loss > 0.0:
+
+                if len(list_dl) == 1:
+                    raise Exception(
+                        "There is a single batch, but `coef_xbarspl2notbatchID_loss` is set to a positive value."
+                    )
 
                 rng_batchemb = [
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
@@ -1330,8 +1345,8 @@ class InFlowVarDist(nn.Module):
 
             # add the z-z, xbarint-xbarint, and xint-xint closeness loss ===
             num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
-            if coef_loss_closeness_zz_xbarintxbarint_xintxint > 0.0:
-                coef_loss_zzcloseness = coef_loss_closeness_zz_xbarintxbarint_xintxint + 0.0
+            if (coef_loss_closeness_zz > 0.0) or (coef_loss_closeness_xbarintxbarint > 0.0) or (coef_loss_closeness_xintxint > 0.0):
+                # coef_loss_zzcloseness = coef_loss_closeness_zz_xbarintxbarint_xintxint + 0.0
                 rng_CT = [
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
@@ -1350,6 +1365,11 @@ class InFlowVarDist(nn.Module):
                 MODE_COMP_PAIRWISEDIST = 'pytorchcdist'
                 assert MODE_COMP_PAIRWISEDIST in ['pytorchcdist', 'vanila']
 
+                dict_varname2coef = {
+                    'z':coef_loss_closeness_zz,
+                    'x_int':coef_loss_closeness_xintxint,
+                    'xbar_int':coef_loss_closeness_xbarintxbarint
+                }
                 for varname in ['z', 'x_int', 'xbar_int']:
                     loss_zzcloseness = 0.0
                     for ct in set_celltype_minibatch:
@@ -1388,16 +1408,18 @@ class InFlowVarDist(nn.Module):
                         with torch.no_grad():
                             if isinstance(loss_zzcloseness, torch.Tensor):
                                 wandb.log(
-                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(varname, varname, coef_loss_zzcloseness): coef_loss_zzcloseness * loss_zzcloseness},
+                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(
+                                        varname, varname, dict_varname2coef[varname]
+                                    ): dict_varname2coef[varname] * loss_zzcloseness},
                                     step=itrcount_wandb
                                 )
                             else:
                                 wandb.log(
-                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(varname, varname, coef_loss_zzcloseness): torch.nan},
+                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(varname, varname, dict_varname2coef[varname]): torch.nan},
                                     step=itrcount_wandb
                                 )
 
-                    loss = loss + coef_loss_zzcloseness * loss_zzcloseness
+                    loss = loss + dict_varname2coef[varname] * loss_zzcloseness
 
             # wandblog other measures ===
             if flag_tensorboardsave:
@@ -1462,16 +1484,19 @@ class InFlowVarDist(nn.Module):
                         list_iter_dl_afterGRL[postGRL_index_dl] = iter(list_dl[postGRL_index_dl])
                         batch_afterGRLs = next(list_iter_dl_afterGRL[postGRL_index_dl])
 
+                    batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
 
                     # get a 2nd pygdl and q_samples for the below two losses
-                    try:
-                        batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
-                    except StopIteration:
-                        iter_dl_2ndpygbatch = iter(list_dl[0])
-                        batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
+                    if (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0):
+                        try:
+                            batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
+                        except StopIteration:
+                            iter_dl_2ndpygbatch = iter(list_dl[0])
+                            batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
+                            batch_2ndpygbatch_postGRL.INFLOWMETAINF = batch.INFLOWMETAINF
+                    else:
+                        batch_2ndpygbatch_postGRL = None
 
-                    batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
-                    batch_2ndpygbatch_postGRL.INFLOWMETAINF = batch.INFLOWMETAINF
 
                     dict_loss_GRLpreds = self._getloss_GradRevPredictors(
                         batch=batch_afterGRLs,
@@ -1480,8 +1505,8 @@ class InFlowVarDist(nn.Module):
                         prob_maskknowngenes=prob_maskknowngenes,
                         dict_args_2ndpygbatch={
                             'batch':batch_2ndpygbatch_postGRL,
-                            'ten_xy_absolute':list_ten_xy_absolute[(postGRL_index_dl + 1) % len(list_dl)],
-                            'ten_xy_touse':list_ten_xy_absolute[(postGRL_index_dl + 1) % len(list_dl)]
+                            'ten_xy_absolute':list_ten_xy_absolute[0],
+                            'ten_xy_touse':list_ten_xy_absolute[0]
                         }
                     )
                     dict_z2notNCC_loss = dict_loss_GRLpreds['z']
@@ -1492,8 +1517,9 @@ class InFlowVarDist(nn.Module):
 
                     loss_after_GRLs = 0.0
                     for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss, dict_xbarint2notbatchID_loss_forGRL, dict_xbarspl2notbatchID_loss_forGRL]:
-                        for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
-                            loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
+                        if d is not None:  # when batch-mixing coefs are zero --> the last 2 dict-s would be None.
+                            for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
+                                loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
                     loss_after_GRLs.backward()
                     optim_training.step()
@@ -1612,11 +1638,12 @@ class InFlowVarDist(nn.Module):
                 prob_maskknowngenes=prob_maskknowngenes,
                 ten_xy_absolute=ten_xy_touse
             )
-            dict_q_sample_2ndpygbatch = self.rsample(
-                batch=dict_args_2ndpygbatch['batch'],
-                prob_maskknowngenes=prob_maskknowngenes,
-                ten_xy_absolute=dict_args_2ndpygbatch['ten_xy_touse']
-            )
+            if (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0):
+                dict_q_sample_2ndpygbatch = self.rsample(
+                    batch=dict_args_2ndpygbatch['batch'],
+                    prob_maskknowngenes=prob_maskknowngenes,
+                    ten_xy_absolute=dict_args_2ndpygbatch['ten_xy_touse']
+                )
 
         # Z 2 NotNCC ======================
         if self.coef_z2notNCC_loss > 0.0:
@@ -1853,11 +1880,12 @@ class InFlowVarDist(nn.Module):
             loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
             loss = loss + loss_rank_XYpos_xbarint
 
+        flag_batchmixingloss_present = (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0)
         return {
             'z':dict_z2notNCC_loss,
             'xbarint':dict_xbarint2notNCC_loss,
-            'xbarint2notbatchID':dict_xbarint2notbatchID_loss,
-            'xbarspl2notbatchID':dict_xbarspl2notbatchID_loss
+            'xbarint2notbatchID':dict_xbarint2notbatchID_loss if flag_batchmixingloss_present else None,
+            'xbarspl2notbatchID':dict_xbarspl2notbatchID_loss if flag_batchmixingloss_present else None
         }
 
 
