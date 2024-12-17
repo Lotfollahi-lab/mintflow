@@ -1216,6 +1216,12 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
                 ]
 
+                if flag_verbose:
+                    with torch.no_grad():
+                        print("computing xbarint --> notBatchID with main batch {} and 2nd batch {}".format(
+                            torch.argmax(batch.y[0, rng_batchemb[0]:rng_batchemb[1]]),
+                            torch.argmax(batch_2ndpygbatch.y[0, rng_batchemb[0]:rng_batchemb[1]])
+                        ))
 
                 dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
                     z=predadjmat.grad_reverse(
