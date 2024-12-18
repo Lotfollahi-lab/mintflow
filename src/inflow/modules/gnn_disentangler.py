@@ -161,7 +161,8 @@ class GNNDisentangler(nn.Module):
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
                     kwargs_genmodel['dict_varname_to_dim']['x']
-                )
+                ),
+                nn.Tanh()
             )  # TODO:TUNE //10
             self.module_covxint = nn.Sequential(
                 nn.ReLU(),
@@ -194,7 +195,8 @@ class GNNDisentangler(nn.Module):
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
                     kwargs_genmodel['dict_varname_to_dim']['x']
-                )
+                ),
+                nn.Tanh()
             )  # TODO:TUNE //10
             self.module_covxspl = nn.Sequential(
                 nn.ReLU(),
@@ -224,7 +226,8 @@ class GNNDisentangler(nn.Module):
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
                     kwargs_genmodel['dict_varname_to_dim']['x']
-                )
+                ),
+                nn.Tanh()
             )  # TODO:TUNE //10
             self.module_covxint = nn.Sequential(
                 nn.ReLU(),
@@ -252,7 +255,8 @@ class GNNDisentangler(nn.Module):
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
                     kwargs_genmodel['dict_varname_to_dim']['x']
-                )
+                ),
+                nn.Tanh()
             )  # TODO:TUNE //10
             self.module_covxspl = nn.Sequential(
                 nn.ReLU(),
@@ -280,7 +284,8 @@ class GNNDisentangler(nn.Module):
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
                     kwargs_genmodel['dict_varname_to_dim']['x']
-                )
+                ),
+                nn.Tanh()
             )  # TODO:TUNE //10
             self.module_covxint = nn.Sequential(
                 nn.Linear(
@@ -306,7 +311,8 @@ class GNNDisentangler(nn.Module):
                 nn.Linear(
                     kwargs_genmodel['dict_varname_to_dim']['x'] // 10,
                     kwargs_genmodel['dict_varname_to_dim']['x']
-                )
+                ),
+                nn.Tanh()
             )  # TODO:TUNE //10
             self.module_covxspl = nn.Sequential(
                 nn.ReLU(),
@@ -596,6 +602,7 @@ class GNNDisentangler(nn.Module):
             )
 
             if muxint is not None:
+                muxint = ((muxint + 1.0)/2.0) * x_cnt.detach()  # since now muxint is the output of a nn.Tanh() layer.
                 muxint = torch.clamp(
                     muxint * oneon_x_nonzero,
                     min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
@@ -603,6 +610,7 @@ class GNNDisentangler(nn.Module):
                 )  # [N, num_genes]
 
             if muxspl is not None:
+                muxspl = ((muxspl + 1.0) / 2.0) * x_cnt.detach()  # since now muxspl is the output of a nn.Tanh() layer.
                 muxspl = torch.clamp(
                     muxspl * oneon_x_nonzero,
                     min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
@@ -636,6 +644,7 @@ class GNNDisentangler(nn.Module):
             )
 
             if muxint is not None:
+                muxint = ((muxint + 1.0) / 2.0) * x_cnt.detach()  # since now muxint is the output of a nn.Tanh() layer.
                 muxint = torch.clamp(
                     muxint * oneon_x_nonzero,
                     min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
@@ -643,6 +652,7 @@ class GNNDisentangler(nn.Module):
                 )  # [N, num_genes]
 
             if muxspl is not None:
+                muxspl = ((muxspl + 1.0) / 2.0) * x_cnt.detach()  # since now muxspl is the output of a nn.Tanh() layer.
                 muxspl = torch.clamp(
                     muxspl * oneon_x_nonzero,
                     min=torch.tensor([0.0001], device=ten_xy_absolute.device),  # TODO: maybe tune?
