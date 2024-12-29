@@ -266,7 +266,13 @@ class Slice:
                 )
 
                 w_toshow = self.kwargs_pygdl_train['width_window']
-                square = patches.Rectangle((0, 0), w_toshow, w_toshow, edgecolor='orange', facecolor='none')
+                square = patches.Rectangle(
+                    (self.ten_xy_absolute.detach().cpu().numpy()[:, 0].mean(), -self.ten_xy_absolute.detach().cpu().numpy()[:, 1].mean()),
+                    w_toshow,
+                    w_toshow,
+                    edgecolor='orange',
+                    facecolor='none'
+                )
                 plt.gca().add_patch(square)
                 plt.axis("equal")
                 plt.title("{}".format(self._get_batchid()))
