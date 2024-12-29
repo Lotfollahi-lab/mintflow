@@ -260,11 +260,13 @@ class Slice:
             else:
 
                 plt.figure()
+
+                # training custom pygloader
+                plt.subplot(1,2,1)
                 plt.scatter(
                     self.ten_xy_absolute.detach().cpu().numpy()[:, 0],
                     -self.ten_xy_absolute.detach().cpu().numpy()[:, 1]
                 )
-
                 w_toshow = self.kwargs_pygdl_train['width_window']
                 square = patches.Rectangle(
                     (self.ten_xy_absolute.detach().cpu().numpy()[:, 0].mean(), -self.ten_xy_absolute.detach().cpu().numpy()[:, 1].mean()),
@@ -275,7 +277,27 @@ class Slice:
                 )
                 plt.gca().add_patch(square)
                 plt.axis("equal")
-                plt.title("{}".format(self._get_batchid()))
+                plt.title("{} (training custom pygdl)".format(self._get_batchid()))
+
+                # testing custom pygloader
+                plt.subplot(1, 2, 2)
+                plt.scatter(
+                    self.ten_xy_absolute.detach().cpu().numpy()[:, 0],
+                    -self.ten_xy_absolute.detach().cpu().numpy()[:, 1]
+                )
+                w_toshow = self.kwargs_pygdl_test['width_window']
+                square = patches.Rectangle(
+                    (self.ten_xy_absolute.detach().cpu().numpy()[:, 0].mean(),
+                     -self.ten_xy_absolute.detach().cpu().numpy()[:, 1].mean()),
+                    w_toshow,
+                    w_toshow,
+                    edgecolor='orange',
+                    facecolor='none'
+                )
+                plt.gca().add_patch(square)
+                plt.axis("equal")
+                plt.title("{} (testing custom pygdl)".format(self._get_batchid()))
+
                 plt.show()
 
 
