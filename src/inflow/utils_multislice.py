@@ -240,6 +240,9 @@ class Slice:
             connectivity_key="spatial_connectivities",
             library_id='connectivities_key',  # 'connectivities_key',
             color=[
+                "inflow_CT",
+            ],
+            title=[
                 "inflow_CT \n ({})".format(self._get_batchid()),
             ],
             crop_coord=crop_coord,
