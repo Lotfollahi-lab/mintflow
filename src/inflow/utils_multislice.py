@@ -277,7 +277,7 @@ class Slice:
                 )
                 plt.gca().add_patch(square)
                 plt.axis("equal")
-                plt.title("{} (training custom pygdl)".format(self._get_batchid()))
+                plt.title("{}\n (training custom pygdl)".format(self._get_batchid()))
 
                 # testing custom pygloader
                 plt.subplot(1, 2, 2)
@@ -296,7 +296,7 @@ class Slice:
                 )
                 plt.gca().add_patch(square)
                 plt.axis("equal")
-                plt.title("{} (testing custom pygdl)".format(self._get_batchid()))
+                plt.title("{}\n (testing custom pygdl)".format(self._get_batchid()))
 
                 plt.show()
 
