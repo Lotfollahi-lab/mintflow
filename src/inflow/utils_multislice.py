@@ -12,6 +12,8 @@ import scanpy as sc
 import torch_geometric as pyg
 from torch_geometric.utils.convert import from_scipy_sparse_matrix
 import torch
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from torch_geometric.loader import NeighborLoader
 from . import utils_pyg
 
@@ -243,6 +245,16 @@ class Slice:
             crop_coord=crop_coord,
             **self.kwargs_sq_pl_spatial_scatter
         )
+
+        # show a sample window on tissue (so one can inspect if it's appropriate for the tissue based on size etc.)
+        if self.flag_use_custompygsampler:
+            if 'img_key' in self.kwargs_sq_pl_spatial_scatter.keys():
+               print("When 'img_key' is provided in 'kwargs_sq_pl_spatial_scatter', show_scatter function doesn't show the sample window of pygloader batch overlayed on tissue.")
+            else:
+                w_toshow = self.kwargs_pygdl_train['width_window']
+                square = patches.Rectangle((0, 0), w_toshow, w_toshow, edgecolor='orange', facecolor='none')
+                plt.gca().add_patch(square)
+
 
     def _get_set_CT(self):
         """
