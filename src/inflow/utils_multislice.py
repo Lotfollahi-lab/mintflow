@@ -246,14 +246,26 @@ class Slice:
             **self.kwargs_sq_pl_spatial_scatter
         )
 
-        # show a sample window on tissue (so one can inspect if it's appropriate for the tissue based on size etc.)
+    def _show_pygbatch_window(self):
+        """
+        Shows a sample window on tissue, so one can inspect if the window size is appropriate for the tissue based on size etc.
+        :return: None
+        """
         if self.flag_use_custompygsampler:
             if 'img_key' in self.kwargs_sq_pl_spatial_scatter.keys():
                print("When 'img_key' is provided in 'kwargs_sq_pl_spatial_scatter', show_scatter function doesn't show the sample window of pygloader batch overlayed on tissue.")
             else:
+
+                plt.figure()
+                plt.scatter(
+                    self.ten_xy_absolute.detach().cpu().numpy()[:, 0],
+                    -self.ten_xy_absolute.detach().cpu().numpy()[:, 1]
+                )
+
                 w_toshow = self.kwargs_pygdl_train['width_window']
                 square = patches.Rectangle((0, 0), w_toshow, w_toshow, edgecolor='orange', facecolor='none')
                 plt.gca().add_patch(square)
+                plt.show()
 
 
     def _get_set_CT(self):
@@ -489,6 +501,10 @@ class ListSlice:
     def show_scatters(self):
         for sl in self.list_slice:
             sl._show_scatter()
+
+    def show_pygbatch_windows(self):
+        for sl in self.list_slice:
+            sl._show_pygbatch_window()
 
     def _check_args(self):
         assert isinstance(self.list_slice, list)
