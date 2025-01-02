@@ -512,7 +512,7 @@ class ListSlice:
 
         set_all_BatchID = list(set(set_all_BatchID))
         assert len(set_all_BatchID) == len(self.list_slice)
-        # set_all_BatchID.sort() TODO: is this needed? 
+        # set_all_BatchID.sort() TODO: is this needed?
 
         self.map_Batchname_to_inflowBatchID = {
             bid: "inflow_BatchID_{}".format(idx_bid)
