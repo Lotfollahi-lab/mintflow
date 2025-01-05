@@ -292,6 +292,7 @@ class Slice:
             bbox_inches='tight',
             pad_inches=0
         )
+        plt.close()
 
 
     def _show_pygbatch_window(self):
@@ -345,6 +346,66 @@ class Slice:
 
                 plt.show()
 
+    def _show_pygbatch_window_4cli(self, fname_output):
+        """
+        Shows a sample window on tissue 4 the command line interface (CLI), so one can inspect if the window size is appropriate for the tissue based on size etc.
+        :return: None
+        """
+        if self.flag_use_custompygsampler:
+            if 'img_key' in self.kwargs_sq_pl_spatial_scatter.keys():
+               print("When 'img_key' is provided in 'kwargs_sq_pl_spatial_scatter', show_scatter function doesn't show the sample window of pygloader batch overlayed on tissue.")
+            else:
+
+                plt.figure()
+
+                # training custom pygloader
+                plt.subplot(1,2,1)
+                plt.scatter(
+                    self.ten_xy_absolute.detach().cpu().numpy()[:, 0],
+                    -self.ten_xy_absolute.detach().cpu().numpy()[:, 1]
+                )
+                w_toshow = self.kwargs_pygdl_train['width_window']
+                square = patches.Rectangle(
+                    (self.ten_xy_absolute.detach().cpu().numpy()[:, 0].mean(), -self.ten_xy_absolute.detach().cpu().numpy()[:, 1].mean()),
+                    w_toshow,
+                    w_toshow,
+                    edgecolor='orange',
+                    facecolor='none'
+                )
+                plt.gca().add_patch(square)
+                plt.axis("equal")
+                plt.title("{}\n (training custom pygdl)".format(self._get_batchid()))
+
+                # testing custom pygloader
+                plt.subplot(1, 2, 2)
+                plt.scatter(
+                    self.ten_xy_absolute.detach().cpu().numpy()[:, 0],
+                    -self.ten_xy_absolute.detach().cpu().numpy()[:, 1]
+                )
+                w_toshow = self.kwargs_pygdl_test['width_window']
+                square = patches.Rectangle(
+                    (self.ten_xy_absolute.detach().cpu().numpy()[:, 0].mean(),
+                     -self.ten_xy_absolute.detach().cpu().numpy()[:, 1].mean()),
+                    w_toshow,
+                    w_toshow,
+                    edgecolor='orange',
+                    facecolor='none'
+                )
+                plt.gca().add_patch(square)
+                plt.axis("equal")
+                # plt.title("{}\n (testing custom pygdl)".format(self._get_batchid()))
+                plt.title(
+                    "The square shows a cropped window by dataloader \n sampleID: {} \n biological batch ID: {}".format(
+                        list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0],
+                        self._get_batchid()
+                    )
+                )
+                plt.savefig(
+                    fname_output,
+                    bbox_inches='tight',
+                    pad_inches=0
+                )
+                plt.close()
 
     def _get_set_CT(self):
         """
@@ -592,6 +653,15 @@ class ListSlice:
     def show_pygbatch_windows(self):
         for sl in self.list_slice:
             sl._show_pygbatch_window()
+
+    def show_pygbatch_windows_4cli(self, path_output):
+        for idx_sl, sl in enumerate(self.list_slice):
+            sl._show_pygbatch_window_4cli(
+                fname_output=os.path.join(
+                    path_output,
+                    'tissue_{}.png'.format(idx_sl)
+                )
+            )
 
     def _check_args(self):
         assert isinstance(self.list_slice, list)
