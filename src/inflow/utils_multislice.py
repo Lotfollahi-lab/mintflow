@@ -288,7 +288,9 @@ class Slice:
             save=None
         )
         plt.savefig(
-            fname_output
+            fname_output,
+            bbox_inches='tight',
+            pad_inches=0
         )
 
 
