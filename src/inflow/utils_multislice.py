@@ -285,8 +285,12 @@ class Slice:
             ],
             crop_coord=crop_coord,
             **self.kwargs_sq_pl_spatial_scatter,
-            save=fname_output
+            save=None
         )
+        plt.savefig(
+            fname_output
+        )
+
 
     def _show_pygbatch_window(self):
         """
