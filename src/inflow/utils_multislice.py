@@ -255,6 +255,11 @@ class Slice:
         Saves the spatial data figure for the command line interface (CLI).
         :return:
         """
+
+        if 'figsize' in self.kwargs_sq_pl_spatial_scatter:
+            if not isinstance(self.kwargs_sq_pl_spatial_scatter['figsize'], list):
+                self.kwargs_sq_pl_spatial_scatter['figsize'] = 2*[self.kwargs_sq_pl_spatial_scatter['figsize']]
+
         if self.kwargs_sq_pl_spatial_scatter is None:
             raise Exception(
                 "To call this funciton, the arg `kwargs_sq_pl_spatial_scatter` should be passed in.\n"+\
