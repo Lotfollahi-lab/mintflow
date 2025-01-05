@@ -23,7 +23,7 @@ def parse(fname_config_data):
         except yaml.YAMLError as exc:
             print(exc)
             raise Exception(
-                "Something went wrong when reading 'file_config_data'. (backtrace printed above).\n" +
+                "Something went wrong when reading the config file for training. (backtrace printed above).\n" +
                 "Please refer to TODO: for sample file config_data_train.yml"
             )
 
