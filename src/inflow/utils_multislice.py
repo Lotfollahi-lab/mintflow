@@ -592,16 +592,24 @@ class ListSlice:
         - Adds `inflow_BatchID` (i.e. inflow batch ID) column to each anndata in the list.
         :return:
         """
-        set_all_BatchID = []
+        set_all_BatchID_ = []
         for sl in self.list_slice:
             sl : Slice
-            set_all_BatchID = set_all_BatchID + [sl._get_batchid()]
+            set_all_BatchID_ = set_all_BatchID_ + [sl._get_batchid()]
 
+        '''
+        not needed anymore.
         for u in set_all_BatchID:
             assert set_all_BatchID.count(u) == 1
+        '''
 
-        set_all_BatchID = list(set(set_all_BatchID))
-        assert len(set_all_BatchID) == len(self.list_slice)
+        set_all_BatchID = []
+        for u in set_all_BatchID_:
+            if u not in set_all_BatchID:
+                set_all_BatchID.append(u)
+
+
+        # assert len(set_all_BatchID) == len(self.list_slice)  note needed anymore
         # set_all_BatchID.sort() TODO: is this needed?
 
         self.map_Batchname_to_inflowBatchID = {
