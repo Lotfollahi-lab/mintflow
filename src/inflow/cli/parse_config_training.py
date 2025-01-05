@@ -3,13 +3,26 @@
 import os, sys
 import yaml
 
-def _correct_booleans(dict_config, set_keys_boolean):
+def _correct_booleans(fname_config, dict_config, set_keys_boolean):
     '''
     Yaml may set the True/False or true/false values as string.
     This function replaces the boolean values with python True/False boolean values.
     :param dict_config:
     :return:
     '''
+
+    # check if `set_keys_boolean` contains all keys starting with flag_...
+    for k in dict_config.keys():
+        if len(k) >= len("flag_"):
+            if k[0:len("flag_")] == "flag_":
+                if k not in set_keys_boolean:
+                    raise Exception(
+                        "In file {} the key {} seems to be a boolean (starts with 'flag_'), but it's not provided in the priori known list of booleans.\n".format(
+                            fname_config,
+                            k
+                        ) + "This may result problems when parsing {}".format(fname_config)
+                    )
+
     for k in set_keys_boolean:
         assert isinstance(dict_config[k], str)
         assert dict_config[k] in ["True", "False"]
@@ -17,6 +30,8 @@ def _correct_booleans(dict_config, set_keys_boolean):
 
     for k in set_keys_boolean:
         assert isinstance(dict_config[k], bool)
+
+
 
     return dict_config
 
@@ -35,6 +50,7 @@ def parse(fname_config_training):
             )
 
     dict_config_training = _correct_booleans(
+        fname_config=fname_config_training,
         dict_config=dict_config_training,
         set_keys_boolean={
             'flag_use_GPU'
