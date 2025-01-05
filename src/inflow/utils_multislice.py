@@ -4,6 +4,7 @@ Utilities for multi-slice setting where there are >1 slices and separate entitie
 while some info is still shared among all slices, like the set of cell types.
 '''
 
+import os, sys
 from typing import List
 import numpy as np
 import gc
@@ -247,6 +248,39 @@ class Slice:
             ],
             crop_coord=crop_coord,
             **self.kwargs_sq_pl_spatial_scatter
+        )
+
+    def _show_scatter_4cli(self, fname_output):
+        """
+        Saves the spatial data figure for the command line interface (CLI).
+        :return:
+        """
+        if self.kwargs_sq_pl_spatial_scatter is None:
+            raise Exception(
+                "To call this funciton, the arg `kwargs_sq_pl_spatial_scatter` should be passed in.\n"+\
+                "For more info reffer to the documentation for TODO."
+            )
+
+        self.adata.uns['spatial'] = self.adata.uns['spatial_neighbors']
+        crop_coord = None
+        sq.pl.spatial_scatter(
+            self.adata,
+            spatial_key='spatial',
+            img=False,
+            connectivity_key="spatial_connectivities",
+            library_id='connectivities_key',  # 'connectivities_key',
+            color=[
+                "inflow_CT",
+            ],
+            title=[
+                "inflow_CT \n (sampleID: {}) \n (biological batch ID: {}".format(
+                    list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0],
+                    self._get_batchid()
+                ),
+            ],
+            crop_coord=crop_coord,
+            **self.kwargs_sq_pl_spatial_scatter,
+            save=fname_output
         )
 
     def _show_pygbatch_window(self):
@@ -534,6 +568,15 @@ class ListSlice:
     def show_scatters(self):
         for sl in self.list_slice:
             sl._show_scatter()
+
+    def show_scatters_4cli(self, path_output):
+        for idx_sl, sl in enumerate(self.list_slice):
+            sl._show_scatter_4cli(
+                fname_output=os.path.join(
+                    path_output,
+                    'tissue_{}.png'.format(idx_sl+1)
+                )
+            )
 
     def show_pygbatch_windows(self):
         for sl in self.list_slice:
