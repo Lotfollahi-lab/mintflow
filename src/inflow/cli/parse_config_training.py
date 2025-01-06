@@ -3,7 +3,7 @@
 import os, sys
 import yaml
 
-def _correct_booleans(fname_config, dict_config, set_keys_boolean):
+def _correct_booleans(fname_config, dict_config):
     '''
     Yaml may set the True/False or true/false values as string.
     This function replaces the boolean values with python True/False boolean values.
@@ -11,27 +11,25 @@ def _correct_booleans(fname_config, dict_config, set_keys_boolean):
     :return:
     '''
 
-    # check if `set_keys_boolean` contains all keys starting with flag_...
+    set_keys_boolean = []
     for k in dict_config.keys():
         if len(k) >= len("flag_"):
             if k[0:len("flag_")] == "flag_":
-                if k not in set_keys_boolean:
-                    raise Exception(
-                        "In file {} the key {} seems to be a boolean (starts with 'flag_'), but it's not provided in the priori known list of booleans.\n".format(
-                            fname_config,
-                            k
-                        ) + "This may result problems when parsing {}".format(fname_config)
-                    )
+                set_keys_boolean.append(k)
+    set_keys_boolean = list(set(set_keys_boolean))
+
 
     for k in set_keys_boolean:
-        assert isinstance(dict_config[k], str)
+        if not isinstance(dict_config[k], str):
+            raise Exception(
+                "In the provided training config file, key {} starts seems to be a boolean flag, but the value is not a string ['True', 'False'].\n"+
+                "We require you True/False values be provided as a string (i.e. True or False with quoation or double-quotaitons on both sides) in the yaml files."
+            )
         assert dict_config[k] in ["True", "False"]
         dict_config[k] = dict_config[k] == "True"
 
     for k in set_keys_boolean:
         assert isinstance(dict_config[k], bool)
-
-
 
     return dict_config
 
@@ -51,10 +49,7 @@ def parse(fname_config_training):
 
     dict_config_training = _correct_booleans(
         fname_config=fname_config_training,
-        dict_config=dict_config_training,
-        set_keys_boolean={
-            'flag_use_GPU'
-        }  # TODO: complete set of booleans
+        dict_config=dict_config_training
     )
 
     return dict_config_training
