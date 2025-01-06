@@ -24,7 +24,7 @@ from .modules import varphienc4xbar
 from .modules import predictorbatchID
 from . import wassdist_utils_batchID
 #from tqdm.auto import tqdm
-from tqdm.notebook import tqdm, trange
+from tqdm.autonotebook import tqdm, trange
 import wandb
 
 
