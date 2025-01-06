@@ -1990,7 +1990,7 @@ class InFlowVarDist(nn.Module):
 
 
     @torch.no_grad()
-    def eval_on_pygneighloader_dense(self, dl:NeighborLoader, ten_xy_absolute:torch.Tensor):
+    def eval_on_pygneighloader_dense(self, dl:NeighborLoader, ten_xy_absolute:torch.Tensor, tqdm_desc=None):
         '''
         Evaluates the model on a pyg.NeighborLoader.
         All results are obtained in dense arrays and returned.
@@ -2012,7 +2012,7 @@ class InFlowVarDist(nn.Module):
             'x_spl':{}
         }  # TODO: add other variables.
         cnt_tqdm = 1
-        for batch in tqdm(dl, desc='Epoch {}'.format(cnt_tqdm), position=0, leave=False):
+        for batch in tqdm(dl, desc=tqdm_desc, position=0, leave=False, total=len(dl)):
 
             batch.INFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
