@@ -1571,7 +1571,7 @@ class InFlowVarDist(nn.Module):
         iterpygdl_for_afterGRL = iter(dl)
 
         history_loss = []
-        for _ in tqdm(range(numiters)):
+        for _ in tqdm(range(numiters), desc='Training the dual functions separately.'):
             optim_gradrevpreds.zero_grad()
 
             try:
