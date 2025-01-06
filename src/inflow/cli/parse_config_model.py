@@ -19,27 +19,17 @@ def _correct_booleans(fname_config, dict_config):
     set_keys_boolean = list(set(set_keys_boolean))
 
 
-    # check if `set_keys_boolean` contains all keys starting with flag_...
-    for k in dict_config.keys():
-        if len(k) >= len("flag_"):
-            if k[0:len("flag_")] == "flag_":
-                if k not in set_keys_boolean:
-                    raise Exception(
-                        "In file {} the key {} seems to be a boolean (starts with 'flag_'), but it's not provided in the priori known list of booleans.\n".format(
-                            fname_config,
-                            k
-                        ) + "This may result problems when parsing {}".format(fname_config)
-                    )
-
     for k in set_keys_boolean:
-        assert isinstance(dict_config[k], str)
+        if not isinstance(dict_config[k], str):
+            raise Exception(
+                "In the provided model config file, key {} starts seems to be a boolean flag, but the value is not a string ['True', 'False'].\n"+
+                "We require you True/False values be provided as a string (i.e. True or False with quoation or double-quotaitons on both sides) in the yaml files."
+            )
         assert dict_config[k] in ["True", "False"]
         dict_config[k] = dict_config[k] == "True"
 
     for k in set_keys_boolean:
         assert isinstance(dict_config[k], bool)
-
-
 
     return dict_config
 
