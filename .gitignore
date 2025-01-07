@@ -1,3 +1,6 @@
+
+wandb/
+
 # Temp files
 .DS_Store
 *~
