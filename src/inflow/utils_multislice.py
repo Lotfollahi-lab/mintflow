@@ -620,13 +620,15 @@ class ListSlice:
                 if u not in set_all_BatchID:
                     set_all_BatchID.append(u)
 
-
             self.map_Batchname_to_inflowBatchID = {
                 bid: "inflow_BatchID_{}".format(idx_bid)
                 for idx_bid, bid in enumerate(set_all_BatchID)
             }
+
+            input_set_global_num_Batch = len(set_all_BatchID)
         else:
             self.map_Batchname_to_inflowBatchID = self.prev_list_slice_to_imitate.map_Batchname_to_inflowBatchID
+            input_set_global_num_Batch = len(list(self.map_Batchname_to_inflowBatchID.keys()))
 
         # add the column "inflow_BatchID"
         for sl in self.list_slice:
@@ -636,7 +638,7 @@ class ListSlice:
         # set the global number of BatchIDs
         for sl in self.list_slice:
             sl: Slice
-            sl._set_global_num_Batch(len(set_all_BatchID))
+            sl._set_global_num_Batch(input_set_global_num_Batch)
 
 
 
