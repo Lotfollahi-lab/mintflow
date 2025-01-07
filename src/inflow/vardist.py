@@ -606,7 +606,8 @@ class InFlowVarDist(nn.Module):
             coef_loss_closeness_xbarintxbarint: float = 0.0,
             coef_loss_closeness_xintxint: float = 0.0,
             coef_flowmatchingloss:float=0.0,
-            flag_verbose:bool=False
+            flag_verbose:bool=False,
+            flag_enable_wandb:bool=True
     ):
         '''
         One epoch of the training.
@@ -695,7 +696,14 @@ class InFlowVarDist(nn.Module):
 
         optim_training.zero_grad()
         temp_print_whilecount = -1
+
+        pbar = tqdm(
+            total=max([len(dl) for dl in list_dl]),
+            desc='Inflow training epoch'
+        )
+
         while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
+            pbar.update(1)
             temp_print_whilecount += 1
             idx_current_dl_normal = (idx_current_dl_normal + 1)%len(list_dl)
             try:
@@ -713,10 +721,11 @@ class InFlowVarDist(nn.Module):
             if np.all(list_iterfinished_normal):
                 break
 
-            wandb.log(
-                {"InspectVals/annealing_coefficient": self.coef_anneal},
-                step=itrcount_wandb
-            )
+            if flag_enable_wandb:
+                wandb.log(
+                    {"InspectVals/annealing_coefficient": self.coef_anneal},
+                    step=itrcount_wandb
+                )
 
             batch.INFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
@@ -731,7 +740,7 @@ class InFlowVarDist(nn.Module):
             self.module_genmodel.clamp_thetanegbins()
 
             # optim_training.zero_grad()
-            flag_tensorboardsave = (itrcount_wandb%tensorboard_stepsize_save == 0)
+            flag_tensorboardsave = (itrcount_wandb%tensorboard_stepsize_save == 0) and flag_enable_wandb
 
             dict_q_sample = self.rsample(
                 batch=batch,
@@ -1545,7 +1554,7 @@ class InFlowVarDist(nn.Module):
             itrcount_wandb += 1
 
 
-
+        pbar.close()
         return itrcount_wandb, list_coef_anneal
 
 
