@@ -26,6 +26,7 @@ class Slice:
     def __init__(
         self,
         adata:sc.AnnData,
+        adata_before_scppnormalize_total:sc.AnnData,
         dict_obskey:dict,
         kwargs_compute_graph:dict,
         flag_use_custompygsampler:bool,
@@ -39,6 +40,7 @@ class Slice:
         """
 
         :param adata: the anndata corresponding to "only" the slice of concernt.
+        :param adata_before_scppnormalize_total: the anndata before adata.X is row-narmalised via sc.pp.normalize_total
         :param dict_obskey: a dictionary containing the column names of interest in the input anndata
         Keys
             - x: the x position
@@ -66,6 +68,7 @@ class Slice:
 
         """
         self.adata = adata
+        self.adata_before_scppnormalize_total = adata_before_scppnormalize_total
         self.dict_obskey = dict_obskey
         self.kwargs_compute_graph = kwargs_compute_graph
         self.flag_use_custompygsampler = flag_use_custompygsampler
@@ -527,9 +530,16 @@ class Slice:
 class ListSlice:
     def __init__(
         self,
-        list_slice:List[Slice]
+        list_slice:List[Slice],
+        prev_list_slice_to_imitate=None
     ):
+        """
+        :param list_slice:
+        :param prev_list_slice_to_imitate: if not None, a previous `ListSlice` where CTmmappings, batch IDs, etc. have to be synchronised.
+        """
+
         self.list_slice = list_slice
+        self.prev_list_slice_to_imitate = prev_list_slice_to_imitate
         self._check_args()
 
         # make internals
@@ -563,17 +573,22 @@ class ListSlice:
         :return:
         """
         # create the mapping
-        set_all_CT = []
-        for sl in self.list_slice:
-            set_all_CT = set_all_CT + list(sl._get_set_CT())
+        if self.prev_list_slice_to_imitate is None:
+            # create a new mapping
+            set_all_CT = []
+            for sl in self.list_slice:
+                set_all_CT = set_all_CT + list(sl._get_set_CT())
 
-        set_all_CT = list(set(set_all_CT))
-        set_all_CT.sort()
+            set_all_CT = list(set(set_all_CT))
+            set_all_CT.sort()
 
-        self.map_CT_to_inflowCT = {
-            ct:"inflowCT_{}".format(idx_ct)
-            for idx_ct, ct in enumerate(set_all_CT)
-        }
+            self.map_CT_to_inflowCT = {
+                ct:"inflowCT_{}".format(idx_ct)
+                for idx_ct, ct in enumerate(set_all_CT)
+            }
+        else:
+            # use the old mapping
+            self.map_CT_to_inflowCT = self.prev_list_slice_to_imitate.map_CT_to_inflowCT
 
         # add the column "inflow_CT"
         for sl in self.list_slice:
@@ -592,30 +607,24 @@ class ListSlice:
         - Adds `inflow_BatchID` (i.e. inflow batch ID) column to each anndata in the list.
         :return:
         """
-        set_all_BatchID_ = []
-        for sl in self.list_slice:
-            sl : Slice
-            set_all_BatchID_ = set_all_BatchID_ + [sl._get_batchid()]
+        if self.prev_list_slice_to_imitate is None:
+            set_all_BatchID_ = []
+            for sl in self.list_slice:
+                sl : Slice
+                set_all_BatchID_ = set_all_BatchID_ + [sl._get_batchid()]
 
-        '''
-        not needed anymore.
-        for u in set_all_BatchID:
-            assert set_all_BatchID.count(u) == 1
-        '''
-
-        set_all_BatchID = []
-        for u in set_all_BatchID_:
-            if u not in set_all_BatchID:
-                set_all_BatchID.append(u)
+            set_all_BatchID = []
+            for u in set_all_BatchID_:
+                if u not in set_all_BatchID:
+                    set_all_BatchID.append(u)
 
 
-        # assert len(set_all_BatchID) == len(self.list_slice)  note needed anymore
-        # set_all_BatchID.sort() TODO: is this needed?
-
-        self.map_Batchname_to_inflowBatchID = {
-            bid: "inflow_BatchID_{}".format(idx_bid)
-            for idx_bid, bid in enumerate(set_all_BatchID)
-        }
+            self.map_Batchname_to_inflowBatchID = {
+                bid: "inflow_BatchID_{}".format(idx_bid)
+                for idx_bid, bid in enumerate(set_all_BatchID)
+            }
+        else:
+            self.map_Batchname_to_inflowBatchID = self.prev_list_slice_to_imitate.map_Batchname_to_inflowBatchID
 
         # add the column "inflow_BatchID"
         for sl in self.list_slice:
