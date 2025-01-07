@@ -81,6 +81,29 @@ class Slice:
 
         self._check_args()
 
+    def __eq__(self, other:Slice):
+        if not isinstance(other, Slice):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        flag_equal = True
+        # anndata checks ===
+        with torch.no_grad():
+            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.X, other.pyg_ds.X))
+            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.y, other.pyg_ds.y))
+            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.edge_index, other.pyg_ds.edge_index))
+
+        flag_equal = flag_equal and np.all(np.isclose(self.adata.X, other.adata.X))
+        flag_equal = flag_equal and np.all(np.isclose(self.adata.obs, other.adata.obs))
+        flag_equal = flag_equal and np.all(np.isclose(self.adata.obs, other.adata.obs))
+        flag_equal = flag_equal and np.all(np.isclose(self.adata.var_names.tolist(), other.adata.var_names.tolist()))
+
+        flag_equal = flag_equal and np.all(np.isclose(self.adata_before_scppnormalize_total.X, other.adata_before_scppnormalize_total.X))
+        flag_equal = flag_equal and (self.dict_obskey == other.dict_obskey)
+        flag_equal = flag_equal and (self.kwargs_compute_graph == other.kwargs_compute_graph)
+
+        return flag_equal
+
     @torch.no_grad()
     def _add_CT_NCC_BatchEmb(self):
         """
@@ -548,6 +571,7 @@ class ListSlice:
         self._create_neighgraphs()
         self._create_CT_NCC_BatchEmb_Vectors()
         self._add_pygds_pygdl()
+
 
     def _add_pygds_pygdl(self):
         for sl in self.list_slice:
