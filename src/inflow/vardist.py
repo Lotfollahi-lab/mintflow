@@ -701,11 +701,14 @@ class InFlowVarDist(nn.Module):
             total=max([len(dl) for dl in list_dl]),
             desc='Inflow training epoch'
         )
-
+        pbar_idx_biggestDL = np.argmax([len(dl) for dl in list_dl])
         while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
-            pbar.update(1)
             temp_print_whilecount += 1
             idx_current_dl_normal = (idx_current_dl_normal + 1)%len(list_dl)
+
+            if idx_current_dl_normal == pbar_idx_biggestDL:
+                pbar.update(1)
+
             try:
                 itr = list_iter_dl_normal[idx_current_dl_normal]
                 batch = next(itr)
