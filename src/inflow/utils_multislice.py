@@ -586,9 +586,11 @@ class ListSlice:
                 ct:"inflowCT_{}".format(idx_ct)
                 for idx_ct, ct in enumerate(set_all_CT)
             }
+            input_set_global_num_CT = len(set_all_CT)
         else:
             # use the old mapping
             self.map_CT_to_inflowCT = self.prev_list_slice_to_imitate.map_CT_to_inflowCT
+            input_set_global_num_CT = len(list(self.map_CT_to_inflowCT.keys()))
 
         # add the column "inflow_CT"
         for sl in self.list_slice:
@@ -598,7 +600,7 @@ class ListSlice:
         # set the global number of CTs
         for sl in self.list_slice:
             sl : Slice
-            sl._set_global_num_CT(len(set_all_CT))
+            sl._set_global_num_CT(input_set_global_num_CT)
 
 
     def _create_Batchmapping_and_inflowBatchID(self):
