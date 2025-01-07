@@ -31,4 +31,4 @@ def check(train_list_slice:utils_multislice.ListSlice, test_list_slice:utils_mul
                 assert sl1 == sl2, "Two tissues in training/testing set are assigned the slice identifier {}, but they are not the same.".format(set(sl1.adata.obs[sl1.dict_obskey['sliceid_to_checkUnique']]))
 
 
-    # if
+    # TODO:HERE check if the testing batch IDs are a subset of training batch IDs

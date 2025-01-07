@@ -96,9 +96,8 @@ class Slice:
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.y.cpu(), other.pyg_ds.y.cpu()))
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.edge_index.cpu(), other.pyg_ds.edge_index.cpu()))
 
-        flag_equal = flag_equal and np.all(np.isclose(self.adata.X, other.adata.X))
-        flag_equal = flag_equal and np.all(np.isclose(self.adata.obs, other.adata.obs))
-        flag_equal = flag_equal and np.all(np.isclose(self.adata.obs, other.adata.obs))
+        flag_equal = flag_equal and np.all(np.isclose(self.adata.X.astype(float), other.adata.X.astype(float)))
+        flag_equal = flag_equal and (self.adata.obs == other.adata.obs)
         flag_equal = flag_equal and np.all(np.isclose(self.adata.var_names.tolist(), other.adata.var_names.tolist()))
 
         flag_equal = flag_equal and np.all(np.isclose(self.adata_before_scppnormalize_total.X, other.adata_before_scppnormalize_total.X))
