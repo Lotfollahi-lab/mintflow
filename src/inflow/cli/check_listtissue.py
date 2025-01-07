@@ -29,3 +29,6 @@ def check(train_list_slice:utils_multislice.ListSlice, test_list_slice:utils_mul
 
             if set(sl1.adata.obs[sl1.dict_obskey['sliceid_to_checkUnique']]) == set(sl2.adata.obs[sl2.dict_obskey['sliceid_to_checkUnique']]):
                 assert sl1 == sl2, "Two tissues in training/testing set are assigned the slice identifier {}, but they are not the same.".format(set(sl1.adata.obs[sl1.dict_obskey['sliceid_to_checkUnique']]))
+
+
+    # if

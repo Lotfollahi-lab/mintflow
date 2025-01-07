@@ -81,7 +81,7 @@ class Slice:
 
         self._check_args()
 
-    def __eq__(self, other:Slice):
+    def __eq__(self, other):
         if not isinstance(other, Slice):
             # don't attempt to compare against unrelated types
             return NotImplemented
