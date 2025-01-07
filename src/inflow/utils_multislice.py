@@ -90,8 +90,8 @@ class Slice:
         # anndata checks ===
         with torch.no_grad():
             # The one on the right is supported --> checking indices and values. flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x.cpu(), other.pyg_ds.x.cpu()))
-            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x.cpu().indices(), other.pyg_ds.x.cpu().indices()))
-            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x.cpu().values(), other.pyg_ds.x.cpu().values()))
+            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x.cpu().coalesce().indices(), other.pyg_ds.x.cpu().coalesce().indices()))
+            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x.cpu().coalesce().values(), other.pyg_ds.x.cpu().coalesce().values()))
 
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.y.cpu(), other.pyg_ds.y.cpu()))
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.edge_index.cpu(), other.pyg_ds.edge_index.cpu()))
