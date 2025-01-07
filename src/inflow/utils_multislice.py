@@ -89,7 +89,7 @@ class Slice:
         flag_equal = True
         # anndata checks ===
         with torch.no_grad():
-            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.X, other.pyg_ds.X))
+            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x, other.pyg_ds.x))
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.y, other.pyg_ds.y))
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.edge_index, other.pyg_ds.edge_index))
 
