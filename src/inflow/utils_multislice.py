@@ -111,10 +111,12 @@ class Slice:
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.edge_index.cpu(), other.pyg_ds.edge_index.cpu()))
 
         flag_equal = flag_equal and checkequal_adataX(self.adata, other.adata)
-        flag_equal = flag_equal and (self.adata.obs == other.adata.obs)
+        flag_equal = flag_equal and self.adata.obs.equals(other.adata.obs)
         flag_equal = flag_equal and np.all(np.isclose(self.adata.var_names.tolist(), other.adata.var_names.tolist()))
 
         flag_equal = flag_equal and checkequal_adataX(self.adata_before_scppnormalize_total, other.adata_before_scppnormalize_total)
+        flag_equal = flag_equal and self.adata_before_scppnormalize_total.obs.equals(other.adata_before_scppnormalize_total.obs)
+
         flag_equal = flag_equal and (self.dict_obskey == other.dict_obskey)
         flag_equal = flag_equal and (self.kwargs_compute_graph == other.kwargs_compute_graph)
 
