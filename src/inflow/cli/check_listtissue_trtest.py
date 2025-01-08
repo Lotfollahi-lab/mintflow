@@ -45,10 +45,10 @@ def check(train_list_slice:utils_multislice.ListSlice, test_list_slice:utils_mul
 
     # check if the testing batch IDs are a subset of training batch IDs
     set_bid_train = set([
-        sl._get_batchid() for sl in train_list_slice
+        sl._get_batchid() for sl in train_list_slice.list_slice
     ])
     set_bid_test = set([
-        sl._get_batchid() for sl in test_list_slice
+        sl._get_batchid() for sl in test_list_slice.list_slice
     ])
 
     if not set_bid_test.issubset(set_bid_train):
