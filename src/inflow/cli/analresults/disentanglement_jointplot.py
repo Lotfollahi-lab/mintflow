@@ -7,6 +7,7 @@ import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pandas as pd
 
 def vis(
     adata_unnorm,
@@ -21,7 +22,7 @@ def vis(
     :param fname_dump:
     :return:
     """
-    
+
     for g in list_LR:
         assert g in adata_unnorm.var.index.tolist()
 
@@ -38,12 +39,15 @@ def vis(
     mask_all = adata_unnorm.X.toarray() > cnt_thresh_x_obs
 
     plt.figure()
-
+    red_x = adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten()
+    red_y = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
     sns.jointplot(
-        adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten(),
-        pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten(),
-        x="counts",
-        y="in-predXspl",
+        data=pd.DataFrame(
+            np.stack([red_x, red_y], -1),
+            columns=['readout counts', 'predicted in predXspl']
+        ),
+        x="readout counts",
+        y='predicted in predXspl',
         color='r',
         kind="scatter"
     )
