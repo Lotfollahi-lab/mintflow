@@ -13,7 +13,8 @@ def vis(
     adata_unnorm,
     pred_Xspl_rownormcorrected,
     list_LR,
-    fname_dump
+    fname_dump,
+
 ):
     """
     :param adata_unnorm:
@@ -38,10 +39,12 @@ def vis(
                    list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))] > cnt_thresh_x_obs
     mask_all = adata_unnorm.X.toarray() > cnt_thresh_x_obs
 
-    plt.figure()
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
+
     red_x = adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten()
     red_y = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
     sns.jointplot(
+        ax=axes[0],
         data=pd.DataFrame(
             np.stack([red_x, red_y], -1),
             columns=['readout counts', 'predicted in predXspl']
