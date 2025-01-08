@@ -46,7 +46,7 @@ def vis(
     plt.figure()
     red_x = adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten()
     red_y = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
-    sns.jointplot(
+    g = sns.jointplot(
         data=pd.DataFrame(
             np.stack([red_x, red_y], -1),
             columns=['readout counts', 'predicted in predXspl']
@@ -56,6 +56,8 @@ def vis(
         color='r',
         kind="scatter"
     )
+    g.ax_marg_x.remove()
+    g.ax_marg_y.remove()
     plt.xlim(
         adata_unnorm.X.toarray()[mask_all].flatten().min(),
         adata_unnorm.X.toarray()[mask_all].flatten().max()
@@ -76,7 +78,7 @@ def vis(
     # blue =======================
     blue_x = adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
     blue_y = pred_Xspl_rownormcorrected[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
-    sns.jointplot(
+    g = sns.jointplot(
         data=pd.DataFrame(
             np.stack([blue_x, blue_y], -1),
             columns=['readout counts', 'predicted in predXspl']
@@ -86,6 +88,9 @@ def vis(
         color='b',
         kind="scatter"
     )
+    g.ax_marg_x.remove()
+    g.ax_marg_y.remove()
+    
     plt.xlim(
         adata_unnorm.X.toarray()[mask_all].flatten().min(),
         adata_unnorm.X.toarray()[mask_all].flatten().max()
