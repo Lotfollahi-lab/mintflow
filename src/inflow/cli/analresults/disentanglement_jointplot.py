@@ -13,14 +13,15 @@ def vis(
     adata_unnorm,
     pred_Xspl_rownormcorrected,
     list_LR,
-    fname_dump,
-
+    fname_dump_red,
+    fname_dump_blue
 ):
     """
     :param adata_unnorm:
     :param pred_Xspl_rownormcorrected:
     :param list_LR: the list of genes found both in the LR databse and the gene pannel.
-    :param fname_dump:
+    :param fname_dump_red:
+    :param fname_dump_blue
     :return:
     """
 
@@ -39,13 +40,13 @@ def vis(
                    list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))] > cnt_thresh_x_obs
     mask_all = adata_unnorm.X.toarray() > cnt_thresh_x_obs
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
+
 
     # red =======================
+    plt.figure()
     red_x = adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten()
     red_y = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
     sns.jointplot(
-        ax=axes[0],
         data=pd.DataFrame(
             np.stack([red_x, red_y], -1),
             columns=['readout counts', 'predicted in predXspl']
@@ -55,24 +56,27 @@ def vis(
         color='r',
         kind="scatter"
     )
-    axes[0].set_xlim(
+    plt.xlim(
         adata_unnorm.X.toarray()[mask_all].flatten().min(),
         adata_unnorm.X.toarray()[mask_all].flatten().max()
     )
-    axes[0].set_ylim(
+    plt.ylim(
         pred_Xspl_rownormcorrected[mask_all].flatten().min(),
         pred_Xspl_rownormcorrected[mask_all].flatten().max()
     )
 
-    axes[0].set_xlabel("observed count X_obs")
-    axes[0].set_ylabel("predicted X_spl")
-    axes[0].set_title("Among Columns of adata.X \n (i.e. genes) found in the LR database.")
+    plt.xlabel("observed count X_obs")
+    plt.ylabel("predicted X_spl")
+    plt.suptitle("Among Columns of adata.X \n (i.e. genes) found in the LR database.", y=1)
+    plt.savefig(
+        fname_dump_red
+    )
+    plt.close()
 
     # blue =======================
     blue_x = adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
     blue_y = pred_Xspl_rownormcorrected[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
     sns.jointplot(
-        ax=axes[1],
         data=pd.DataFrame(
             np.stack([blue_x, blue_y], -1),
             columns=['readout counts', 'predicted in predXspl']
@@ -82,22 +86,23 @@ def vis(
         color='b',
         kind="scatter"
     )
-    axes[1].set_xlim(
+    plt.xlim(
         adata_unnorm.X.toarray()[mask_all].flatten().min(),
         adata_unnorm.X.toarray()[mask_all].flatten().max()
     )
-    axes[1].set_ylim(
+    plt.ylim(
         pred_Xspl_rownormcorrected[mask_all].flatten().min(),
         pred_Xspl_rownormcorrected[mask_all].flatten().max()
     )
-    axes[1].set_xlabel("observed count X_obs")
-    axes[1].set_ylabel("predicted X_spl")
-    axes[1].set_title("Among Columns of adata.X \n (i.e. genes) not found in the LR database.")
+    plt.xlabel("observed count X_obs")
+    plt.ylabel("predicted X_spl")
+    plt.suptitle("Among Columns of adata.X \n (i.e. genes) not found in the LR database.", y=1)
 
     # plt.show()
-    fig.savefig(
-        fname_dump
+    plt.savefig(
+        fname_dump_blue
     )
-    plt.close(fig)
+    plt.close()
+
 
 
