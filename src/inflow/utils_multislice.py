@@ -100,27 +100,89 @@ class Slice:
             # don't attempt to compare against unrelated types
             raise NotImplementedError()
 
+        bool_eq, _ = self.custom_eq_with_namemismatch(other)
+        return bool_eq
+
+    def custom_eq_with_namemismatch(self, other):
+        """
+        :param other:
+        :return:
+        - whether self equals other
+        - as well as the point where a potential mismatch happens.
+        """
+        if not isinstance(other, Slice):
+            # don't attempt to compare against unrelated types
+            raise NotImplementedError()
+
         flag_equal = True
-        # anndata checks ===
-        with torch.no_grad():
-            # The one on the right is supported --> checking indices and values. flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x.cpu(), other.pyg_ds.x.cpu()))
-            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x.cpu().coalesce().indices(), other.pyg_ds.x.cpu().coalesce().indices()))
-            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.x.cpu().coalesce().values(), other.pyg_ds.x.cpu().coalesce().values()))
 
-            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.y.cpu(), other.pyg_ds.y.cpu()))
-            flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.edge_index.cpu(), other.pyg_ds.edge_index.cpu()))
+        msg, cond = 'anndata.X', checkequal_adataX(self.adata, other.adata)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
 
-        flag_equal = flag_equal and checkequal_adataX(self.adata, other.adata)
-        flag_equal = flag_equal and self.adata.obs.equals(other.adata.obs)
-        flag_equal = flag_equal and (self.adata.var_names.tolist() == other.adata.var_names.tolist())
 
-        flag_equal = flag_equal and checkequal_adataX(self.adata_before_scppnormalize_total, other.adata_before_scppnormalize_total)
-        flag_equal = flag_equal and self.adata_before_scppnormalize_total.obs.equals(other.adata_before_scppnormalize_total.obs)
+        msg, cond = 'anndata.obs', self.adata.obs.equals(other.adata.obs)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
 
-        flag_equal = flag_equal and (self.dict_obskey == other.dict_obskey)
-        flag_equal = flag_equal and (self.kwargs_compute_graph == other.kwargs_compute_graph)
 
-        return flag_equal
+        msg, cond = 'adata.var_names', (self.adata.var_names.tolist() == other.adata.var_names.tolist())
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+        msg, cond = 'adata_before_scppnormalize_total.X', checkequal_adataX(self.adata_before_scppnormalize_total, other.adata_before_scppnormalize_total)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+
+        msg, cond = 'adata_before_scppnormalize_total.obs', self.adata_before_scppnormalize_total.obs.equals(other.adata_before_scppnormalize_total.obs)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+        msg, cond = 'dict_obskey', (self.dict_obskey == other.dict_obskey)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+        msg, cond = 'kwargs_compute_graph', (self.kwargs_compute_graph == other.kwargs_compute_graph)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+        with (torch.no_grad()):
+
+            msg, cond = 'pyg_ds.x.indices', torch.all(torch.isclose(self.pyg_ds.x.cpu().coalesce().indices(), other.pyg_ds.x.cpu().coalesce().indices()))
+            flag_equal = flag_equal and cond
+            if not flag_equal:
+                return flag_equal, msg
+
+            msg, cond = 'pyg_ds.x.values', torch.all(torch.isclose(self.pyg_ds.x.cpu().coalesce().values(), other.pyg_ds.x.cpu().coalesce().values()))
+            flag_equal = flag_equal and cond
+            if not flag_equal:
+                return flag_equal, msg
+
+            msg, cond = 'pyg_ds.y', torch.all(torch.isclose(self.pyg_ds.y.cpu(), other.pyg_ds.y.cpu()))
+            flag_equal = flag_equal and cond
+            if not flag_equal:
+                return flag_equal, msg
+
+            msg, cond = 'pyg_ds.edge_index', torch.all(torch.isclose(self.pyg_ds.edge_index.cpu(), other.pyg_ds.edge_index.cpu()))
+            flag_equal = flag_equal and cond
+            if not flag_equal:
+                return flag_equal, msg
+
+
+
+        return flag_equal, None
 
     @torch.no_grad()
     def _add_CT_NCC_BatchEmb(self):
