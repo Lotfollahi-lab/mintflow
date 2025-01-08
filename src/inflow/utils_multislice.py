@@ -26,7 +26,7 @@ from .modules import gnn
 def checkequal_adataX(adata1, adata2):
     flag_eq = True
     if isinstance(adata1.X, scipy.sparse.spmatrix):
-        flag_eq = flag_eq and isinstance((adata2.X, scipy.sparse.spmatrix))
+        flag_eq = flag_eq and isinstance(adata2.X, scipy.sparse.spmatrix)
         flag_eq = flag_eq and ((adata1.X != adata2.X).nnz==0)
     else:
         assert isinstance(adata1.X, np.ndarray)
@@ -98,7 +98,7 @@ class Slice:
     def __eq__(self, other):
         if not isinstance(other, Slice):
             # don't attempt to compare against unrelated types
-            return NotImplemented
+            raise NotImplementedError()
 
         flag_equal = True
         # anndata checks ===

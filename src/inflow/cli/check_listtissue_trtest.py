@@ -32,3 +32,6 @@ def check(train_list_slice:utils_multislice.ListSlice, test_list_slice:utils_mul
 
 
     # TODO:HERE check if the testing batch IDs are a subset of training batch IDs
+
+    # TODO: check if the mapping dicts in two list slice-s are the same.
+
