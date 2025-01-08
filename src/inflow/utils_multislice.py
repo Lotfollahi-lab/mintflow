@@ -112,7 +112,7 @@ class Slice:
 
         flag_equal = flag_equal and checkequal_adataX(self.adata, other.adata)
         flag_equal = flag_equal and self.adata.obs.equals(other.adata.obs)
-        flag_equal = flag_equal and np.all(np.isclose(self.adata.var_names.tolist(), other.adata.var_names.tolist()))
+        flag_equal = flag_equal and (self.adata.var_names.tolist() == other.adata.var_names.tolist())
 
         flag_equal = flag_equal and checkequal_adataX(self.adata_before_scppnormalize_total, other.adata_before_scppnormalize_total)
         flag_equal = flag_equal and self.adata_before_scppnormalize_total.obs.equals(other.adata_before_scppnormalize_total.obs)
