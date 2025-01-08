@@ -96,7 +96,8 @@ class InFlowGenerativeModel(nn.Module):
         self.coef_zinb_spl_loglik = coef_zinb_spl_loglik
         self.dict_config_batchtoken = dict_config_batchtoken
 
-
+        assert self.coef_zinb_int_loglik == 1.0, "coef_zinb_int_loglik has to be 1.0, since that's handled by annealing now."
+        assert self.coef_zinb_spl_loglik == 1.0, "coef_zinb_spl_loglik has to be 1.0, since that's handled by annealing now."
 
 
         #make internals ===

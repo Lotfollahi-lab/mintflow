@@ -31,6 +31,16 @@ def _correct_booleans(fname_config, dict_config):
     for k in set_keys_boolean:
         assert isinstance(dict_config[k], bool)
 
+    # check the annealing numbers for decoder Xint and Xspl ===
+    assert dict_config['annealing_decoder_XintXspl_fractionepochs_phase1'] >= 0.0, "In the config file for training, annealing_decoder_XintXspl_fractionepochs_phase1 cannot be negative."
+    assert dict_config['annealing_decoder_XintXspl_fractionepochs_phase2'] >= 0.0, "In the config file for training, annealing_decoder_XintXspl_fractionepochs_phase2 cannot be negative."
+
+    assert dict_config['annealing_decoder_XintXspl_fractionepochs_phase1'] <= 1.0, "In the config file for training, annealing_decoder_XintXspl_fractionepochs_phase1 cannot be larger than 1.0."
+    assert dict_config['annealing_decoder_XintXspl_fractionepochs_phase2'] <= 1.0, "In the config file for training, annealing_decoder_XintXspl_fractionepochs_phase2 cannot be larger than 1.0."
+
+    assert (dict_config['annealing_decoder_XintXspl_fractionepochs_phase1'] + dict_config['annealing_decoder_XintXspl_fractionepochs_phase2']) <= 1.0, \
+        "In the config file for training the sum of `annealing_decoder_XintXspl_fractionepochs_phase1` and `annealing_decoder_XintXspl_fractionepochs_phase2` cannot be larger than 1.0"
+
     return dict_config
 
 

@@ -26,7 +26,7 @@ from . import wassdist_utils_batchID
 #from tqdm.auto import tqdm
 from tqdm.autonotebook import tqdm, trange
 import wandb
-
+from . import anneal_decoder_xintxspl
 
 
 class InFlowVarDist(nn.Module):
@@ -76,6 +76,7 @@ class InFlowVarDist(nn.Module):
             coef_xbarint2notbatchID_loss:float,
             module_predictor_xbarspl2notbatchID: predictorbatchID.PredictorBatchID,
             coef_xbarspl2notbatchID_loss: float,
+            module_annealing_decoderXintXspl: anneal_decoder_xintxspl.AnnealingDecoderXintXspl
     ):
         '''
 
@@ -133,6 +134,9 @@ class InFlowVarDist(nn.Module):
         self.module_predictor_xbarint2notNCC = module_predictor_xbarint2notNCC
         self.str_modexbarint2notNCCloss_regorclsorwassdist = str_modexbarint2notNCCloss_regorclsorwassdist
 
+
+        assert isinstance(module_annealing_decoderXintXspl, anneal_decoder_xintxspl.AnnealingDecoderXintXspl)
+        self.module_annealing_decoderXintXspl = iter(module_annealing_decoderXintXspl)
 
         assert (
             isinstance(module_annealing, kl_annealing.AnnealingSchedule) or (module_annealing is None)
@@ -660,6 +664,7 @@ class InFlowVarDist(nn.Module):
             self.coef_anneal = None
 
 
+        coef_decoderXintXspl_annealing = next(self.module_annealing_decoderXintXspl)
 
         if flag_lockencdec_duringtraining:
             assert (optim_training.flag_freezeencdec)  # TODO: make the check differently
@@ -774,14 +779,14 @@ class InFlowVarDist(nn.Module):
                         if self.weight_logprob_zinbpos == -1:  # do as usual
                             assert (self.weight_logprob_zinbzero == -1)
                             lossterm_logp = dict_logp[k].sum(1).mean()
-                            loss = loss - lossterm_logp
+                            loss = loss - lossterm_logp * coef_decoderXintXspl_annealing
                         else:
                             x_cnt = batch.x.to_dense().to(list_ten_xy_absolute[0].device).detach()[:batch.batch_size] + 0.0
                             lossterm_logp_pos = dict_logp[k][x_cnt > 0]
                             lossterm_logp_zero = dict_logp[k][x_cnt == 0]
                             lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos.sum() + self.weight_logprob_zinbzero*lossterm_logp_zero.sum()
                             lossterm_logp = lossterm_logp/((x_cnt.size()[0] + 0.0) * (self.weight_logprob_zinbpos + self.weight_logprob_zinbzero))
-                            loss = loss - lossterm_logp
+                            loss = loss - lossterm_logp * coef_decoderXintXspl_annealing
 
 
                     if flag_tensorboardsave:
@@ -790,6 +795,12 @@ class InFlowVarDist(nn.Module):
                                 {"Loss/logprob_P/{}".format(k): -lossterm_logp},
                                 step=itrcount_wandb
                             )
+
+                if flag_tensorboardsave:
+                    wandb.log(
+                        {"InspectVals/annealing_coefficient_decoderXintXspl": coef_decoderXintXspl_annealing},
+                        step=itrcount_wandb
+                    )
 
             if list_flag_elboloss_imputationloss[0]:
                 for k in dict_logq.keys():
