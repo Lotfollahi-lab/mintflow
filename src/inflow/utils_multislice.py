@@ -8,6 +8,8 @@ import os, sys
 from typing import List
 import numpy as np
 import gc
+
+import scipy.sparse
 import squidpy as sq
 import scanpy as sc
 import torch_geometric as pyg
@@ -20,6 +22,18 @@ from . import utils_pyg
 
 from . import modules
 from .modules import gnn
+
+def checkequal_adataX(adata1, adata2):
+    flag_eq = True
+    if isinstance(adata1.X, scipy.sparse.spmatrix):
+        flag_eq = flag_eq and isinstance((adata2.X, scipy.sparse.spmatrix))
+        flag_eq = flag_eq and ((adata1.X != adata2.X).nnz==0)
+    else:
+        assert isinstance(adata1.X, np.ndarray)
+        flag_eq = flag_eq and isinstance(adata2.X, np.ndarray)
+        flag_eq = flag_eq and np.allclose(adata1.X, adata2.X)
+
+    return flag_eq
 
 
 class Slice:
@@ -96,11 +110,11 @@ class Slice:
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.y.cpu(), other.pyg_ds.y.cpu()))
             flag_equal = flag_equal and torch.all(torch.isclose(self.pyg_ds.edge_index.cpu(), other.pyg_ds.edge_index.cpu()))
 
-        flag_equal = flag_equal and np.all(np.isclose(self.adata.X.astype(float), other.adata.X.astype(float)))
+        flag_equal = flag_equal and checkequal_adataX(self.adata, other.adata)
         flag_equal = flag_equal and (self.adata.obs == other.adata.obs)
         flag_equal = flag_equal and np.all(np.isclose(self.adata.var_names.tolist(), other.adata.var_names.tolist()))
 
-        flag_equal = flag_equal and np.all(np.isclose(self.adata_before_scppnormalize_total.X, other.adata_before_scppnormalize_total.X))
+        flag_equal = flag_equal and checkequal_adataX(self.adata_before_scppnormalize_total, other.adata_before_scppnormalize_total)
         flag_equal = flag_equal and (self.dict_obskey == other.dict_obskey)
         flag_equal = flag_equal and (self.kwargs_compute_graph == other.kwargs_compute_graph)
 
