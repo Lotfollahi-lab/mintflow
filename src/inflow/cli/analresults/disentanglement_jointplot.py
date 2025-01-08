@@ -14,7 +14,10 @@ def vis(
     pred_Xspl_rownormcorrected,
     list_LR,
     fname_dump_red,
-    fname_dump_blue
+    fname_dump_blue,
+    str_sampleID,
+    str_batchID
+
 ):
     """
     :param adata_unnorm:
@@ -69,7 +72,7 @@ def vis(
 
     plt.xlabel("observed count X_obs")
     plt.ylabel("predicted X_spl")
-    plt.suptitle("Among Columns of adata.X \n (i.e. genes) found in the LR database.", y=1)
+    plt.suptitle("Among Columns of adata.X \n (i.e. genes) found in the LR database.\n sample: {} \n in biological batch {}".format(str_sampleID, str_batchID), y=1)
     plt.savefig(
         fname_dump_red
     )
@@ -90,7 +93,7 @@ def vis(
     )
     g.ax_marg_x.remove()
     g.ax_marg_y.remove()
-    
+
     plt.xlim(
         adata_unnorm.X.toarray()[mask_all].flatten().min(),
         adata_unnorm.X.toarray()[mask_all].flatten().max()
@@ -101,7 +104,7 @@ def vis(
     )
     plt.xlabel("observed count X_obs")
     plt.ylabel("predicted X_spl")
-    plt.suptitle("Among Columns of adata.X \n (i.e. genes) not found in the LR database.", y=1)
+    plt.suptitle("Among Columns of adata.X \n (i.e. genes) not found in the LR database.\n sample: {} \n in biological batch {}".format(str_sampleID, str_batchID), y=1)
 
     # plt.show()
     plt.savefig(
