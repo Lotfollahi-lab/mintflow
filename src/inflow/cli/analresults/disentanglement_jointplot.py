@@ -28,6 +28,9 @@ def vis(
     :return:
     """
 
+    assert adata_unnorm.shape[0] == pred_Xspl_rownormcorrected.shape[0]
+    assert adata_unnorm.shape[1] == pred_Xspl_rownormcorrected.shape[1]
+
     for g in list_LR:
         assert g in adata_unnorm.var.index.tolist()
 
