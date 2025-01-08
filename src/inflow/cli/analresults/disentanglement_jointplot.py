@@ -14,8 +14,16 @@ def vis(
     list_LR,
     fname_dump
 ):
-    for g in adata_unnorm.var.index.tolist():
-        assert g in list_LR
+    """
+    :param adata_unnorm:
+    :param pred_Xspl_rownormcorrected:
+    :param list_LR: the list of genes found both in the LR databse and the gene pannel.
+    :param fname_dump:
+    :return:
+    """
+    
+    for g in list_LR:
+        assert g in adata_unnorm.var.index.tolist()
 
     list_geneindex_inLR = [
         adata_unnorm.var.index.tolist().index(g) for g in list_LR
@@ -30,7 +38,7 @@ def vis(
     mask_all = adata_unnorm.X.toarray() > cnt_thresh_x_obs
 
     plt.figure()
-    
+
     sns.jointplot(
         adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten(),
         pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten(),
@@ -56,5 +64,6 @@ def vis(
     plt.savefig(
         fname_dump
     )
+    plt.close()
 
 
