@@ -41,6 +41,7 @@ def vis(
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
 
+    # red =======================
     red_x = adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten()
     red_y = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
     sns.jointplot(
@@ -54,23 +55,49 @@ def vis(
         color='r',
         kind="scatter"
     )
-    plt.xlim(
+    axes[0].set_xlim(
         adata_unnorm.X.toarray()[mask_all].flatten().min(),
         adata_unnorm.X.toarray()[mask_all].flatten().max()
     )
-    plt.ylim(
+    axes[0].set_ylim(
         pred_Xspl_rownormcorrected[mask_all].flatten().min(),
         pred_Xspl_rownormcorrected[mask_all].flatten().max()
     )
 
-    plt.xlabel("observed count X_obs")
-    plt.ylabel("predicted X_spl")
-    plt.title("Among Columns of adata.X \n (i.e. genes) found in LR database")
+    axes[0].set_xlabel("observed count X_obs")
+    axes[0].set_ylabel("predicted X_spl")
+    axes[0].set_title("Among Columns of adata.X \n (i.e. genes) found in the LR database.")
+
+    # blue =======================
+    blue_x = adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
+    blue_y = pred_Xspl_rownormcorrected[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
+    sns.jointplot(
+        ax=axes[1],
+        data=pd.DataFrame(
+            np.stack([blue_x, blue_y], -1),
+            columns=['readout counts', 'predicted in predXspl']
+        ),
+        x="readout counts",
+        y='predicted in predXspl',
+        color='b',
+        kind="scatter"
+    )
+    axes[1].set_xlim(
+        adata_unnorm.X.toarray()[mask_all].flatten().min(),
+        adata_unnorm.X.toarray()[mask_all].flatten().max()
+    )
+    axes[1].set_ylim(
+        pred_Xspl_rownormcorrected[mask_all].flatten().min(),
+        pred_Xspl_rownormcorrected[mask_all].flatten().max()
+    )
+    axes[1].set_xlabel("observed count X_obs")
+    axes[1].set_ylabel("predicted X_spl")
+    axes[1].set_title("Among Columns of adata.X \n (i.e. genes) not found in the LR database.")
 
     # plt.show()
-    plt.savefig(
+    fig.savefig(
         fname_dump
     )
-    plt.close()
+    plt.close(fig)
 
 
