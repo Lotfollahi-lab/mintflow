@@ -1,0 +1,60 @@
+
+"""
+Shows the joint plot (disentanglment across different count values).
+"""
+
+import os, sys
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def vis(
+    adata_unnorm,
+    pred_Xspl_rownormcorrected,
+    list_LR,
+    fname_dump
+):
+    for g in adata_unnorm.var.index.tolist():
+        assert g in list_LR
+
+    list_geneindex_inLR = [
+        adata_unnorm.var.index.tolist().index(g) for g in list_LR
+    ]
+    list_geneindex_inLR.sort()
+    cnt_thresh_x_obs = 0  # dummy filter atm
+
+
+    mask_inLR = adata_unnorm.X.toarray()[:, list_geneindex_inLR] > cnt_thresh_x_obs
+    mask_notinLR = adata_unnorm.X.toarray()[:,
+                   list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))] > cnt_thresh_x_obs
+    mask_all = adata_unnorm.X.toarray() > cnt_thresh_x_obs
+
+    plt.figure()
+    
+    sns.jointplot(
+        adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten(),
+        pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten(),
+        x="counts",
+        y="in-predXspl",
+        color='r',
+        kind="scatter"
+    )
+    plt.xlim(
+        adata_unnorm.X.toarray()[mask_all].flatten().min(),
+        adata_unnorm.X.toarray()[mask_all].flatten().max()
+    )
+    plt.ylim(
+        pred_Xspl_rownormcorrected[mask_all].flatten().min(),
+        pred_Xspl_rownormcorrected[mask_all].flatten().max()
+    )
+
+    plt.xlabel("observed count X_obs")
+    plt.ylabel("predicted X_spl")
+    plt.title("Among Columns of adata.X \n (i.e. genes) found in LR database")
+
+    # plt.show()
+    plt.savefig(
+        fname_dump
+    )
+
+
