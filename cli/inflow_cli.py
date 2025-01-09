@@ -1,5 +1,10 @@
 
 
+import os
+print(os.getcwd())
+assert False
+
+
 #use inflow or inflow_synth
 STR_INFLOW_OR_INFLOW_SYNTH = "inflow"  # in ['inflow', 'inflow_synth']
 assert(
@@ -52,6 +57,7 @@ from tqdm.autonotebook import tqdm
 import gdown
 
 list_pathstoadd = [
+    "../",
     "../src/{}/".format(STR_INFLOW_OR_INFLOW_SYNTH),
     "../src/"
 ]
