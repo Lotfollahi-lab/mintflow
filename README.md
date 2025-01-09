@@ -1,43 +1,98 @@
-# celldino
+# inflow
 
 [![Tests][badge-tests]][link-tests]
 [![Documentation][badge-docs]][link-docs]
 
-[badge-tests]: https://img.shields.io/github/actions/workflow/status/sebastianbirk/celldino/test.yaml?branch=main
-[link-tests]: https://github.com/sebastianbirk/celldino/actions/workflows/test.yml
-[badge-docs]: https://img.shields.io/readthedocs/celldino
+[badge-tests]: https://img.shields.io/github/actions/workflow/status/sebastianbirk/inflow/test.yaml?branch=main
+[link-tests]: https://github.com/sebastianbirk/inflow/actions/workflows/test.yml
+[badge-docs]: https://img.shields.io/readthedocs/inflow
 
 Cellular decomposition of intrinsic and neighborhood-induced omic effects
 
-## Getting started
+## Installing the Python Environment
+ **SANGER INTERNAL**: The environment is already available on farm.
 
-Please refer to the [documentation][link-docs]. In particular, the
-
--   [API documentation][link-api].
-
-## Installation
-
-You need to have Python 3.9 or newer installed on your system. If you don't have
-Python installed, we recommend installing [Mambaforge](https://github.com/conda-forge/miniforge#mambaforge).
-
-There are several alternative options to install celldino:
-
-<!--
-1) Install the latest release of `inflow` from `PyPI <https://pypi.org/project/celldino/>`_:
-
-```bash
-pip install inflow
+To activate it:
+```commandline
+module load cellgen/conda
+conda activate /nfs/team361/aa36/PythonEnvs_2/envinflowdec27/
 ```
--->
 
-1. Install the latest development version:
+Alternatively, you can create the python environment yourself:
+```commandline
+git clone https://github.com/Lotfollahi-lab/inflow.git  # clone the repo
+cd ./inflow/
+conda env create -f environment.yml --prefix SOME_EMPTY_PATH
+```
 
-```bash
-pip install git+https://github.com/sebastianbirk/celldino.git@main
+## Installing WandB
+It's highly recommended to install make a wandb account before proceeding.
+
+To do so: 
+- Go to https://wandb.ai/ and create and account.
+- Create a project called "inFlow".
+
+## Quick Start
+You can use inflow as a local package, because it's not pip installable at the moment.
+
+To do so:
+```commandline
+git clone https://github.com/Lotfollahi-lab/inflow.git  # clone the repo
+cd ./inflow/
+```
+The easiest way to run inflow is through the command line interface (CLI).
+This involves two steps
+1. Creating four config files (you duplicate/modify template config files).
+2. Running inflow with a single command line.
+
+### Rule of thumbs §1 for modifying the config files
+In the template config files, there are `TODO`-s of different types that you may need to modify
+- Category 1: `TODO:ESSENTIAL:TUNE`: the basic/essential parts to run inflow.
+- Category 2: `TODO:TUNE`: less essneitial and/or technical details.
+- Category 3: `TODO:check`: parameters of even less importance compared to category 1 and category 2.
+
+If you are, for example, a biologist with no interest/experience in computational methods, you can only modify "Category 1" above and leave the rest of configurations untouched.
+"Category 2" and "Category 3" come next in both priority and the level of details.
+
+### Step 1 of Using the CLI: Making 4 config files
+Please follow these steps
+- Training data config file:
+    - Make a copy of `./cli/SampleConfigFiles/config_data_train.yml` and rename it to `YOUR_CONFIG_DATA_TRAIN.yml`
+    - Read the block of comments tarting with *"# Inflow expects a list of .h5ad files stored on disk, ..."*.
+    - Modify some parts marked by `TODO:...` and according to *"Rule of thumbs §1"* explained above.
+
+
+- Testing data config file:
+    - Make a copy of `YOUR_CONFIG_DATA_TRAIN.yml` and rename it to `YOUR_CONFIG_DATA_TEST.yml`
+    - Rename all ocrrences of `config_dataloader_train` to `config_dataloader_test`
+
+
+- Model config file:
+    - Make a copy of `./cli/SampleConfigFiles/config_model.yml` and rename it to `YOUR_CONFIG_MODEL.yml`.
+    - Modify some parts marked by `TODO:...` and according to *"Rule of thumbs §1"* explained above.
+
+
+- Training config file:
+    - Make a copy of `./cli/SampleConfigFiles/config_training.yml` and rename it to `YOUR_CONFIG_TRAINING.yml`.
+    - Modify some parts marked by `TODO:...` and according to *"Rule of thumbs §1"* explained above.
+
+### Step 2 of Using the CLI: Running inflow
+
+```commandline
+cd ./inflow/  # if you haven't already done it above.
+cd ./cli/
+
+python inflow_cli.py \
+--file_config_data_train YOUR_CONFIG_DATA_TRAIN.yml \
+--file_config_data_test YOUR_CONFIG_DATA_TEST.yml \
+--file_config_model YOUR_CONFIG_MODEL.yml \
+--file_config_training YOUR_CONFIG_TRAINING.yml \
+--path_output "./Your/Output/Path/ToDump/Results/" \
+--flag_verbose "True" \
 ```
 
 ## Release notes
-
+TODOTODO
 See the [changelog][changelog].
 
 ## Contact
