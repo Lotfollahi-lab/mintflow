@@ -1,7 +1,5 @@
 
 
-# TODO TODO TODO
-
 num_graph_hops: 1  # number of neighbourhood hops over which the S_out-s of each cell's neighbours are aggregated to form the cell's S_in.
 
 dict_pname_to_scaleandunweighted: "z#1.0#True&sout#1.0#True&sin#0.1#True&xbar_int#0.1#True&xbar_spl#0.1#True&x#0.1#True"
@@ -42,8 +40,8 @@ negbintheta_spl_clamp_minmax: '1.0_10.0'  # The minmax clamp values on the dispe
 flag_use_int_u: 'True'  # whether Z is conditioned on the additional label (i.e. u_z).
 flag_use_spl_u: 'True'  # whether S_out is conditioned on the additional label (i.e. u_s).
 
-flag_detach_mu_u_int: 'False'  # Whether the mean parameter of Z's likelihood is detached. TODO: check? why are they set to True and False on initiall Melanoma runs???
-flag_detach_mu_u_spl: 'True'  # Whether the mean parameter of S_out's likelihood is detached. TODO: check? why are they set to True and False on initiall Melanoma runs???
+flag_detach_mu_u_int: 'False'  # Whether the mean parameter of Z's likelihood is detached. TODO:internalcheck? why are they set to True and False on initiall Melanoma runs???
+flag_detach_mu_u_spl: 'True'  # Whether the mean parameter of S_out's likelihood is detached. TODO:internalcheck? why are they set to True and False on initiall Melanoma runs???
 
 upperbound_cov_u: 1.0  # upper-bound on the covariance of the likelihood terms of Z and S_out
 lowerbound_cov_u: 0.01 # lower-bound on the covariance of the likelihood terms of Z and S_out
@@ -64,7 +62,7 @@ args_list_adjmatloss: ""
 # Variable names can be chosen from: z, s_in, s_out, xbar_int, xbar_spl, x_int, and x_spl.
 
 
-CTNCC_usage_moduledisent: "{'CT':inflow.modules.gnn_disentangler.ArchInsertionPoint.NONE, 'NCC':inflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO: TUNE  TODO: check
+CTNCC_usage_moduledisent: "{'CT':inflow.modules.gnn_disentangler.ArchInsertionPoint.NONE, 'NCC':inflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO:TUNE  TODO:internalcheck
 # Specifies how CT (i.e. cell type) and NCC (neighbourhood cell type composition) are fed to the disentangler module, i.e. the encoder for x --> [x_int, x_spl]
 # Different assignable values to each of the `CT` and `NCC` keys
 #     - inflow.modules.gnn_disentangler.ArchInsertionPoint.NONE: `CT` or `NCC` not fed to the disentangler module
@@ -81,12 +79,12 @@ dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_sp
 # If scale is set to 0.0 and flag_unweighted is set to True --> the conditional likelihood term for that variable is discarded to imitate a deterministic encoder.
 
 
-clipval_cov_noncentralnodes: 0.1  # TODO: TUNE, a very important paramter to tune.
+clipval_cov_noncentralnodes: 0.1  # TODO:ESSENTIAL:TUNE, a very important paramter to tune.
 # The prediction uncertainty on non-central nodes in NeighbourLoader's mini-batches are lower-bounded, and the above variable `clipval_cov_noncentralnodes` determines that lower bound.
 # Please refer to the manuscript for more info about why doing so might be necessary.
 
 std_minval_finalclip: 0.01
-std_maxval_finalclip: 0.01  # TODO: check, shouldn't it be increased to, e.g., 1.0 ???
+std_maxval_finalclip: 0.01  # TODO:internalcheck, shouldn't it be increased to, e.g., 1.0 ???
 # The final clip limits put on the predicted covariance values for x_int and x_spl
 
 flag_use_layernorm_disentangler_enc1: 'True'
@@ -99,7 +97,7 @@ flag_enable_batchtoken_disentangler: 'True'
 
 
 
-coef_flowmatchingloss: 0.0  # TODO: TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
+coef_flowmatchingloss: 0.0  # TODO:TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
 flowmatching_mode_samplex0: 'ModeSampleX0.FROMINFLOW'
 flowmatching_mode_minibatchper: 'ModeMinibatchPerm.RANDOM'
 flowmatching_mode_timesched: 'ModeTimeSched.UNIFORM'
@@ -138,7 +136,7 @@ CTNCC_usage_modulecond4flow: "{'z':[True, False], 'sout':[True, False], 'sin':[F
 
 str_modez2notNCCloss_regorclsorwassdist: 'wassdist'  # a string either 'cls' and 'wassdist'. It's highly recommended to leave as 'wassdist'.
 
-module_predictor_z2notNCC: >  # the module that tries to predict NCCs (neighbourhood cell type decompositions) from the Z vectors. The gradient is used to mix the Z vectors based on NCC and in each cell type. 
+module_predictor_z2notNCC: >  # the module that tries to predict NCCs (neighbourhood cell type decompositions) from the Z vectors. The gradient is used to mix the Z vectors based on NCC and in each cell type.
   PredictorPerCT(
     list_modules=[
         torch.nn.Sequential(
@@ -217,7 +215,7 @@ module_predictor_xbarspl2notBatchID: >  # The module that tries to predict batch
     ],
     num_batches=kwargs_genmodel['dict_varname_to_dim']['BatchEmb']
   )
-  
+
 
 coef_loss_CTpredfromZ: 0.1  # coefficient of loss term that encourages CT (cell type) being predictable from Z.
 module_classifier_P1loss: >  # the predictor module for the above loss term. # TODO:check: is linear better than, e.g., 2-layer?
@@ -255,7 +253,7 @@ flag_drop_loss_logQdisentangler: 'True'
 # It's done to not discourage higher entropy in variational distribution of x_int and x_spl, so different decompositions are explored.
 
 
-coef_xbarintCT_loss: 0.0  # coefficient of loss term that encourages CT (cell type) being predictable from xbar_int. TODO:check, it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
+coef_xbarintCT_loss: 0.0  # coefficient of loss term that encourages CT (cell type) being predictable from xbar_int. TODO:check, TODO:internalcheck:it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
 module_classifier_xbarintCT: >  #The predictor for the above loss term. TODO:check: is linear better than, e.g., 2-layer?,
   torch.nn.Sequential(
         torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
@@ -264,7 +262,7 @@ module_classifier_xbarintCT: >  #The predictor for the above loss term. TODO:che
   )
 
 
-coef_xbarsplNCC_loss: 0.0  # coefficient of loss term that encourages NCC (neighbourhood cell type decomposition) being predictable from xbar_spl. TODO:check, it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
+coef_xbarsplNCC_loss: 0.0  # coefficient of loss term that encourages NCC (neighbourhood cell type decomposition) being predictable from xbar_spl. TODO:check, TODO:internalcheck:it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
 module_predictor_xbarsplNCC: > #The predictor for the above loss term. TODO:check: is linear better than, e.g., 2-layer?,
   torch.nn.Sequential(
         torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['s'], kwargs_genmodel['dict_varname_to_dim']['s']//2),
@@ -282,10 +280,10 @@ num_subsample_XYrankloss: 20
 # related to subsampling for efficient computation of the above loss (again not important atm).
 
 
-coef_xbarint2notNCC_loss: 1.0  # TODO: TUNE. An important parameter. The coefficient of a loss saying: NCC (neighbouhood cell type composition) should not be preditable from xbar_int.
+coef_xbarint2notNCC_loss: 1.0  # TODO:TUNE. An important parameter. The coefficient of a loss saying: NCC (neighbouhood cell type composition) should not be preditable from xbar_int.
 str_modexbarint2notNCCloss_regorclsorwassdist: 'wassdist'
 
-coef_z2notNCC_loss: 1.0  # TODO: TUNE. An important parameter. The coefficient of a loss saying: NCC (neighbouhood cell type composition) should not be preditable from Z.
+coef_z2notNCC_loss: 1.0  # TODO:TUNE. An important parameter. The coefficient of a loss saying: NCC (neighbouhood cell type composition) should not be preditable from Z.
 
 coef_rankloss_Z: 0.0
 # coefficient of a loss term saying: from z the rank of neighbouring cells (rank based on closeness) should not be preditable.
