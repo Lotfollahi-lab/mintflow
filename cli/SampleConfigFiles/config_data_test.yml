@@ -1,0 +1,78 @@
+
+# This is a smple config file to let inflow know how it should take in it's testing data.
+# To evaluate disentanglement (i.e. Bayesian inference) it's a good practice to evaluate on the same tissue samples used during training.
+# This is because the variational distirbution may not generalise to new samples, and furthermore, new biological batch IDs in the evaluation phass is obviously prohibited.
+# To follow the above recommended practice, one can simply duplicate, e.g., `config_data_train.yml` and make the following changes in the duplicated file
+#     - rename all ocrrences of `config_dataloader_train` to `config_dataloader_test`.
+#     - Inflow will ignore `config_dataloader_test.num_neighbors` and `config_dataloader_test.min_numpoints_ingrid` during evaluation. You can leave them in the config file untouched as they will be ignored anyway.
+# At the following the fields marked as 'TODO:TUNE' are essential to tune for each sample/dataset. Other configurations are relatively less important.
+
+# Given the similarity to `config_data_train.yml` please refer to the sample `config_data_train.yml` for additional notes (those additional notes apply to this config file, but are not repeated).
+
+list_tissue:  # this name is mandatory
+  anndata1:  # this name is mandatory (and other fields `anndata2`, `anndata3`, ...)
+    file: ./NonGit/ListAnndata/adata_1.h5ad  # TODO:TUNE, the file name for sample 1
+    obskey_cell_type: mod_celltypes_new  # TODO:TUNE, the cell type column in `adata.obs` to be used by inflow.
+    obskey_sliceid_to_checkUnique: info_id  # TODO:TUNE, inflow requires each sample to a have a unique ID stored in the `obskey_sliceid_to_checkUnique` column of `adata.obs`. This column is only used to double check that each anndata contains a unique sample and not >1 tissues.
+    obskey_x: x_centroid  # TODO:TUNE, the column in `adata.obs` containing the sptial X position of cells.
+    obskey_y: y_centroid  # TODO:TUNE, the column in `adata.obs` containing the sptial Y position of cells.
+    obskey_biological_batch_key: info_id  # TODO:TUNE, the column in `adata.obs` that specifies the biological batch. This should be set carefully, since inflow creates biological batch identifiers based on this. Refer to `Notes on specifying biological batches and inflow's batch correction` above.
+    config_neighbourhood_graph:  # config for the neighbourhood graph created by `sq.gr.spatial_neighbors`, any argument can be passed here except `spatial_key` and `library_key`
+      set_diag: "False"  # no self-loops
+      delaunay: "False"  # no delaunay tringulation in the neighbourhood graph
+      n_neighs: 5  # each cell is connected to its 5 nearest neighbours
+    config_dataloader_test:  # config for the testing dataloader, which is a torch_geometric's `NeighborLoader` with a customised batch sampler.
+      num_neighbors: 5  # elements of `num_neighbors` argument of torch geometric's `NeighborLoader`. It has to be less than or equal to the `n_neighs` field above. If `n_neighs` is small, it's usually fine to set `num_neighbors` equal to `n_neighs`.
+      width_window: 600 #'TODO:TUNE' and "essential" paramter to tune. Please refer to the description above, under "Notes on setting the window size".
+      min_numpoints_ingrid: 10  # if the number of cells in a tissue copr is less than this number, that crop is discarded by the dataloader.
+    config_sq_pl_spatial_scatter:  # some args of `sq.pl.spatial_scatter`, called by inflow to create the connectivity graphs in 'path_output/Toinspect_NeighbourhoodGraphs'
+      edges_width: 0.1
+      legend_fontsize: 5
+      figsize: 10
+      size: 10.0
+    batchsize_compute_NCC: 10  # the batch size to compute NCC vectors (i.e. Neighbouhood Celltype Composition s)
+
+  anndata2:  # this name is mandatory (and other fields `anndata2`, `anndata3`, ...)
+    file: ./NonGit/ListAnndata/adata_2.h5ad  # TODO:TUNE, the file name for sample 2
+    obskey_cell_type: mod_celltypes_new  # TODO:TUNE, the cell type column in `adata.obs` to be used by inflow.
+    obskey_sliceid_to_checkUnique: info_id  # TODO:TUNE, inflow requires each sample to a have a unique ID stored in the `obskey_sliceid_to_checkUnique` column of `adata.obs`. This column is only used to double check that each anndata contains a unique sample and not >1 tissues.
+    obskey_x: x_centroid  # TODO:TUNE, the column in `adata.obs` containing the sptial X position of cells.
+    obskey_y: y_centroid  # TODO:TUNE, the column in `adata.obs` containing the sptial Y position of cells.
+    obskey_biological_batch_key: info_id  # TODO:TUNE, the column in `adata.obs` that specifies the biological batch. This should be set carefully, since inflow creates biological batch identifiers based on this. Refer to `Notes on specifying biological batches and inflow's batch correction` above.
+    config_neighbourhood_graph: # config for the neighbourhood graph created by `sq.gr.spatial_neighbors`, any argument can be passed here except `spatial_key` and `library_key`
+      set_diag: "False"  # no self-loops
+      delaunay: "False"  # no delaunay tringulation in the neighbourhood graph
+      n_neighs: 5  # each cell is connected to its 5 nearest neighbours
+    config_dataloader_test: # config for the testing dataloader, which is a torch_geometric's `NeighborLoader` with a customised batch sampler.
+      num_neighbors: 5  # elements of `num_neighbors` argument of torch geometric's `NeighborLoader`. It has to be less than or equal to the `n_neighs` field above. If `n_neighs` is small, it's usually fine to set `num_neighbors` equal to `n_neighs`.
+      width_window: 600 #'TODO:TUNE' and "essential" paramter to tune. Please refer to the description above, under "Notes on setting the window size".
+      min_numpoints_ingrid: 10  # if the number of cells in a tissue copr is less than this number, that crop is discarded by the dataloader.
+    config_sq_pl_spatial_scatter: # some args of `sq.pl.spatial_scatter`, called by inflow to create the connectivity graphs in 'path_output/Toinspect_NeighbourhoodGraphs'
+      edges_width: 0.1
+      legend_fontsize: 5
+      figsize: 10
+      size: 10.0
+    batchsize_compute_NCC: 10  # the batch size to compute NCC vectors (i.e. Neighbouhood Celltype Composition s)
+
+  anndata3:  # this name is mandatory (and other fields `anndata2`, `anndata3`, ...)
+    file: ./NonGit/ListAnndata/adata_3.h5ad  # TODO:TUNE, the file name for sample 3
+    obskey_cell_type: mod_celltypes_new  # TODO:TUNE, the cell type column in `adata.obs` to be used by inflow.
+    obskey_sliceid_to_checkUnique: info_id  # TODO:TUNE, inflow requires each sample to a have a unique ID stored in the `obskey_sliceid_to_checkUnique` column of `adata.obs`. This column is only used to double check that each anndata contains a unique sample and not >1 tissues.
+    obskey_x: x_centroid  # TODO:TUNE, the column in `adata.obs` containing the sptial X position of cells.
+    obskey_y: y_centroid  # TODO:TUNE, the column in `adata.obs` containing the sptial Y position of cells.
+    obskey_biological_batch_key: info_id  # TODO:TUNE, the column in `adata.obs` that specifies the biological batch. This should be set carefully, since inflow creates biological batch identifiers based on this. Refer to `Notes on specifying biological batches and inflow's batch correction` above.
+    config_neighbourhood_graph: # config for the neighbourhood graph created by `sq.gr.spatial_neighbors`, any argument can be passed here except `spatial_key` and `library_key`
+      set_diag: "False"  # no self-loops
+      delaunay: "False"  # no delaunay tringulation in the neighbourhood graph
+      n_neighs: 5  # each cell is connected to its 5 nearest neighbours
+    config_dataloader_test: # config for the testing dataloader, which is a torch_geometric's `NeighborLoader` with a customised batch sampler.
+      num_neighbors: 5  # elements of `num_neighbors` argument of torch geometric's `NeighborLoader`. It has to be less than or equal to the `n_neighs` field above. If `n_neighs` is small, it's usually fine to set `num_neighbors` equal to `n_neighs`.
+      width_window: 600 #'TODO:TUNE' and "essential" paramter to tune. Please refer to the description above, under "Notes on setting the window size".
+      min_numpoints_ingrid: 10  # if the number of cells in a tissue copr is less than this number, that crop is discarded by the dataloader.
+    config_sq_pl_spatial_scatter: # some args of `sq.pl.spatial_scatter`, called by inflow to create the connectivity graphs in 'path_output/Toinspect_NeighbourhoodGraphs'
+      edges_width: 0.1
+      legend_fontsize: 5
+      figsize: 10
+      size: 10.0
+    batchsize_compute_NCC: 10  # the batch size to compute NCC vectors (i.e. Neighbouhood Celltype Composition s)
+

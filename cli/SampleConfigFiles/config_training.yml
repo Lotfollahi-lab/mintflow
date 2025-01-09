@@ -1,0 +1,63 @@
+
+
+# TODO TODO TODO
+
+flag_use_GPU: "True"  # if set to True, GPU is used for training/evaluation
+val_scppnorm_total: 10000  # the target_sum arg of `sc.pp.normalize_total`
+
+
+# wandb configs ============
+flag_enable_wandb: "True"  # TODO:TUNE if set to Ture wandb logging is enabled. Recommended: True  # TODO:revert back to "True"
+wandb_project_name: "inFlow"  # TODO:TUNE your own wandb project name
+wandb_run_name: "inflow_sample_run_Jan08"  # TODO:TUNE your wandb run name
+wandb_stepsize_log: 2  # The step size to log to wandb, increase this number if you want less frequent wandb logs.
+
+lr_training: 0.001  # TODO:check. Learning rate for training optimisers. The default value of 0.001 should be OK but one may need to tune it.
+
+num_training_epochs: 10  # TODO:TUNE, number of training epochs. Recommended: ~50 epochs. TODO:change 2 to 50 TODO:revert 0 back to 2.
+
+numiters_updateduals_seprately_perepoch: 2000  # TODO:check
+batchsize_updateduals_seprately_perepoch: 50  # TODO:check
+# Before each training epoch the dual functions are updates separately for `numiters_updateduals_seprately_perepoch` iterations.
+# This is done to keep the dual functions a good, e.g., Wasserstein distance approximators.
+
+numsteps_accumgrad: 2 # TODO:TUNE
+num_updateseparate_afterGRLs: 50  # TODO:TUNE
+# Above: two very important parameters.
+#   - `numsteps_accumgrad`: inflow uses accumulated gradients, i.e. during training it performs `numsteps_accumgrad` calls to backward followed by a single call to optimiser step.
+#   - `num_updateseparate_afterGRLs`: the dual functions (e.g. for Wasserstein distance estimation) have to be updated regularly.
+#      To this end after each `numsteps_accumgrad` calls to backward and optimiser step, the dual functions are seperately updated `num_updateseparate_afterGRLs` times.
+#      Ideally `num_updateseparate_afterGRLs` should be large, but increasing it too much is computationlly infeasible.
+
+
+annealing_decoder_XintXspl_coef_min: 0.00001  # TODO:check
+annealing_decoder_XintXspl_coef_max: 0.001  # TODO:check
+annealing_decoder_XintXspl_fractionepochs_phase1: 0.5  # TODO:check
+annealing_decoder_XintXspl_fractionepochs_phase2: 0.2  # TODO:check
+# Above: four VERY IMPORTANT parameters that specify the annealing for the decoder ZINB loss of Xint and Xspl (please refer to the manuscript to the discussion about why this is needed).
+# The annealing has three phases
+#   - phase 1: Takes `annealing_decoder_XintXspl_fractionepochs_phase1` fraction of training epochs, during which the two zinb losses for Xint and Xspl are multiplied by `annealing_decoder_XintXspl_coef_min`.
+#   - phase 2: Takes `annealing_decoder_XintXspl_fractionepochs_phase2` fraction of training epochs, during which the two zinb losses for Xint and Xspl are multiplied by a number linearly going up to `annealing_decoder_XintXspl_coef_max`.
+#   - phase 3: the rest of training, the two zinb losses for Xint and Xspl are multipled by `annealing_decoder_XintXspl_coef_max`.
+# To disable this annealing you can set `annealing_decoder_XintXspl_coef_min` and `annealing_decoder_XintXspl_coef_max` to equal numbers.
+
+sleeptime_gccollect_aftertraining: 1  #TODO:check # TODO: increase to 120 after DEV
+# After training for `num_training_epochs`, garbage collection is called followed by `time.sleep(sleeptime_gccollect_aftertraining)` so some system/gpu memory is potentially released.
+# `sleeptime_gccollect_aftertraining` is in sleeping time in seconds.
+
+sleeptime_gccollect_dumpOnePred: 1 #TODO:cehck # TODO: increase to 30 after DEV
+# Similar to above, but after dumping the predictions for each tissue sample
+
+
+flag_finaleval_enable_pertissue_violinplot: "True"  # TODO:check
+# Whether in the final evaluation the per-tissue violin plots are dumped.
+# Creating the violin plots may take a while, you can disable it by setting `flag_finaleval_enable_pertissue_violinplot` to "False".
+
+flag_finaleval_enable_alltissuecombined_eval: "True"  # TODO:check
+# Whether in the final evaluation the evaluation  is done on all samples combined.
+# If there are many tissue samples, combining them may result in problems like out of memory (OOM).
+# In that case you can disable the combined analysis by setting `flag_finaleval_enable_alltissuecombined_eval` to "False".
+
+flag_finaleval_enable_alltissue_violinplot: "True"  # TODO:check
+# Optionally you can disable only the violinplots when all tissues are combined in the end.
+# To do so, you can set `flag_finaleval_enable_alltissue_violinplot` to "False".
