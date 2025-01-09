@@ -52,8 +52,8 @@ from tqdm.autonotebook import tqdm
 import gdown
 
 list_pathstoadd = [
-    "../../../inflow/src/{}/".format(STR_INFLOW_OR_INFLOW_SYNTH),
-    "../../../inflow/src/"
+    "../src/{}/".format(STR_INFLOW_OR_INFLOW_SYNTH),
+    "../src/"
 ]
 for path in list_pathstoadd:
     if(path not in sys.path):
