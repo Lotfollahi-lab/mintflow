@@ -970,11 +970,6 @@ module_vardist = BASE_PATH.vardist.InFlowVarDist(
 )
 module_vardist.to(device)
 
-# for debug ===
-for idx_next in range(100):
-    print(idx_next, next(module_vardist.module_annealing_decoderXintXspl))
-assert False
-
 
 if args.flag_verbose:
     print("Inflow vardist module was created on {}.".format(device))
