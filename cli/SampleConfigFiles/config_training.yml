@@ -28,16 +28,17 @@ num_updateseparate_afterGRLs: 50  # TODO:TUNE
 #      Ideally `num_updateseparate_afterGRLs` should be large, but increasing it too much is computationlly infeasible.
 
 
-annealing_decoder_XintXspl_coef_min: 0.00001  # TODO:check
-annealing_decoder_XintXspl_coef_max: 0.001  # TODO:check
-annealing_decoder_XintXspl_fractionepochs_phase1: 0.5  # TODO:check
-annealing_decoder_XintXspl_fractionepochs_phase2: 0.2  # TODO:check
+annealing_decoder_XintXspl_coef_min: 0.00001  # TODO:check, TODO:internalcheck: recomm a good setting
+annealing_decoder_XintXspl_coef_max: 0.001  # TODO:check, TODO:internalcheck: recomm a good setting
+annealing_decoder_XintXspl_fractionepochs_phase1: 0.5  # TODO:check, TODO:internalcheck: recomm a good setting
+annealing_decoder_XintXspl_fractionepochs_phase2: 0.2  # TODO:check, TODO:internalcheck: recomm a good setting
 # Above: four VERY IMPORTANT parameters that specify the annealing for the decoder ZINB loss of Xint and Xspl (please refer to the manuscript to the discussion about why this is needed).
 # The annealing has three phases
 #   - phase 1: Takes `annealing_decoder_XintXspl_fractionepochs_phase1` fraction of training epochs, during which the two zinb losses for Xint and Xspl are multiplied by `annealing_decoder_XintXspl_coef_min`.
 #   - phase 2: Takes `annealing_decoder_XintXspl_fractionepochs_phase2` fraction of training epochs, during which the two zinb losses for Xint and Xspl are multiplied by a number linearly going up to `annealing_decoder_XintXspl_coef_max`.
 #   - phase 3: the rest of training, the two zinb losses for Xint and Xspl are multipled by `annealing_decoder_XintXspl_coef_max`.
 # To disable this annealing you can set `annealing_decoder_XintXspl_coef_min` and `annealing_decoder_XintXspl_coef_max` to equal numbers.
+# TODO:internalcheck: see if the annealing coefficients are as expected.
 
 sleeptime_gccollect_aftertraining: 120  #TODO:TUNE
 # After training for `num_training_epochs`, garbage collection is called followed by `time.sleep(sleeptime_gccollect_aftertraining)` so some system/gpu memory is potentially released.
