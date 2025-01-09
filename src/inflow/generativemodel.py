@@ -13,6 +13,7 @@ from . import utils
 from . import probutils
 from .modules import mlp
 from . import zs_samplers
+from . import utils_flowmatching
 
 
 
@@ -37,7 +38,8 @@ class InFlowGenerativeModel(nn.Module):
             flag_use_int_u: bool, module_int_mu_u: nn.Module | None, module_int_cov_u: mlp.SimpleMLPandExp | None,
             flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
             coef_zinb_int_loglik: float,
-            coef_zinb_spl_loglik: float
+            coef_zinb_spl_loglik: float,
+            dict_config_batchtoken: dict
     ):
         '''
 
@@ -69,6 +71,9 @@ class InFlowGenerativeModel(nn.Module):
             the mean and cov of p(z|u).
         :param flag_use_spl_u, module_spl_mu_u, module_spl_cov_u: whether the u-label (with the notation of iVAE) is used for s_out, and modules to produce
             the mean and cov of p(s_out|u).
+        :dict_config_batchtoken: the configdict for how/if batchtoken is used. Containing keys
+            - flag_enable_batchtoken_flowmodule: whether the flow part of decoder is conditioned on batch token.
+            - TODO: maybe add more?
         :param TODO:complete
 
 
@@ -89,7 +94,10 @@ class InFlowGenerativeModel(nn.Module):
         self.flag_use_spl_u, self.module_spl_mu_u, self.module_spl_cov_u = flag_use_spl_u, module_spl_mu_u, module_spl_cov_u
         self.coef_zinb_int_loglik = coef_zinb_int_loglik
         self.coef_zinb_spl_loglik = coef_zinb_spl_loglik
+        self.dict_config_batchtoken = dict_config_batchtoken
 
+        assert self.coef_zinb_int_loglik == 1.0, "coef_zinb_int_loglik has to be 1.0, since that's handled by annealing now."
+        assert self.coef_zinb_spl_loglik == 1.0, "coef_zinb_spl_loglik has to be 1.0, since that's handled by annealing now."
 
 
         #make internals ===
@@ -100,24 +108,30 @@ class InFlowGenerativeModel(nn.Module):
                 **kwargs_theta_aggr
             }
         ) #TODO: add note about requiring the `dim_input` and `dim_output` arguments.
+        # TODO: `dim_input` and `dim_output` arguments were removed after adding batch token. Any issues?
         self.module_Vflow_unwrapped = type_moduleflow(
             **{**{
-                'dim_input': self.dict_varname_to_dim['s'] + self.dict_varname_to_dim['z'],
-                'dim_output': self.dict_varname_to_dim['s'] + self.dict_varname_to_dim['z']},
+                'flag_enable_batchtoken_flowmodule':self.dict_config_batchtoken['flag_enable_batchtoken_flowmodule'],
+                'dim_b':self.dict_varname_to_dim['BatchEmb'],
+                'dim_z': self.dict_varname_to_dim['z'],
+                'dim_s': self.dict_varname_to_dim['s']},
                **kwargs_moduleflow
             }
         )
-        self.module_flow = NeuralODE(
-            torch_wrapper(
-                self.module_Vflow_unwrapped
-            ),
-            solver="dopri5",
-            sensitivity="adjoint",
-            return_t_eval=True
+
+        self.module_flow = utils_flowmatching.WrapperTorchDiffEq(
+            model=self.module_Vflow_unwrapped,
+            kwargs_odeint={
+                'atol':1e-4,
+                'rtol':1e-4,
+                'method':"dopri5"
+            }
         )
+        # torch_wrapper is not needed:
+        # https://github.com/atong01/conditional-flow-matching/blob/62c44affd877a01b7838d408b5dc4cbcbf83e3ad/examples/images/conditional_mnist.ipynb
         self.module_w_dec_int = type_w_dec(
             **{**{
-                'dim_input': self.dict_varname_to_dim['z'],
+                'dim_input': self.dict_varname_to_dim['BatchEmb'] + self.dict_varname_to_dim['z'],
                 'dim_output': self.dict_varname_to_dim['x']},
                **kwargs_w_dec
                }
@@ -335,6 +349,11 @@ class InFlowGenerativeModel(nn.Module):
             batch by batch, where each batch is determined by this argument.
         :return:
         '''
+
+        raise NotImplementedError(
+            "Check the implementation after batch tokens are added."
+        )
+
         assert(
             not pyg.utils.contains_self_loops(edge_index)
         )
@@ -442,6 +461,7 @@ class InFlowGenerativeModel(nn.Module):
             batch_size=batch_size_feedforward,
             t_span=torch.linspace(0, 1, t_num_steps).to(device)
         )  # [num_cell, dim_z+dim_s]
+        # TODO:backtrace the flow module is totally changed, so here must be changed.
 
         xbar_int = probutils.ExtenededNormal(
             loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
@@ -583,13 +603,34 @@ class InFlowGenerativeModel(nn.Module):
 
 
         # xbar_int, xbar_spl
+        rng_batchemb = [
+            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+            batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+        ]
+        '''
         output_neuralODE = self.module_flow(
             torch.cat(
-                [dict_qsamples['z'][:batch.batch_size], dict_qsamples['s_in'][:batch.batch_size]],
+                [
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size].float().to(device),
+                    dict_qsamples['z'][:batch.batch_size],
+                    dict_qsamples['s_in'][:batch.batch_size]
+                ],
                 1
             ),
             torch.linspace(0, 1, t_num_steps).to(device)
         )[1][-1, :, :]  # [b, dim_z+dim_s]
+        '''
+        output_neuralODE = self.module_flow(
+            t_in=torch.linspace(0, 1, t_num_steps).to(device),
+            x_in=torch.cat(
+                [
+                    dict_qsamples['z'][:batch.batch_size],
+                    dict_qsamples['s_in'][:batch.batch_size]
+                ],
+                1
+            ),
+            ten_BatchEmb_in=batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size].float().to(device)
+        )
 
         logp_xbarint = probutils.ExtenededNormal(
             loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
@@ -608,17 +649,52 @@ class InFlowGenerativeModel(nn.Module):
         )  # [b, dim_s]
 
 
+        # FLAG_MODE_DEC_SIZEFACTOR_XSUM ====
+        FLAG_MODE_DEC_SIZEFACTOR_XSUM = True
 
         # x_int
+        netout_w_dec_int = self.module_w_dec_int(
+            torch.cat(
+                [
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size].float().to(device),
+                    dict_qsamples['xbar_int'][:batch.batch_size]
+                ],
+                1
+            )
+        )
+
+        if FLAG_MODE_DEC_SIZEFACTOR_XSUM:
+            with torch.no_grad():
+                sizefactor_int = dict_qsamples['x_int'][:batch.batch_size].sum(1).unsqueeze(-1)  # [b, num_genes]
+        else:
+            sizefactor_int = torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1)
+
         logp_x_int = self.coef_zinb_int_loglik * ZeroInflatedNegativeBinomial(
-            **{**{'mu': self.module_w_dec_int(dict_qsamples['xbar_int'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
+            **{**{'mu': netout_w_dec_int * sizefactor_int.detach(),
                   'theta': torch.exp(self.theta_negbin_int)},
                   **self.kwargs_negbin_int}
         ).log_prob(dict_qsamples['x_int'][:batch.batch_size])  # [b, num_genes]
 
+
         # x_spl
+        netout_w_dec_spl = self.module_w_dec_spl(
+            torch.cat(
+                [
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]][:batch.batch_size].float().to(device),
+                    dict_qsamples['xbar_spl'][:batch.batch_size]
+                ],
+                1
+            )
+        )
+
+        if FLAG_MODE_DEC_SIZEFACTOR_XSUM:
+            with torch.no_grad():
+                sizefactor_spl = dict_qsamples['x_spl'][:batch.batch_size].sum(1).unsqueeze(-1)  # [b, num_genes]
+        else:
+            sizefactor_spl = torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1)
+
         logp_x_spl = self.coef_zinb_spl_loglik * ZeroInflatedNegativeBinomial(
-            **{**{'mu': self.module_w_dec_spl(dict_qsamples['xbar_spl'][:batch.batch_size]) * torch.tensor(np_size_factor[batch.input_id], device=device, requires_grad=False).unsqueeze(1),
+            **{**{'mu': netout_w_dec_spl * sizefactor_spl.detach(),
                   'theta': torch.exp(self.theta_negbin_spl)},
                **self.kwargs_negbin_spl}
         ).log_prob(dict_qsamples['x_spl'][:batch.batch_size])  # [b, num_genes]

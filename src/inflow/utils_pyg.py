@@ -3,7 +3,7 @@ import random
 import numpy as np
 import torch
 from torch.utils.data.sampler import Sampler
-from tqdm.notebook import tqdm, trange
+from tqdm.autonotebook import tqdm
 from datetime import datetime
 
 from random import shuffle

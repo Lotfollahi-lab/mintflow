@@ -20,10 +20,13 @@ from . import kl_annealing
 from .modules import predictorperCT
 import predadjmat
 from . import wassdist_utils
+from .modules import varphienc4xbar
+from .modules import predictorbatchID
+from . import wassdist_utils_batchID
 #from tqdm.auto import tqdm
-from tqdm.notebook import tqdm, trange
+from tqdm.autonotebook import tqdm, trange
 import wandb
-
+from . import anneal_decoder_xintxspl
 
 
 class InFlowVarDist(nn.Module):
@@ -68,7 +71,12 @@ class InFlowVarDist(nn.Module):
             str_modexbarint2notNCCloss_regorclsorwassdist: str,
             coef_z2notNCC_loss: float,
             module_predictor_z2notNCC: nn.Module,
-            str_modez2notNCCloss_regorclsorwassdist: str
+            str_modez2notNCCloss_regorclsorwassdist: str,
+            module_predictor_xbarint2notbatchID:predictorbatchID.PredictorBatchID,
+            coef_xbarint2notbatchID_loss:float,
+            module_predictor_xbarspl2notbatchID: predictorbatchID.PredictorBatchID,
+            coef_xbarspl2notbatchID_loss: float,
+            module_annealing_decoderXintXspl: anneal_decoder_xintxspl.AnnealingDecoderXintXspl
     ):
         '''
 
@@ -126,6 +134,9 @@ class InFlowVarDist(nn.Module):
         self.module_predictor_xbarint2notNCC = module_predictor_xbarint2notNCC
         self.str_modexbarint2notNCCloss_regorclsorwassdist = str_modexbarint2notNCCloss_regorclsorwassdist
 
+
+        assert isinstance(module_annealing_decoderXintXspl, anneal_decoder_xintxspl.AnnealingDecoderXintXspl)
+        self.module_annealing_decoderXintXspl = iter(module_annealing_decoderXintXspl)
 
         assert (
             isinstance(module_annealing, kl_annealing.AnnealingSchedule) or (module_annealing is None)
@@ -205,6 +216,22 @@ class InFlowVarDist(nn.Module):
         self.module_impanddisentgl = self.type_impanddisentgl(**kwargs_impanddisentgl)
         self.module_cond4flowvarphi0 = type_cond4flowvarphi0(**kwargs_cond4flowvarphi0)
 
+        # related to xbarint2notbatchID
+        self.module_predictor_xbarint2notbatchID = module_predictor_xbarint2notbatchID
+        self.coef_xbarint2notbatchID_loss = coef_xbarint2notbatchID_loss
+        self.crit_loss_xbarint2notbatchID = wassdist_utils_batchID.WassDistBatchID(
+            coef_fminf=self.coef_xbarint2notbatchID_loss,
+            coef_smoothness=1.0 * self.coef_xbarint2notbatchID_loss
+        )
+
+        # related to xbarspl2notbatchID
+        self.module_predictor_xbarspl2notbatchID = module_predictor_xbarspl2notbatchID
+        self.coef_xbarspl2notbatchID_loss = coef_xbarspl2notbatchID_loss
+        self.crit_loss_xbarspl2notbatchID = wassdist_utils_batchID.WassDistBatchID(
+            coef_fminf=self.coef_xbarspl2notbatchID_loss,
+            coef_smoothness=1.0 * self.coef_xbarspl2notbatchID_loss
+        )
+
 
         self._check_args()
 
@@ -253,6 +280,9 @@ class InFlowVarDist(nn.Module):
                 ))
 
         else:
+            raise NotImplementedError(
+                "Only the distangler implementation in modules.gnn_disentangler.GNNDisentangler is tested."
+            )
             x_int = probutils.ExtenededNormal(
                 loc=params_q_impanddisentgl['muxint'],
                 scale=self.dict_qname_to_scaleandunweighted['impanddisentgl_int']['scale'],
@@ -271,8 +301,8 @@ class InFlowVarDist(nn.Module):
             )  # [N, num_genes]  # [N, num_genes]
 
         # step 2, rsample from encoders to the low-dim embedding space.
-        param_q_xbarint = self.module_varphi_enc_int(x_int)  # [N, dim_latent]
-        param_q_xbarspl = self.module_varphi_enc_spl(x_spl)  # [N, dim_latent]
+        param_q_xbarint = self.module_varphi_enc_int(x_int, batch)  # [N, dim_latent]
+        param_q_xbarspl = self.module_varphi_enc_spl(x_spl, batch)  # [N, dim_latent]
         xbar_int = probutils.ExtenededNormal(
             loc=param_q_xbarint,
             scale=self.dict_qname_to_scaleandunweighted['varphi_enc_int']['scale'],
@@ -309,9 +339,12 @@ class InFlowVarDist(nn.Module):
 
         #set ten_u_int and ten_u_spl ===
         assert (
-            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']  + batch.INFLOWMETAINF['dim_NCC'])
+            batch.y.size()[1] == (batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']  + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb'])
         )
-        ten_u_int = batch.y[:, 0:batch.INFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
+        ten_u_int = batch.y[
+            :,
+            0:batch.INFLOWMETAINF['dim_u_int']
+        ].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
         ten_u_spl = batch.y[
             :,
             batch.INFLOWMETAINF['dim_u_int']:batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']
@@ -355,6 +388,9 @@ class InFlowVarDist(nn.Module):
 
 
         else:
+            raise NotImplementedError(
+                "The disentangler has to be an instance of inflow.modules.gnn_disentangler import GNNDisentangler"
+            )
             # xint
             logq_xint = probutils.ExtenededNormal(
                 loc=dict_retvalrsample['params_q_impanddisentgl']['muxint'],
@@ -370,6 +406,7 @@ class InFlowVarDist(nn.Module):
             ).log_prob(dict_retvalrsample['x_spl'])  # [N, num_genes]
 
         # xbarint
+        # TODO: loc should be re-computed with encoder ?
         logq_xbarint = probutils.ExtenededNormal(
             loc=dict_retvalrsample['param_q_xbarint'],
             scale=self.dict_qname_to_scaleandunweighted['varphi_enc_int']['scale'],
@@ -377,6 +414,7 @@ class InFlowVarDist(nn.Module):
         ).log_prob(dict_retvalrsample['xbar_int'])  # [N, dim_latent]
 
         # xbarspl
+        # TODO: loc should be re-computed with encoder ?
         logq_xbarspl = probutils.ExtenededNormal(
             loc=dict_retvalrsample['param_q_xbarspl'],
             scale=self.dict_qname_to_scaleandunweighted['varphi_enc_spl']['scale'],
@@ -420,6 +458,11 @@ class InFlowVarDist(nn.Module):
             - log1p: log(1+x) is fed to end/dec
         :return:
         '''
+
+        raise NotImplementedError(
+            "train_separately_encdec is not implemented when having batch tokens"
+        )
+
         # get x
         x = torch.sparse_coo_tensor(
             indices=adata.X.tocoo().nonzero(),
@@ -563,9 +606,12 @@ class InFlowVarDist(nn.Module):
             num_updateseparate_afterGRLs:int,
             itrcount_wandbstep_input:int|None=None,
             list_flag_elboloss_imputationloss=[True, True],
-            coef_loss_closeness_zz_xbarintxbarint_xintxint:float=0.0,
+            coef_loss_closeness_zz:float=0.0,
+            coef_loss_closeness_xbarintxbarint: float = 0.0,
+            coef_loss_closeness_xintxint: float = 0.0,
             coef_flowmatchingloss:float=0.0,
-            flag_verbose:bool=False
+            flag_verbose:bool=False,
+            flag_enable_wandb:bool=True
     ):
         '''
         One epoch of the training.
@@ -580,7 +626,9 @@ class InFlowVarDist(nn.Module):
         :param tensorboard_stepsize_save
         :param itrcount_wandbstep_input
         :param list_flag_elboloss_imputationloss
-        :param coef_loss_closeness_zz_xbarintxbarint_xintxint
+        :param coef_loss_closeness_zz
+        :param coef_loss_closeness_xbarintxbarint
+        :param coef_loss_closeness_xintxint
         :param prob_applytfm_affinexy: with this probability the [xy] positions go throug an affined transformation.
         :param coef_flowmatchingloss: the coefficient for flow-matching loss.
         :param np_size_factor: a tensor of shape [num_cells], containing the size factors.
@@ -616,6 +664,7 @@ class InFlowVarDist(nn.Module):
             self.coef_anneal = None
 
 
+        coef_decoderXintXspl_annealing = next(self.module_annealing_decoderXintXspl)
 
         if flag_lockencdec_duringtraining:
             assert (optim_training.flag_freezeencdec)  # TODO: make the check differently
@@ -642,18 +691,36 @@ class InFlowVarDist(nn.Module):
         # iterpygdl_for_afterGRL = iter(dl)
 
         list_iter_dl_normal = [iter(u) for u in list_dl]
+
+        iter_dl_2ndpygbatch = iter(list_dl[0])  # [iter(u) for u in list_dl]  # the 2nd pygbatch for batch mixing (i.e. xbarint/xbarspl --> notbatchID losses)
+
         list_iterfinished_normal = [False for u in list_dl]
+
         idx_current_dl_normal = -1
 
 
         optim_training.zero_grad()
-        while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
+        temp_print_whilecount = -1
 
+        pbar = tqdm(
+            total=max([len(dl) for dl in list_dl]),
+            desc='Inflow training epoch'
+        )
+        pbar_idx_biggestDL = np.argmax([len(dl) for dl in list_dl])
+        while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
+            temp_print_whilecount += 1
             idx_current_dl_normal = (idx_current_dl_normal + 1)%len(list_dl)
+
+            if idx_current_dl_normal == pbar_idx_biggestDL:
+                pbar.update(1)
+
             try:
                 itr = list_iter_dl_normal[idx_current_dl_normal]
                 batch = next(itr)
             except StopIteration:
+                if flag_verbose:
+                    print("<><><><><><><><><><><><><><><><><> stop-iteration occured at while-loop {}".format(temp_print_whilecount))
+
                 list_iterfinished_normal[idx_current_dl_normal] = True
                 list_iter_dl_normal[idx_current_dl_normal] = iter(list_dl[idx_current_dl_normal])
                 itr = list_iter_dl_normal[idx_current_dl_normal]
@@ -662,24 +729,26 @@ class InFlowVarDist(nn.Module):
             if np.all(list_iterfinished_normal):
                 break
 
-            wandb.log(
-                {"InspectVals/annealing_coefficient": self.coef_anneal},
-                step=itrcount_wandb
-            )
+            if flag_enable_wandb:
+                wandb.log(
+                    {"InspectVals/annealing_coefficient": self.coef_anneal},
+                    step=itrcount_wandb
+                )
 
             batch.INFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
                 "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
                 "dim_CT":self.module_genmodel.dict_varname_to_dim['CT'],
-                "dim_NCC":self.module_genmodel.dict_varname_to_dim['NCC']
-            }  # how batch.y is split between u_int, u_spl, CT, and NCC
+                "dim_NCC":self.module_genmodel.dict_varname_to_dim['NCC'],
+                "dim_BatchEmb":self.module_genmodel.dict_varname_to_dim['BatchEmb']
+            }  # how batch.y is split between u_int, u_spl, CT, NCC, BatchEmb
 
             ten_xy_touse = list_ten_xy_absolute[idx_current_dl_normal]
 
             self.module_genmodel.clamp_thetanegbins()
 
             # optim_training.zero_grad()
-            flag_tensorboardsave = (itrcount_wandb%tensorboard_stepsize_save == 0)
+            flag_tensorboardsave = (itrcount_wandb%tensorboard_stepsize_save == 0) and flag_enable_wandb
 
             dict_q_sample = self.rsample(
                 batch=batch,
@@ -710,14 +779,14 @@ class InFlowVarDist(nn.Module):
                         if self.weight_logprob_zinbpos == -1:  # do as usual
                             assert (self.weight_logprob_zinbzero == -1)
                             lossterm_logp = dict_logp[k].sum(1).mean()
-                            loss = loss - lossterm_logp
+                            loss = loss - lossterm_logp * coef_decoderXintXspl_annealing
                         else:
                             x_cnt = batch.x.to_dense().to(list_ten_xy_absolute[0].device).detach()[:batch.batch_size] + 0.0
                             lossterm_logp_pos = dict_logp[k][x_cnt > 0]
                             lossterm_logp_zero = dict_logp[k][x_cnt == 0]
                             lossterm_logp = self.weight_logprob_zinbpos*lossterm_logp_pos.sum() + self.weight_logprob_zinbzero*lossterm_logp_zero.sum()
                             lossterm_logp = lossterm_logp/((x_cnt.size()[0] + 0.0) * (self.weight_logprob_zinbpos + self.weight_logprob_zinbzero))
-                            loss = loss - lossterm_logp
+                            loss = loss - lossterm_logp * coef_decoderXintXspl_annealing
 
 
                     if flag_tensorboardsave:
@@ -726,6 +795,12 @@ class InFlowVarDist(nn.Module):
                                 {"Loss/logprob_P/{}".format(k): -lossterm_logp},
                                 step=itrcount_wandb
                             )
+
+                if flag_tensorboardsave:
+                    wandb.log(
+                        {"InspectVals/annealing_coefficient_decoderXintXspl": coef_decoderXintXspl_annealing},
+                        step=itrcount_wandb
+                    )
 
             if list_flag_elboloss_imputationloss[0]:
                 for k in dict_logq.keys():
@@ -771,16 +846,31 @@ class InFlowVarDist(nn.Module):
 
             # add the flow-matching loss ===
             if coef_flowmatchingloss > 0.0:
+                rng_batchemb = [
+                    batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']+batch.INFLOWMETAINF['dim_CT']+batch.INFLOWMETAINF['dim_NCC'],
+                    batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']+batch.INFLOWMETAINF['dim_CT']+batch.INFLOWMETAINF['dim_NCC']+batch.INFLOWMETAINF['dim_BatchEmb']
+                ]
+
                 fm_loss = self.module_conditionalflowmatcher.get_fmloss(
                     module_v=self.module_genmodel.module_Vflow_unwrapped,
                     x1=torch.cat(
-                    [dict_q_sample['xbar_int'][:batch.batch_size], dict_q_sample['xbar_spl'][:batch.batch_size]],
+                    [
+                        dict_q_sample['xbar_int'][:batch.batch_size],
+                        dict_q_sample['xbar_spl'][:batch.batch_size]
+                    ],
                     1
                     ),
                     x0_frominflow=torch.cat(
-                    [dict_q_sample['z'][:batch.batch_size], dict_q_sample['s_in'][:batch.batch_size]],
+                    [
+                        dict_q_sample['z'][:batch.batch_size],
+                        dict_q_sample['s_in'][:batch.batch_size]
+                    ],
                     1
-                    )
+                    ),
+                    ten_batchEmb=batch.y[
+                        :,
+                        rng_batchemb[0]:rng_batchemb[1]
+                    ][:batch.batch_size].to(list_ten_xy_absolute[0].device)
                 )
                 loss = loss + coef_flowmatchingloss*fm_loss
 
@@ -790,6 +880,7 @@ class InFlowVarDist(nn.Module):
                             {"Loss/FMloss (after mult by coef={})".format(coef_flowmatchingloss): coef_flowmatchingloss*fm_loss},
                             step=itrcount_wandb
                         )
+
             # add P1 loss ===
             if self.coef_P1loss > 0.0:
                 rng_CT = [
@@ -816,10 +907,13 @@ class InFlowVarDist(nn.Module):
 
             # add P3 loss ===
             if self.coef_P3loss > 0.0:
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+                ]
                 ten_NCC = batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modeP3loss_regorcls == 'cls':
@@ -866,10 +960,13 @@ class InFlowVarDist(nn.Module):
 
             # add xbarspl-->NCC loss ===
             if self.coef_xbarsplNCC_loss > 0.0:
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+                ]
                 ten_NCC = batch.y[
                     :batch.batch_size,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modexbarsplNCCloss_regorcls == 'cls':
@@ -910,18 +1007,23 @@ class InFlowVarDist(nn.Module):
                 netout_rank_Xpos = self.module_predictor_ranklossZ_X(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
-                             dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                            [
+                                dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
+                                dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]
+                            ],
                             1
                         )
                     )
                 )  # [N,2]  # TODO: should it be on non-cental nodes as well?
+
                 assert (netout_rank_Xpos.size()[1] == 2)
                 netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
-                             dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]],
+                            [
+                                dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :],
+                                dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :]
+                            ],
                             1
                         )
                     )
@@ -954,6 +1056,7 @@ class InFlowVarDist(nn.Module):
 
             # add xbarint rank loss  ===
             if self.coef_rankloss_xbarint > 0.0:
+
                 #print("batch.input_id.shape = {}".format(batch.input_id.shape))
                 #print("dict_q_sample['xbar_spl'].shape = {}".format(dict_q_sample['xbar_spl'].shape))
                 assert(batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
@@ -970,12 +1073,13 @@ class InFlowVarDist(nn.Module):
                 list_j_subsample = [u[1] for u in list_ij_subsample]
 
 
-
-
                 netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :], dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
+                            [
+                                dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :],
+                                dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]
+                            ],
                             1
                         )
                     )
@@ -984,7 +1088,10 @@ class InFlowVarDist(nn.Module):
                 netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
                     predadjmat.grad_reverse(
                         torch.cat(
-                            [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :], dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]],
+                            [
+                                dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :],
+                                dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :]
+                            ],
                             1
                         )
                     )
@@ -1020,10 +1127,14 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ]
 
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+                ]
+
                 ten_NCC = batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modexbarint2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1040,7 +1151,6 @@ class InFlowVarDist(nn.Module):
                     ten_CT=batch.y[:, rng_CT[0]:rng_CT[1]],
                     ten_NCC=ten_NCC.detach()
                 )
-
 
 
                 for loss_name in dict_xbarint2notNCC_loss.keys():
@@ -1061,10 +1171,14 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ]
 
-                rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+                rng_NCC = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+                ]
+
                 ten_NCC = batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(list_ten_xy_absolute[0].device).float()
 
                 if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1094,6 +1208,113 @@ class InFlowVarDist(nn.Module):
                                 {"Loss/Z-->notNCC {} (after mult by coef={})".format(loss_name, dict_z2notNCC_loss[loss_name]['coef']): dict_z2notNCC_loss[loss_name]['coef'] * dict_z2notNCC_loss[loss_name]['val']},
                                 step=itrcount_wandb
                             )
+
+
+            # get a 2nd pygdl and q_samples for the below two losses
+            if (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0):
+                try:
+                    batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
+                except StopIteration:
+                    iter_dl_2ndpygbatch = iter(list_dl[0])
+                    batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
+
+                batch_2ndpygbatch.INFLOWMETAINF = batch.INFLOWMETAINF
+
+                dict_q_sample_2ndpygbatch = self.rsample(
+                    batch=batch_2ndpygbatch,
+                    prob_maskknowngenes=prob_maskknowngenes,
+                    ten_xy_absolute=list_ten_xy_absolute[0]
+                )
+
+            # add xbarint-->notBatchID loss ===
+            if self.coef_xbarint2notbatchID_loss > 0.0:
+
+                if len(list_dl) == 1:
+                    raise Exception(
+                        "There is a single batch, but `coef_xbarint2notbatchID_loss` is set to a positive value."
+                    )
+
+                rng_batchemb = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+                ]
+
+                if flag_verbose:
+                    with torch.no_grad():
+                        print("computing xbarint --> notBatchID with main batch {} and 2nd batch {}".format(
+                            torch.argmax(batch.y[0, rng_batchemb[0]:rng_batchemb[1]]),
+                            torch.argmax(batch_2ndpygbatch.y[0, rng_batchemb[0]:rng_batchemb[1]])
+                        ))
+
+                dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
+                    z=predadjmat.grad_reverse(
+                        torch.cat(
+                            [dict_q_sample['param_q_xbarint'], dict_q_sample_2ndpygbatch['param_q_xbarint']],
+                            0
+                        )
+                    ),
+                    module_BatchIDpredictor=self.module_predictor_xbarint2notbatchID,
+                    ten_BatchID=torch.cat(
+                        [batch.y[:, rng_batchemb[0]:rng_batchemb[1]], batch_2ndpygbatch.y[:, rng_batchemb[0]:rng_batchemb[1]]],
+                        0
+                    ).to(list_ten_xy_absolute[0].device)
+                )
+
+                for loss_name in dict_xbarint2notbatchID_loss.keys():
+                    loss = loss + dict_xbarint2notbatchID_loss[loss_name]['coef'] * dict_xbarint2notbatchID_loss[loss_name]['val']
+
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        for loss_name in dict_xbarint2notbatchID_loss.keys():
+                            wandb.log(
+                                {"Loss/xbarint-->notBatchID {} (after mult by coef={})".format(loss_name, dict_xbarint2notbatchID_loss[loss_name]['coef']):
+                                  dict_xbarint2notbatchID_loss[loss_name]['coef'] * dict_xbarint2notbatchID_loss[loss_name]['val']
+                                },
+                                step=itrcount_wandb
+                            )
+
+            # add xbarspl-->notBatchID loss ===
+            if self.coef_xbarspl2notbatchID_loss > 0.0:
+
+                if len(list_dl) == 1:
+                    raise Exception(
+                        "There is a single batch, but `coef_xbarspl2notbatchID_loss` is set to a positive value."
+                    )
+
+                rng_batchemb = [
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                    batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+                ]
+
+                dict_xbarspl2notbatchID_loss = self.crit_loss_xbarspl2notbatchID(
+                    z=predadjmat.grad_reverse(
+                        torch.cat(
+                            [dict_q_sample['param_q_xbarspl'], dict_q_sample_2ndpygbatch['param_q_xbarspl']],
+                            0
+                        )
+                    ),
+                    module_BatchIDpredictor=self.module_predictor_xbarspl2notbatchID,
+                    ten_BatchID=torch.cat(
+                        [batch.y[:, rng_batchemb[0]:rng_batchemb[1]], batch_2ndpygbatch.y[:, rng_batchemb[0]:rng_batchemb[1]]],
+                        0
+                    )
+                )#.to(list_ten_xy_absolute[0].device)
+
+                for loss_name in dict_xbarspl2notbatchID_loss.keys():
+                    loss = loss + dict_xbarspl2notbatchID_loss[loss_name]['coef'] * dict_xbarspl2notbatchID_loss[loss_name]['val']
+
+                if flag_tensorboardsave:
+                    with torch.no_grad():
+                        for loss_name in dict_xbarspl2notbatchID_loss.keys():
+                            wandb.log(
+                                {"Loss/xbarspl-->notBatchID {} (after mult by coef={})".format(loss_name, dict_xbarspl2notbatchID_loss[loss_name]['coef']):
+                                     dict_xbarspl2notbatchID_loss[loss_name]['coef'] * dict_xbarspl2notbatchID_loss[loss_name]['val']
+                                 },
+                                step=itrcount_wandb
+                            )
+
+
+
 
             # log int_cov_u and spl_cov_u ===
             if flag_tensorboardsave:
@@ -1153,13 +1374,12 @@ class InFlowVarDist(nn.Module):
 
             # add the z-z, xbarint-xbarint, and xint-xint closeness loss ===
             num_celltypes = self.module_genmodel.dict_varname_to_dim['cell-types']
-            if coef_loss_closeness_zz_xbarintxbarint_xintxint > 0.0:
-                coef_loss_zzcloseness = coef_loss_closeness_zz_xbarintxbarint_xintxint + 0.0
+            if (coef_loss_closeness_zz > 0.0) or (coef_loss_closeness_xbarintxbarint > 0.0) or (coef_loss_closeness_xintxint > 0.0):
+                # coef_loss_zzcloseness = coef_loss_closeness_zz_xbarintxbarint_xintxint + 0.0
                 rng_CT = [
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'],
                     batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
                 ]
-
 
 
                 np_celltype_batch = torch.argmax(
@@ -1171,6 +1391,14 @@ class InFlowVarDist(nn.Module):
                 set_celltype_minibatch = list(set(np_celltype_batch.tolist()))
                 set_celltype_minibatch.sort()
 
+                MODE_COMP_PAIRWISEDIST = 'pytorchcdist'
+                assert MODE_COMP_PAIRWISEDIST in ['pytorchcdist', 'vanila']
+
+                dict_varname2coef = {
+                    'z':coef_loss_closeness_zz,
+                    'x_int':coef_loss_closeness_xintxint,
+                    'xbar_int':coef_loss_closeness_xbarintxbarint
+                }
                 for varname in ['z', 'x_int', 'xbar_int']:
                     loss_zzcloseness = 0.0
                     for ct in set_celltype_minibatch:
@@ -1182,10 +1410,20 @@ class InFlowVarDist(nn.Module):
                                 # print("torch.max(dict_q_sample[{}][np_celltype_batch == ct, :]) = {}".format(varname, torch.max(dict_q_sample[varname][np_celltype_batch == ct, :]))): output: ~300 and <800
                                 z_incelltype = torch.log(z_incelltype + 1.0)
 
-                            pairwise_dist = torch.sum(
-                                (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)) * (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)),
-                                2
-                            )  # [n, n]
+                            if MODE_COMP_PAIRWISEDIST == 'vanila':
+                                pairwise_dist = torch.sum(
+                                    (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)) * (z_incelltype.unsqueeze(0) - z_incelltype.unsqueeze(1)),
+                                    2
+                                )  # [n, n]
+                            else:
+                                assert MODE_COMP_PAIRWISEDIST == 'pytorchcdist'
+                                pairwise_dist = torch.cdist(
+                                    z_incelltype.unsqueeze(0),
+                                    z_incelltype.unsqueeze(0),
+                                    p=2
+                                )[0, :, :]  # [n, n]
+                                pairwise_dist = pairwise_dist * pairwise_dist
+
                             assert (len(pairwise_dist.size()) == 2)
 
 
@@ -1199,16 +1437,18 @@ class InFlowVarDist(nn.Module):
                         with torch.no_grad():
                             if isinstance(loss_zzcloseness, torch.Tensor):
                                 wandb.log(
-                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(varname, varname, coef_loss_zzcloseness): coef_loss_zzcloseness * loss_zzcloseness},
+                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(
+                                        varname, varname, dict_varname2coef[varname]
+                                    ): dict_varname2coef[varname] * loss_zzcloseness},
                                     step=itrcount_wandb
                                 )
                             else:
                                 wandb.log(
-                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(varname, varname, coef_loss_zzcloseness): torch.nan},
+                                    {"Loss/loss_closeness_{}<-->{} (after mult by coef {})".format(varname, varname, dict_varname2coef[varname]): torch.nan},
                                     step=itrcount_wandb
                                 )
 
-                    loss = loss + coef_loss_zzcloseness * loss_zzcloseness
+                    loss = loss + dict_varname2coef[varname] * loss_zzcloseness
 
             # wandblog other measures ===
             if flag_tensorboardsave:
@@ -1273,22 +1513,43 @@ class InFlowVarDist(nn.Module):
                         list_iter_dl_afterGRL[postGRL_index_dl] = iter(list_dl[postGRL_index_dl])
                         batch_afterGRLs = next(list_iter_dl_afterGRL[postGRL_index_dl])
 
-
                     batch_afterGRLs.INFLOWMETAINF = batch.INFLOWMETAINF
+
+                    # get a 2nd pygdl and q_samples for the below two losses
+                    if (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0):
+                        try:
+                            batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
+                        except StopIteration:
+                            iter_dl_2ndpygbatch = iter(list_dl[0])
+                            batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
+
+                        batch_2ndpygbatch_postGRL.INFLOWMETAINF = batch.INFLOWMETAINF
+                    else:
+                        batch_2ndpygbatch_postGRL = None
+
 
                     dict_loss_GRLpreds = self._getloss_GradRevPredictors(
                         batch=batch_afterGRLs,
                         ten_xy_absolute=list_ten_xy_absolute[postGRL_index_dl],
                         ten_xy_touse=list_ten_xy_absolute[postGRL_index_dl],
-                        prob_maskknowngenes=prob_maskknowngenes
+                        prob_maskknowngenes=prob_maskknowngenes,
+                        dict_args_2ndpygbatch={
+                            'batch':batch_2ndpygbatch_postGRL,
+                            'ten_xy_absolute':list_ten_xy_absolute[0],
+                            'ten_xy_touse':list_ten_xy_absolute[0]
+                        }
                     )
                     dict_z2notNCC_loss = dict_loss_GRLpreds['z']
                     dict_xbarint2notNCC_loss = dict_loss_GRLpreds['xbarint']
+                    dict_xbarint2notbatchID_loss_forGRL = dict_loss_GRLpreds['xbarint2notbatchID']
+                    dict_xbarspl2notbatchID_loss_forGRL = dict_loss_GRLpreds['xbarspl2notbatchID']
+
 
                     loss_after_GRLs = 0.0
-                    for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]:
-                        for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
-                            loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
+                    for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss, dict_xbarint2notbatchID_loss_forGRL, dict_xbarspl2notbatchID_loss_forGRL]:
+                        if d is not None:  # when batch-mixing coefs are zero --> the last 2 dict-s would be None.
+                            for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
+                                loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
                     loss_after_GRLs.backward()
                     optim_training.step()
@@ -1307,7 +1568,7 @@ class InFlowVarDist(nn.Module):
             itrcount_wandb += 1
 
 
-
+        pbar.close()
         return itrcount_wandb, list_coef_anneal
 
 
@@ -1321,18 +1582,19 @@ class InFlowVarDist(nn.Module):
         ten_CT,
         ten_NCC,
         ten_xbarint,
+        ten_BatchEmb,
+        ten_xbarspl,
         ten_xy_absolute,
         device,
         kwargs_dl
     ):
 
-
-        ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC, ten_xbarint)
+        ds = torch.utils.data.TensorDataset(ten_Z, ten_CT, ten_NCC, ten_xbarint, ten_BatchEmb, ten_xbarspl)
         dl = torch.utils.data.DataLoader(ds, shuffle=True, **kwargs_dl)
         iterpygdl_for_afterGRL = iter(dl)
 
         history_loss = []
-        for _ in tqdm(range(numiters)):
+        for _ in tqdm(range(numiters), desc='Training the dual functions separately.'):
             optim_gradrevpreds.zero_grad()
 
             try:
@@ -1362,8 +1624,21 @@ class InFlowVarDist(nn.Module):
                 ten_NCC=y.detach().to(device)
             ) # NOTE: the first detach is important
 
+            dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
+                z=batch_afterGRLs[3].to(device).detach(),
+                module_BatchIDpredictor=self.module_predictor_xbarint2notbatchID,
+                ten_BatchID=batch_afterGRLs[4].to(device).detach()
+            ) # NOTE: the first detach is important
+
+            dict_xbarspl2notbatchID_loss = self.crit_loss_xbarspl2notbatchID(
+                z=batch_afterGRLs[5].to(device).detach(),
+                module_BatchIDpredictor=self.module_predictor_xbarspl2notbatchID,
+                ten_BatchID=batch_afterGRLs[4].to(device).detach()
+            ) # NOTE: the first detach is important
+
+
             loss_after_GRLs = 0.0
-            for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss]:
+            for d in [dict_z2notNCC_loss, dict_xbarint2notNCC_loss, dict_xbarint2notbatchID_loss, dict_xbarspl2notbatchID_loss]:
                 for lossterm_name in d.keys():  # lossterm_name in ['fminf', 'smoothness']
                     loss_after_GRLs = loss_after_GRLs + dict_z2notNCC_loss[lossterm_name]['coef'] * dict_z2notNCC_loss[lossterm_name]['val']
 
@@ -1380,7 +1655,7 @@ class InFlowVarDist(nn.Module):
         return history_loss
 
 
-    def _getloss_GradRevPredictors(self, batch, ten_xy_absolute, ten_xy_touse, prob_maskknowngenes):
+    def _getloss_GradRevPredictors(self, batch, ten_xy_absolute, ten_xy_touse, prob_maskknowngenes, dict_args_2ndpygbatch):
         '''
 
         :return: the loss of predictors atop a gradient reverse layer.
@@ -1393,6 +1668,12 @@ class InFlowVarDist(nn.Module):
                 prob_maskknowngenes=prob_maskknowngenes,
                 ten_xy_absolute=ten_xy_touse
             )
+            if (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0):
+                dict_q_sample_2ndpygbatch = self.rsample(
+                    batch=dict_args_2ndpygbatch['batch'],
+                    prob_maskknowngenes=prob_maskknowngenes,
+                    ten_xy_absolute=dict_args_2ndpygbatch['ten_xy_touse']
+                )
 
         # Z 2 NotNCC ======================
         if self.coef_z2notNCC_loss > 0.0:
@@ -1401,10 +1682,14 @@ class InFlowVarDist(nn.Module):
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
             ]
 
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            rng_NCC = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+            ]
+
             ten_NCC = batch.y[
                 :,
-                rng_NCC:
+                rng_NCC[0]:rng_NCC[1]
             ].to(ten_xy_absolute.device).float()
 
             if self.str_modez2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1432,11 +1717,13 @@ class InFlowVarDist(nn.Module):
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
             ]
 
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF[
-                'dim_CT']
+            rng_NCC = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+            ]
             ten_NCC = batch.y[
                 :batch.batch_size,
-                rng_NCC:
+                rng_NCC[0]:rng_NCC[1]
             ].to(ten_xy_absolute.device).float()
 
             if self.str_modexbarint2notNCCloss_regorclsorwassdist in ['cls', 'wassdist']:
@@ -1456,11 +1743,62 @@ class InFlowVarDist(nn.Module):
             # TODO: should it be on non-cental nodes as well?
 
 
+        # add xbarint-->notBatchID loss ===
+        if self.coef_xbarint2notbatchID_loss > 0.0:
+            rng_batchemb = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+            ]
+
+            dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
+                z=predadjmat.grad_reverse(
+                    torch.cat(
+                        [dict_q_sample['param_q_xbarint'].detach(), dict_q_sample_2ndpygbatch['param_q_xbarint'].detach()],
+                        0
+                    )
+                ),
+                module_BatchIDpredictor=self.module_predictor_xbarint2notbatchID,
+                ten_BatchID=torch.cat(
+                    [batch.y[:, rng_batchemb[0]:rng_batchemb[1]], dict_args_2ndpygbatch['batch'].y[:, rng_batchemb[0]:rng_batchemb[1]]],
+                    0
+                ).to(ten_xy_absolute.device).detach()
+            )  # NOTE: the first detach is important
+            # TODO: should it be only on central nodes?
+
+
+
+        # add xbarspl-->notBatchID loss ===
+        if self.coef_xbarspl2notbatchID_loss > 0.0:
+            rng_batchemb = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+            ]
+
+            dict_xbarspl2notbatchID_loss = self.crit_loss_xbarspl2notbatchID(
+                z=predadjmat.grad_reverse(
+                    torch.cat(
+                        [dict_q_sample['param_q_xbarspl'].detach(), dict_q_sample_2ndpygbatch['param_q_xbarspl'].detach()],
+                        0
+                    )
+                ),
+                module_BatchIDpredictor=self.module_predictor_xbarspl2notbatchID,
+                ten_BatchID=torch.cat(
+                    [batch.y[:,rng_batchemb[0]:rng_batchemb[1]], dict_args_2ndpygbatch['batch'].y[:,rng_batchemb[0]:rng_batchemb[1]]],
+                    0
+                ).to(ten_xy_absolute.device).detach()
+            )  # NOTE: the first detach is important
+            # TODO: should it be only on central nodes?
+
+
+
 
 
 
         # add Z rank loss  ======================================================================================
         if self.coef_rankloss_Z > 0.0:
+            raise NotImplementedError(
+                "This function is not implemented for `coef_rankloss_Z > 0`"
+            )
             assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
             assert (ten_xy_absolute.size()[1] == 2)
             ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
@@ -1477,8 +1815,10 @@ class InFlowVarDist(nn.Module):
             netout_rank_Xpos = self.module_predictor_ranklossZ_X(
                 predadjmat.grad_reverse(
                     torch.cat(
-                        [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
-                         dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
+                        [
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()
+                        ],
                         1
                     )
                 )
@@ -1488,8 +1828,10 @@ class InFlowVarDist(nn.Module):
             netout_rank_Ypos = self.module_predictor_ranklossZ_Y(
                 predadjmat.grad_reverse(
                     torch.cat(
-                        [dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
-                         dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()],
+                        [
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_i_subsample, :].detach(),
+                            dict_q_sample['param_q_cond4flow']['mu_z'][:batch.batch_size][list_j_subsample, :].detach()
+                        ],
                         1
                     )
                 )
@@ -1512,6 +1854,9 @@ class InFlowVarDist(nn.Module):
 
         # add xbarint rank loss  =====================================================
         if self.coef_rankloss_xbarint:
+            raise NotImplementedError(
+                "This function is not implemented for `coef_rankloss_xbarint > 0`"
+            )
             assert (batch.n_id.shape[0] == dict_q_sample['xbar_spl'].shape[0])
             assert (ten_xy_absolute.size()[1] == 2)
             ten_x, ten_y = ten_xy_absolute[batch.input_id.tolist(), 0].detach(), ten_xy_absolute[batch.input_id.tolist(), 1].detach()  # [N], [N]
@@ -1528,8 +1873,10 @@ class InFlowVarDist(nn.Module):
             netout_rank_Xpos = self.module_predictor_ranklossxbarint_X(
                 predadjmat.grad_reverse(
                     torch.cat(
-                        [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
-                         dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
+                        [
+                            dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
+                            dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()
+                        ],
                         1
                     )
                 )
@@ -1539,8 +1886,10 @@ class InFlowVarDist(nn.Module):
             netout_rank_Ypos = self.module_predictor_ranklossxbarint_Y(
                 predadjmat.grad_reverse(
                     torch.cat(
-                        [dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
-                         dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()],
+                        [
+                            dict_q_sample['xbar_int'][:batch.batch_size][list_i_subsample, :].detach(),
+                            dict_q_sample['xbar_int'][:batch.batch_size][list_j_subsample, :].detach()
+                        ],
                         1
                     )
                 )
@@ -1561,9 +1910,13 @@ class InFlowVarDist(nn.Module):
             loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
             loss = loss + loss_rank_XYpos_xbarint
 
-        return {'z':dict_z2notNCC_loss, 'xbarint':dict_xbarint2notNCC_loss}
-
-
+        flag_batchmixingloss_present = (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0)
+        return {
+            'z':dict_z2notNCC_loss,
+            'xbarint':dict_xbarint2notNCC_loss,
+            'xbarint2notbatchID':dict_xbarint2notbatchID_loss if flag_batchmixingloss_present else None,
+            'xbarspl2notbatchID':dict_xbarspl2notbatchID_loss if flag_batchmixingloss_present else None
+        }
 
 
 
@@ -1593,6 +1946,10 @@ class InFlowVarDist(nn.Module):
         :param prob_applytfm_affinexy: the probability that the xy positions go through an affine augmentation.
         :return:
         '''
+        raise NotImplementedError(
+            "Not implemented."
+        )
+
         # make the affine xy augmenter
         tfm_affinexy = utils_imputer.RandomGeometricTfm(
             prob_applytfm=prob_applytfm_affinexy,
@@ -1656,7 +2013,7 @@ class InFlowVarDist(nn.Module):
 
 
     @torch.no_grad()
-    def eval_on_pygneighloader_dense(self, dl:NeighborLoader, ten_xy_absolute:torch.Tensor):
+    def eval_on_pygneighloader_dense(self, dl:NeighborLoader, ten_xy_absolute:torch.Tensor, tqdm_desc=None):
         '''
         Evaluates the model on a pyg.NeighborLoader.
         All results are obtained in dense arrays and returned.
@@ -1678,13 +2035,14 @@ class InFlowVarDist(nn.Module):
             'x_spl':{}
         }  # TODO: add other variables.
         cnt_tqdm = 1
-        for batch in tqdm(dl, desc='Epoch {}'.format(cnt_tqdm), position=0, leave=False):
+        for batch in tqdm(dl, desc=tqdm_desc, total=len(dl)):
 
             batch.INFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
                 "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
                 "dim_CT": self.module_genmodel.dict_varname_to_dim['CT'],
-                "dim_NCC": self.module_genmodel.dict_varname_to_dim['NCC']
+                "dim_NCC": self.module_genmodel.dict_varname_to_dim['NCC'],
+                "dim_BatchEmb": self.module_genmodel.dict_varname_to_dim['BatchEmb']
             }  # how batch.y is split between u_int, u_spl, CT, and NCC
 
             cnt_tqdm += 1
@@ -1752,6 +2110,16 @@ class InFlowVarDist(nn.Module):
 
 
     def _check_args(self):
+
+        # related to xbarint2notbatchID and xbarsplt2notbatchID
+        assert isinstance(self.module_predictor_xbarint2notbatchID, predictorbatchID.PredictorBatchID)
+        assert isinstance(self.coef_xbarint2notbatchID_loss, float)
+        assert isinstance(self.module_predictor_xbarspl2notbatchID, predictorbatchID.PredictorBatchID)
+        assert isinstance(self.coef_xbarspl2notbatchID_loss, float)
+
+
+        assert isinstance(self.module_varphi_enc_int, varphienc4xbar.EncX2Xbar)
+        assert isinstance(self.module_varphi_enc_spl, varphienc4xbar.EncX2Xbar)
 
         assert isinstance(self.coef_rankloss_Z, float)
         assert(self.coef_rankloss_Z >= 0.0)

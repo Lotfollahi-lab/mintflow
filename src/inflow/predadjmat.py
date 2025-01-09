@@ -1,3 +1,6 @@
+# When adding the batch-token, the adjmatpredictor-s work with `batch.edge_index` (and occasionaly `batch.x`).
+# So they aren't affected by `batch.BatchEmb`.
+
 '''
 Utils for the Adjacancy matrix predictor losses.
 '''

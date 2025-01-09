@@ -1,5 +1,8 @@
 
 
+# Checked for newly added batch emdb in `batch.batch_emb`.
+# The disentangler only looks (potentially) for CT and NCC in batch.y, so all such cases were checked.
+
 import os, sys
 import numpy as np
 import torch
@@ -25,7 +28,7 @@ class ArchInsertionPoint:
 class GNNDisentangler(nn.Module):
     def __init__(self, kwargs_genmodel, str_mode_normalizex:str, maxsize_subgraph, dict_general_args, mode_headxint_headxspl_headboth_twosep,
                  gnn_list_dim_hidden, kwargs_sageconv, clipval_cov_noncentralnodes:float, dict_CTNNC_usage:dict, std_minval_finalclip:float, std_maxval_finalclip:float,
-                 flag_use_layernorm:bool, flag_use_dropout:bool):
+                 flag_use_layernorm:bool, flag_use_dropout:bool, flag_enable_batchtoken:bool):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
         :param str_mode_normalizex: in ['counts', 'logp1'], whether the GNN works on counts or log1p
@@ -43,6 +46,7 @@ class GNNDisentangler(nn.Module):
         :param clipval_cov_noncentralnodes: the value by which the covariance for non-central nodes is clipped.
         :param dict_CTNNC_usage: a dictionary that specifies wheteher/how CT and NCC are used.
         :param std_minval_finalclip, std_maxval_finalclip: values for the final clip. Can also be used to freez the std to a fixed value.
+        :param flag_enable_batchtoken: if set to True, the inferred `muxint` and `muxspl` are shifted by batch-specific tensors.
         '''
 
         super(GNNDisentangler, self).__init__()
@@ -60,6 +64,7 @@ class GNNDisentangler(nn.Module):
         self.std_maxval_finalclip = std_maxval_finalclip
         self.flag_use_layernorm = flag_use_layernorm
         self.flag_use_dropout = flag_use_dropout
+        self.flag_enable_batchtoken = flag_enable_batchtoken
 
         self._check_dict_CTNCCusage()
         self._check_args()
@@ -73,6 +78,11 @@ class GNNDisentangler(nn.Module):
         if self.dict_CTNNC_usage['NCC'] == ArchInsertionPoint.BACKBONE:
             # assert self.mode_headxint_headxspl_headboth_twosep != ModeArch.TWOSEP  # twosep --> backbone not defined
             dim_gnnin += kwargs_genmodel['dict_varname_to_dim']['NCC']
+
+        # add the batch token
+        if self.flag_enable_batchtoken:
+            dim_gnnin += kwargs_genmodel['dict_varname_to_dim']['BatchEmb']
+
 
         '''
         if self.mode_headxint_headxspl_headboth_twosep == ModeArch.TWOSEP:
@@ -90,14 +100,27 @@ class GNNDisentangler(nn.Module):
         }[self.mode_headxint_headxspl_headboth_twosep]  # backward comtblity (to be used only by the outer modules)
 
 
-
-
         self.module_gnn = gnn.SAGE(
             dim_input=dim_gnnin,
             dim_output=100,  # TODO:TUNE 100
             list_dim_hidden=self.gnn_list_dim_hidden,
             kwargs_sageconv=self.kwargs_sageconv
         )
+
+        # add the batch-specific shifts (to be applied on GNN's output)
+        if self.flag_enable_batchtoken:
+            if kwargs_genmodel['dict_varname_to_dim']['BatchEmb'] == 1:
+                raise NotImplementedError(
+                    "Not implemented for a single batch yet."
+                )
+
+            self.param_batchshifts_4_gnnoutput = torch.nn.Parameter(
+                torch.randn(
+                    [kwargs_genmodel['dict_varname_to_dim']['BatchEmb']-1, self.module_gnn.dim_output],
+                    requires_grad=True
+                ),
+                requires_grad=True
+            )  # [num_batch-1 x gnnoutput]
 
         # assert that the GNN backbone has as many hops as the generative model
         cnt_sage_conv = 0
@@ -310,6 +333,9 @@ class GNNDisentangler(nn.Module):
 
 
 
+
+
+
     def _check_dict_CTNCCusage(self):
         # format of the dict =====
         assert (
@@ -350,6 +376,9 @@ class GNNDisentangler(nn.Module):
 
     def _check_args(self):
         assert (
+            self.flag_enable_batchtoken in [True, False]
+        )
+        assert (
             self.flag_use_dropout in [True, False]
         )
         assert (
@@ -379,11 +408,35 @@ class GNNDisentangler(nn.Module):
             device=device
         )
 
-        return self.module_gnn(
+        # add the batch-token
+        if self.flag_enable_batchtoken:
+            rng_batchemb = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'] + batch.INFLOWMETAINF['dim_BatchEmb']
+            ]
+            ten_input_gnn = torch.cat(
+                [ten_input_gnn, batch.y[:, rng_batchemb[0]:rng_batchemb[1]].to(device).detach()],
+                1
+            )
+
+        gnn_output = self.module_gnn(
             ten_input_gnn,
             batch.edge_index.to(device)
         )
 
+        if self.flag_enable_batchtoken:
+            extended_batchemb = torch.cat(
+                [torch.zeros(self.module_gnn.dim_output, requires_grad=False).to(gnn_output.device).unsqueeze(0), self.param_batchshifts_4_gnnoutput],
+                0
+            )  # [num_batch x dim_out]
+
+            ten_shift = torch.mm(
+                batch.y[:, rng_batchemb[0]:rng_batchemb[1]].to(device).detach(),
+                extended_batchemb
+            )  # [N x dim_out]
+            gnn_output = gnn_output + ten_shift
+
+        return gnn_output
 
     def _feed_to_head(self, str_int_or_spl, output_gnn, batch, device):
         '''
@@ -476,11 +529,14 @@ class GNNDisentangler(nn.Module):
             )
 
         if self.dict_CTNNC_usage['NCC'] == key_inspoint:
-            rng_NCC = batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT']
+            rng_NCC = [
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'],
+                batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC']
+            ]
             output.append(
                 batch.y[
                     :,
-                    rng_NCC:
+                    rng_NCC[0]:rng_NCC[1]
                 ].to(device)
             )
 
@@ -627,11 +683,23 @@ class GNNDisentangler(nn.Module):
         sigmaxspl = torch.clamp(sigmaxspl_raw, min=self.std_minval_finalclip, max=self.std_maxval_finalclip)
 
         sigmaxint = torch.concat(
-            [sigmaxint[:,0:batch.batch_size]+0.0, torch.clamp(sigmaxint[:,batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
+            [
+                sigmaxint[:,0:batch.batch_size]+0.0,
+                torch.clamp(
+                    sigmaxint[:,batch.batch_size::]+0.0,
+                    min=self.clipval_cov_noncentralnodes,
+                    max=4.0
+                )],
             1
         ).sqrt()
         sigmaxspl = torch.concat(
-            [sigmaxspl[:, 0:batch.batch_size]+0.0, torch.clamp(sigmaxspl[:, batch.batch_size::]+0.0, min=self.clipval_cov_noncentralnodes, max=4.0)],
+            [
+                sigmaxspl[:, 0:batch.batch_size]+0.0,
+                torch.clamp(
+                    sigmaxspl[:, batch.batch_size::]+0.0,
+                    min=self.clipval_cov_noncentralnodes,
+                    max=4.0
+                )],
             1
         ).sqrt()
 

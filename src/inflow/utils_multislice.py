@@ -4,25 +4,43 @@ Utilities for multi-slice setting where there are >1 slices and separate entitie
 while some info is still shared among all slices, like the set of cell types.
 '''
 
+import os, sys
 from typing import List
 import numpy as np
 import gc
+
+import scipy.sparse
 import squidpy as sq
 import scanpy as sc
 import torch_geometric as pyg
 from torch_geometric.utils.convert import from_scipy_sparse_matrix
 import torch
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from torch_geometric.loader import NeighborLoader
 from . import utils_pyg
 
 from . import modules
 from .modules import gnn
 
+def checkequal_adataX(adata1, adata2):
+    flag_eq = True
+    if isinstance(adata1.X, scipy.sparse.spmatrix):
+        flag_eq = flag_eq and isinstance(adata2.X, scipy.sparse.spmatrix)
+        flag_eq = flag_eq and ((adata1.X != adata2.X).nnz==0)
+    else:
+        assert isinstance(adata1.X, np.ndarray)
+        flag_eq = flag_eq and isinstance(adata2.X, np.ndarray)
+        flag_eq = flag_eq and np.allclose(adata1.X, adata2.X)
+
+    return flag_eq
+
 
 class Slice:
     def __init__(
         self,
         adata:sc.AnnData,
+        adata_before_scppnormalize_total:sc.AnnData,
         dict_obskey:dict,
         kwargs_compute_graph:dict,
         flag_use_custompygsampler:bool,
@@ -36,12 +54,14 @@ class Slice:
         """
 
         :param adata: the anndata corresponding to "only" the slice of concernt.
+        :param adata_before_scppnormalize_total: the anndata before adata.X is row-narmalised via sc.pp.normalize_total
         :param dict_obskey: a dictionary containing the column names of interest in the input anndata
         Keys
             - x: the x position
             - y: the y position
             - cell_type: to be used to obtain, CT and NCC tensors.
             - sliceid_to_checkUnique: the ID of each slice, to double check they are unique in the anndata list.
+            - biological_batch_key: the key name batch (batch in the biological sense).
         :param kwargs_compute_graph: kwargs to pass to `sq.gr.spatial_neighbors`
         :param flag_use_custompygsampler: whether to use the custom (i.e. window-based) sampler for pyg.NeighbourLoader.
         :param kwargs_pygdl_train: there are two cases
@@ -62,6 +82,7 @@ class Slice:
 
         """
         self.adata = adata
+        self.adata_before_scppnormalize_total = adata_before_scppnormalize_total
         self.dict_obskey = dict_obskey
         self.kwargs_compute_graph = kwargs_compute_graph
         self.flag_use_custompygsampler = flag_use_custompygsampler
@@ -74,12 +95,102 @@ class Slice:
 
         self._check_args()
 
+    def __eq__(self, other):
+        if not isinstance(other, Slice):
+            # don't attempt to compare against unrelated types
+            raise NotImplementedError()
+
+        bool_eq, _ = self.custom_eq_with_namemismatch(other)
+        return bool_eq
+
+    def custom_eq_with_namemismatch(self, other):
+        """
+        :param other:
+        :return:
+        - whether self equals other
+        - as well as the point where a potential mismatch happens.
+        """
+        if not isinstance(other, Slice):
+            # don't attempt to compare against unrelated types
+            raise NotImplementedError()
+
+        flag_equal = True
+
+        msg, cond = 'anndata.X', checkequal_adataX(self.adata, other.adata)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+        msg, cond = 'anndata.obs', self.adata.obs.equals(other.adata.obs)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+        msg, cond = 'adata.var_names', (self.adata.var_names.tolist() == other.adata.var_names.tolist())
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+        msg, cond = 'adata_before_scppnormalize_total.X', checkequal_adataX(self.adata_before_scppnormalize_total, other.adata_before_scppnormalize_total)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+
+        msg, cond = 'adata_before_scppnormalize_total.obs', self.adata_before_scppnormalize_total.obs.equals(other.adata_before_scppnormalize_total.obs)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+        msg, cond = 'dict_obskey', (self.dict_obskey == other.dict_obskey)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+        msg, cond = 'kwargs_compute_graph', (self.kwargs_compute_graph == other.kwargs_compute_graph)
+        flag_equal = flag_equal and cond
+        if not flag_equal:
+            return flag_equal, msg
+
+
+        with (torch.no_grad()):
+
+            msg, cond = 'pyg_ds.x.indices', torch.all(torch.isclose(self.pyg_ds.x.cpu().coalesce().indices(), other.pyg_ds.x.cpu().coalesce().indices()))
+            flag_equal = flag_equal and cond
+            if not flag_equal:
+                return flag_equal, msg
+
+            msg, cond = 'pyg_ds.x.values', torch.all(torch.isclose(self.pyg_ds.x.cpu().coalesce().values(), other.pyg_ds.x.cpu().coalesce().values()))
+            flag_equal = flag_equal and cond
+            if not flag_equal:
+                return flag_equal, msg
+
+            msg, cond = 'pyg_ds.y', torch.all(torch.isclose(self.pyg_ds.y.cpu(), other.pyg_ds.y.cpu()))
+            flag_equal = flag_equal and cond
+            if not flag_equal:
+                return flag_equal, msg
+
+            msg, cond = 'pyg_ds.edge_index', torch.all(torch.isclose(self.pyg_ds.edge_index.cpu(), other.pyg_ds.edge_index.cpu()))
+            flag_equal = flag_equal and cond
+            if not flag_equal:
+                return flag_equal, msg
+
+
+
+        return flag_equal, None
+
     @torch.no_grad()
-    def _add_CT_NCC(self):
+    def _add_CT_NCC_BatchEmb(self):
         """
         Adds
         - `self.ten_CT`
         - `self.ten_NCC`
+        - `self.ten_BatchEmb`
         :return:
         """
 
@@ -115,6 +226,20 @@ class Slice:
         self.ten_CT  = ten_CT.to("cpu")
         self.ten_NCC = ten_NCC.to("cpu")
 
+        # add `self.ten_BatchEmb`
+        list_batchid_int = []
+        for idx_row in range(self.adata.shape[0]):
+            str_batchid = self.adata.obs['inflow_BatchID'].iloc[idx_row]
+            assert str_batchid[0:len('inflow_BatchID_')] == 'inflow_BatchID_'
+            list_batchid_int.append(
+                int(str_batchid.split("_")[2])
+            )
+
+        assert len(set(list_batchid_int)) == 1
+        self.ten_BatchEmb = (torch.eye(self._global_num_Batch)[list_batchid_int, :] + 0.0).to("cpu")
+
+
+
     @torch.no_grad()
     def _add_pygds_pygdl(self):
         """
@@ -144,12 +269,12 @@ class Slice:
                 indices=self.adata.X.tocoo().nonzero(),
                 values=self.adata.X.tocoo().data,
                 size=self.adata.X.tocoo().shape
-            ).float(),
-            edge_index=self.edge_index,
+            ).float().detach(),
+            edge_index=self.edge_index.detach(),
             y=torch.cat(
-                [ten_u_z, ten_u_s, self.ten_CT, self.ten_NCC],
+                [ten_u_z, ten_u_s, self.ten_CT, self.ten_NCC, self.ten_BatchEmb],
                 1
-            )
+            ).detach()
         )
 
         if self.adata.X.shape[0] * self.adata.X.shape[1] < 1e9:
@@ -224,9 +349,153 @@ class Slice:
             color=[
                 "inflow_CT",
             ],
+            title=[
+                "inflow_CT \n ({})".format(self._get_batchid()),
+            ],
             crop_coord=crop_coord,
             **self.kwargs_sq_pl_spatial_scatter
         )
+
+    def _show_scatter_4cli(self, fname_output):
+        """
+        Saves the spatial data figure for the command line interface (CLI).
+        :return:
+        """
+
+        if 'figsize' in self.kwargs_sq_pl_spatial_scatter:
+            if not isinstance(self.kwargs_sq_pl_spatial_scatter['figsize'], list):
+                self.kwargs_sq_pl_spatial_scatter['figsize'] = 2*[self.kwargs_sq_pl_spatial_scatter['figsize']]
+
+        if self.kwargs_sq_pl_spatial_scatter is None:
+            raise Exception(
+                "To call this funciton, the arg `kwargs_sq_pl_spatial_scatter` should be passed in.\n"+\
+                "For more info reffer to the documentation for TODO."
+            )
+
+        self.adata.uns['spatial'] = self.adata.uns['spatial_neighbors']
+        crop_coord = None
+        sq.pl.spatial_scatter(
+            self.adata,
+            spatial_key='spatial',
+            img=False,
+            connectivity_key="spatial_connectivities",
+            library_id='connectivities_key',  # 'connectivities_key',
+            color=[
+                "inflow_CT",
+            ],
+            title=[
+                "inflow_CT \n (sampleID: {}) \n (biological batch ID: {}".format(
+                    list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0],
+                    self._get_batchid()
+                ),
+            ],
+            crop_coord=crop_coord,
+            **self.kwargs_sq_pl_spatial_scatter,
+            save=None
+        )
+        plt.savefig(
+            fname_output,
+            bbox_inches='tight',
+            pad_inches=0
+        )
+        plt.close()
+
+
+    def _show_pygbatch_window(self):
+        """
+        Shows a sample window on tissue, so one can inspect if the window size is appropriate for the tissue based on size etc.
+        :return: None
+        """
+        if self.flag_use_custompygsampler:
+            if 'img_key' in self.kwargs_sq_pl_spatial_scatter.keys():
+               print("When 'img_key' is provided in 'kwargs_sq_pl_spatial_scatter', show_scatter function doesn't show the sample window of pygloader batch overlayed on tissue.")
+            else:
+
+                plt.figure()
+
+                # training custom pygloader
+                plt.subplot(1,2,1)
+                plt.scatter(
+                    self.ten_xy_absolute.detach().cpu().numpy()[:, 0],
+                    -self.ten_xy_absolute.detach().cpu().numpy()[:, 1]
+                )
+                w_toshow = self.kwargs_pygdl_train['width_window']
+                square = patches.Rectangle(
+                    (self.ten_xy_absolute.detach().cpu().numpy()[:, 0].mean(), -self.ten_xy_absolute.detach().cpu().numpy()[:, 1].mean()),
+                    w_toshow,
+                    w_toshow,
+                    edgecolor='orange',
+                    facecolor='none'
+                )
+                plt.gca().add_patch(square)
+                plt.axis("equal")
+                plt.title("{}\n (training custom pygdl)".format(self._get_batchid()))
+
+                # testing custom pygloader
+                plt.subplot(1, 2, 2)
+                plt.scatter(
+                    self.ten_xy_absolute.detach().cpu().numpy()[:, 0],
+                    -self.ten_xy_absolute.detach().cpu().numpy()[:, 1]
+                )
+                w_toshow = self.kwargs_pygdl_test['width_window']
+                square = patches.Rectangle(
+                    (self.ten_xy_absolute.detach().cpu().numpy()[:, 0].mean(),
+                     -self.ten_xy_absolute.detach().cpu().numpy()[:, 1].mean()),
+                    w_toshow,
+                    w_toshow,
+                    edgecolor='orange',
+                    facecolor='none'
+                )
+                plt.gca().add_patch(square)
+                plt.axis("equal")
+                plt.title("{}\n (testing custom pygdl)".format(self._get_batchid()))
+
+                plt.show()
+
+    def _show_pygbatch_window_4cli(self, fname_output, str_train_or_test):
+        """
+        Shows a sample window on tissue 4 the command line interface (CLI), so one can inspect if the window size is appropriate for the tissue based on size etc.
+        :return: None
+        """
+
+        assert str_train_or_test in ['train', 'test']
+
+        if self.flag_use_custompygsampler:
+            if 'img_key' in self.kwargs_sq_pl_spatial_scatter.keys():
+               print("When 'img_key' is provided in 'kwargs_sq_pl_spatial_scatter', show_scatter function doesn't show the sample window of pygloader batch overlayed on tissue.")
+            else:
+
+                plt.figure()
+
+                # training custom pygloader
+                plt.scatter(
+                    self.ten_xy_absolute.detach().cpu().numpy()[:, 0],
+                    -self.ten_xy_absolute.detach().cpu().numpy()[:, 1]
+                )
+                w_toshow = self.kwargs_pygdl_train['width_window'] if(str_train_or_test=='train') else self.kwargs_pygdl_test['width_window']
+                square = patches.Rectangle(
+                    (self.ten_xy_absolute.detach().cpu().numpy()[:, 0].mean(), -self.ten_xy_absolute.detach().cpu().numpy()[:, 1].mean()),
+                    w_toshow,
+                    w_toshow,
+                    edgecolor='orange',
+                    facecolor='none'
+                )
+                plt.gca().add_patch(square)
+                plt.axis("equal")
+                plt.title(
+                    "The square shows a cropped window by dataloader \n sampleID: {} \n biological batch ID: {}".format(
+                        list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0],
+                        self._get_batchid()
+                    )
+                )
+
+
+                plt.savefig(
+                    fname_output,
+                    bbox_inches='tight',
+                    pad_inches=0
+                )
+                plt.close()
 
     def _get_set_CT(self):
         """
@@ -241,6 +510,14 @@ class Slice:
 
     def _set_global_num_CT(self, global_num_CT:int):
         self._global_num_CT = global_num_CT + 0
+
+    def _set_global_num_Batch(self, global_num_Batch:int):
+        self._global_num_Batch = global_num_Batch + 0
+
+        if self._global_num_Batch == 1:
+            raise NotImplementedError(
+                "When there is one batch --> all batch embeddings should be '0' instead of the current case of '1'."
+            )
 
 
     def _add_inflowCTcol(self, dict_rename):
@@ -277,7 +554,22 @@ class Slice:
 
             self.edge_index = edge_index
 
+    def _get_batchid(self):
+        bid = set(self.adata.obs[self.dict_obskey['biological_batch_key']])
+        if len(bid) != 1:
+            raise Exception(
+                "Column {} is chosen to specify batch ID, but the values in this column are not unique.".format(
+                    self.dict_obskey['biological_batch_key']
+                )
+            )
 
+        bid = list(bid)[0]
+        return bid
+
+
+    def _add_inflowBatchIDcol(self, dict_rename):
+        assert ("inflow_BatchID" not in self.adata.obs.columns)
+        self.adata.obs['inflow_BatchID'] = self.adata.obs[self.dict_obskey['biological_batch_key']].map(dict_rename)
 
     def _check_args(self):
 
@@ -315,7 +607,7 @@ class Slice:
         assert isinstance(self.neighgraph_num_hops_computeNCC, int)
         assert self.neighgraph_num_hops_computeNCC >= 1
 
-        for k in ['x', 'y', 'cell_type', 'sliceid_to_checkUnique']:
+        for k in ['x', 'y', 'cell_type', 'sliceid_to_checkUnique', 'biological_batch_key']:
             if k not in self.dict_obskey.keys():
                 raise Exception(
                     "The input dictionary `dict_obskey` is expected to have {} key.".format(k)
@@ -341,16 +633,25 @@ class Slice:
 class ListSlice:
     def __init__(
         self,
-        list_slice:List[Slice]
+        list_slice:List[Slice],
+        prev_list_slice_to_imitate=None
     ):
+        """
+        :param list_slice:
+        :param prev_list_slice_to_imitate: if not None, a previous `ListSlice` where CTmmappings, batch IDs, etc. have to be synchronised.
+        """
+
         self.list_slice = list_slice
+        self.prev_list_slice_to_imitate = prev_list_slice_to_imitate
         self._check_args()
 
         # make internals
         self._create_CTmapping_and_inflowCT()
+        self._create_Batchmapping_and_inflowBatchID()
         self._create_neighgraphs()
-        self._create_CT_NCC_Vectors()
+        self._create_CT_NCC_BatchEmb_Vectors()
         self._add_pygds_pygdl()
+
 
     def _add_pygds_pygdl(self):
         for sl in self.list_slice:
@@ -359,10 +660,10 @@ class ListSlice:
 
 
 
-    def _create_CT_NCC_Vectors(self):
+    def _create_CT_NCC_BatchEmb_Vectors(self):
         for sl in self.list_slice:
             sl : Slice
-            sl._add_CT_NCC()
+            sl._add_CT_NCC_BatchEmb()
 
 
     def _create_neighgraphs(self):
@@ -376,17 +677,24 @@ class ListSlice:
         :return:
         """
         # create the mapping
-        set_all_CT = []
-        for sl in self.list_slice:
-            set_all_CT = set_all_CT + list(sl._get_set_CT())
+        if self.prev_list_slice_to_imitate is None:
+            # create a new mapping
+            set_all_CT = []
+            for sl in self.list_slice:
+                set_all_CT = set_all_CT + list(sl._get_set_CT())
 
-        set_all_CT = list(set(set_all_CT))
-        set_all_CT.sort()
+            set_all_CT = list(set(set_all_CT))
+            set_all_CT.sort()
 
-        self.map_CT_to_inflowCT = {
-            ct:"inflowCT_{}".format(idx_ct)
-            for idx_ct, ct in enumerate(set_all_CT)
-        }
+            self.map_CT_to_inflowCT = {
+                ct:"inflowCT_{}".format(idx_ct)
+                for idx_ct, ct in enumerate(set_all_CT)
+            }
+            input_set_global_num_CT = len(set_all_CT)
+        else:
+            # use the old mapping
+            self.map_CT_to_inflowCT = self.prev_list_slice_to_imitate.map_CT_to_inflowCT
+            input_set_global_num_CT = len(list(self.map_CT_to_inflowCT.keys()))
 
         # add the column "inflow_CT"
         for sl in self.list_slice:
@@ -396,13 +704,74 @@ class ListSlice:
         # set the global number of CTs
         for sl in self.list_slice:
             sl : Slice
-            sl._set_global_num_CT(len(set_all_CT))
+            sl._set_global_num_CT(input_set_global_num_CT)
+
+
+    def _create_Batchmapping_and_inflowBatchID(self):
+        """
+        - Creates `self.matp_Batchname_to_inflowBatchID`
+        - Adds `inflow_BatchID` (i.e. inflow batch ID) column to each anndata in the list.
+        :return:
+        """
+        if self.prev_list_slice_to_imitate is None:
+            set_all_BatchID_ = []
+            for sl in self.list_slice:
+                sl : Slice
+                set_all_BatchID_ = set_all_BatchID_ + [sl._get_batchid()]
+
+            set_all_BatchID = []
+            for u in set_all_BatchID_:
+                if u not in set_all_BatchID:
+                    set_all_BatchID.append(u)
+
+            self.map_Batchname_to_inflowBatchID = {
+                bid: "inflow_BatchID_{}".format(idx_bid)
+                for idx_bid, bid in enumerate(set_all_BatchID)
+            }
+
+            input_set_global_num_Batch = len(set_all_BatchID)
+        else:
+            self.map_Batchname_to_inflowBatchID = self.prev_list_slice_to_imitate.map_Batchname_to_inflowBatchID
+            input_set_global_num_Batch = len(list(self.map_Batchname_to_inflowBatchID.keys()))
+
+        # add the column "inflow_BatchID"
+        for sl in self.list_slice:
+            sl: Slice
+            sl._add_inflowBatchIDcol(self.map_Batchname_to_inflowBatchID)
+
+        # set the global number of BatchIDs
+        for sl in self.list_slice:
+            sl: Slice
+            sl._set_global_num_Batch(input_set_global_num_Batch)
 
 
 
     def show_scatters(self):
         for sl in self.list_slice:
             sl._show_scatter()
+
+    def show_scatters_4cli(self, path_output):
+        for idx_sl, sl in enumerate(self.list_slice):
+            sl._show_scatter_4cli(
+                fname_output=os.path.join(
+                    path_output,
+                    'tissue_{}.png'.format(idx_sl+1)
+                )
+            )
+
+    def show_pygbatch_windows(self):
+        for sl in self.list_slice:
+            sl._show_pygbatch_window()
+
+    def show_pygbatch_windows_4cli(self, path_output, str_train_or_test):
+        for idx_sl, sl in enumerate(self.list_slice):
+            sl._show_pygbatch_window_4cli(
+                fname_output=os.path.join(
+                    path_output,
+                    'tissue_{}.png'.format(idx_sl)
+                ),
+                str_train_or_test=str_train_or_test
+            )
 
     def _check_args(self):
         assert isinstance(self.list_slice, list)
