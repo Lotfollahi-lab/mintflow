@@ -1,4 +1,3 @@
-name: /nfs/team361/aa36/PythonEnvs_2/envinflowdec27
 channels:
   - pytorch
   - conda-forge
