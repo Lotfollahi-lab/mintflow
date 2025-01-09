@@ -1,10 +1,5 @@
 
 
-import os
-print(os.getcwd())
-assert False
-
-
 #use inflow or inflow_synth
 STR_INFLOW_OR_INFLOW_SYNTH = "inflow"  # in ['inflow', 'inflow_synth']
 assert(
