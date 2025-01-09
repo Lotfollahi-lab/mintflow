@@ -91,7 +91,7 @@ python inflow_cli.py \
 --flag_verbose "True" \
 ```
 ## Common Issues
-- Use absolute paths (and not relative paths like `../../some/path/`) in the config files, and well as when running `python inflow_cli.py ...`.
+- Use absolute paths (and not relative paths like `../../some/path/`) in the config files, as well as when running `python inflow_cli.py ...`.
 -
 
 ## Release notes
