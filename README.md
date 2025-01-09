@@ -26,9 +26,9 @@ conda env create -f environment.yml --prefix SOME_EMPTY_PATH
 ```
 
 ## Installing WandB
-It's highly recommended to install make a wandb account before proceeding.
+It's highly recommended to setup wandb before proceeding.
 
-To do so: 
+To do so:
 - Go to https://wandb.ai/ and create and account.
 - Create a project called "inFlow".
 
