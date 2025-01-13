@@ -1231,7 +1231,7 @@ class InFlowVarDist(nn.Module):
 
                 if len(list_dl) == 1:
                     raise Exception(
-                        "There is a single batch, but `coef_xbarint2notbatchID_loss` is set to a positive value."
+                        "There is a single batch, but in your `config_model.yml` file, the parameter `coef_xbarint2notbatchID_loss` is set to a positive value."
                     )
 
                 rng_batchemb = [
