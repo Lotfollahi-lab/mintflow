@@ -770,7 +770,7 @@ class ListSlice:
             sl._show_pygbatch_window_4cli(
                 fname_output=os.path.join(
                     path_output,
-                    'tissue_{}.png'.format(idx_sl)
+                    'tissue_{}.png'.format(idx_sl+1)
                 ),
                 str_train_or_test=str_train_or_test,
                 dict_slideID_to_maxnumcentralnodes=dict_slideID_to_maxnumcentralnodes,
