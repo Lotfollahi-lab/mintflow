@@ -41,10 +41,10 @@ class EncX2Xbar(nn.Module):
             # TODO: upperbound the shift by 1. tanh(.) layer followed by 2. some bounded coefficients.
         '''
 
-        if self.num_batches == 1:
-            raise NotImplementedError(
-                "Not implemented for 1 batch. TODO: makes the shift non-trainable and zero in that case."
-            )
+        # if self.num_batches == 1:
+        #     raise NotImplementedError(
+        #         "Not implemented for 1 batch. TODO: makes the batch token non-trainable and zero in that case."
+        #     )
 
 
     def forward(self, x, batch):
@@ -69,6 +69,9 @@ class EncX2Xbar(nn.Module):
             assert ten_batchEmb.size()[1] == self.num_batches
         else:
             ten_batchEmb = torch.zeros([x.size()[0], self.num_batches]).float().to(x.device).detach()  # [N x num_batches], all-zero vectors.
+
+        if len(ten_batchEmb.size()) == 1:
+            ten_batchEmb = ten_batchEmb.unsqueeze(-1)  # in the case of 1 batch --> avoid the dim issue.
 
         output = self.module_encX(
             torch.cat([ten_batchEmb, x], 1)
