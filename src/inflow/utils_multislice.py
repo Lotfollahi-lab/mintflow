@@ -452,7 +452,7 @@ class Slice:
 
                 plt.show()
 
-    def _show_pygbatch_window_4cli(self, fname_output, str_train_or_test):
+    def _show_pygbatch_window_4cli(self, fname_output, str_train_or_test, dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize):
         """
         Shows a sample window on tissue 4 the command line interface (CLI), so one can inspect if the window size is appropriate for the tissue based on size etc.
         :return: None
@@ -483,9 +483,11 @@ class Slice:
                 plt.gca().add_patch(square)
                 plt.axis("equal")
                 plt.title(
-                    "The square shows a cropped window by dataloader \n sampleID: {} \n biological batch ID: {}".format(
+                    "The square shows a cropped window by dataloader \n sampleID: {} \n biological batch ID: {} \n maxnum central nodes: {} \n worsecase batch size: {}".format(
                         list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0],
-                        self._get_batchid()
+                        self._get_batchid(),
+                        dict_slideID_to_maxnumcentralnodes[list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0]] if(dict_slideID_to_maxnumcentralnodes is not None) else "N.A.",
+                        dict_slideID_to_worsecasebatchsize[list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0]] if(dict_slideID_to_maxnumcentralnodes is not None) else "N.A."
                     )
                 )
 
@@ -763,14 +765,16 @@ class ListSlice:
         for sl in self.list_slice:
             sl._show_pygbatch_window()
 
-    def show_pygbatch_windows_4cli(self, path_output, str_train_or_test):
+    def show_pygbatch_windows_4cli(self, path_output, str_train_or_test, dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize):
         for idx_sl, sl in enumerate(self.list_slice):
             sl._show_pygbatch_window_4cli(
                 fname_output=os.path.join(
                     path_output,
                     'tissue_{}.png'.format(idx_sl)
                 ),
-                str_train_or_test=str_train_or_test
+                str_train_or_test=str_train_or_test,
+                dict_slideID_to_maxnumcentralnodes=dict_slideID_to_maxnumcentralnodes,
+                dict_slideID_to_worsecasebatchsize=dict_slideID_to_worsecasebatchsize
             )
 
     def _check_args(self):

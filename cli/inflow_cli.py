@@ -447,43 +447,6 @@ if not os.path.isdir(path_scatters):
     os.mkdir(path_scatters)
 test_list_slice.show_scatters_4cli(path_output=path_scatters)
 
-# dump the window sizes =========
-# Train
-path_window_overlays = os.path.join(
-    args.path_output,
-    'Toinspect_CropsOnTissues'
-)
-if not os.path.isdir(path_window_overlays):
-    os.mkdir(path_window_overlays)
-path_window_overlays = os.path.join(
-    path_window_overlays,
-    'Train'
-)
-if not os.path.isdir(path_window_overlays):
-    os.mkdir(path_window_overlays)
-list_slice.show_pygbatch_windows_4cli(
-    path_output=path_window_overlays,
-    str_train_or_test='train'
-)
-
-# Test
-path_window_overlays = os.path.join(
-    args.path_output,
-    'Toinspect_CropsOnTissues'
-)
-if not os.path.isdir(path_window_overlays):
-    os.mkdir(path_window_overlays)
-path_window_overlays = os.path.join(
-    path_window_overlays,
-    'Test'
-)
-if not os.path.isdir(path_window_overlays):
-    os.mkdir(path_window_overlays)
-test_list_slice.show_pygbatch_windows_4cli(
-    path_output=path_window_overlays,
-    str_train_or_test='test'
-)
-
 
 
 if args.flag_verbose:
@@ -682,6 +645,7 @@ if len(config_model['args_list_adjmatloss']) > 0:
 # compute/report the maximum number of subgraphs
 print("Computing some initial stats (max number of central nodes, etc) for each tissue.")
 list_maxsize_subgraph = []
+dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize = {}, {}
 for idx_sl, sl in enumerate(list_slice.list_slice):
     print("Tissue # {}".format(idx_sl+1))
     sl: Slice
@@ -712,8 +676,53 @@ for idx_sl, sl in enumerate(list_slice.list_slice):
             maxsize_subgraph
         ))
 
+        dict_slideID_to_maxnumcentralnodes[list(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']])[0]] = pyg_neighloader_train.batch_sampler.get_maxnumpoints_insquare()
+        dict_slideID_to_worsecasebatchsize[list(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']])[0]] = maxsize_subgraph
+
+
 maxsize_subgraph = max(list_maxsize_subgraph)
 
+
+# dump the window sizes ========= TODO:HERE
+# Train
+path_window_overlays = os.path.join(
+    args.path_output,
+    'Toinspect_CropsOnTissues'
+)
+if not os.path.isdir(path_window_overlays):
+    os.mkdir(path_window_overlays)
+path_window_overlays = os.path.join(
+    path_window_overlays,
+    'Train'
+)
+if not os.path.isdir(path_window_overlays):
+    os.mkdir(path_window_overlays)
+list_slice.show_pygbatch_windows_4cli(
+    path_output=path_window_overlays,
+    str_train_or_test='train',
+    dict_slideID_to_maxnumcentralnodes=dict_slideID_to_maxnumcentralnodes,
+    dict_slideID_to_worsecasebatchsize=dict_slideID_to_worsecasebatchsize
+)
+
+# Test
+path_window_overlays = os.path.join(
+    args.path_output,
+    'Toinspect_CropsOnTissues'
+)
+if not os.path.isdir(path_window_overlays):
+    os.mkdir(path_window_overlays)
+path_window_overlays = os.path.join(
+    path_window_overlays,
+    'Test'
+)
+if not os.path.isdir(path_window_overlays):
+    os.mkdir(path_window_overlays)
+test_list_slice.show_pygbatch_windows_4cli(
+    path_output=path_window_overlays,
+    str_train_or_test='test',
+    dict_slideID_to_maxnumcentralnodes=None,
+    dict_slideID_to_worsecasebatchsize=None
+)
 
 
 exec('disent_dict_CTNNC_usage = {}'.format(config_model['CTNCC_usage_moduledisent']))
