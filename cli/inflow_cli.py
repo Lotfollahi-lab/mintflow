@@ -414,6 +414,8 @@ if len(os.listdir(args.path_output)) != 0:
         "\n\nThe specified path_output {} is not empty. It's recommeneded to empty path_output so files from different runs are not mixed.\n\n".format(args.path_output)
     )
 
+
+
 # dump the scatters (i.e. neighbourhood graphs) ======
 # Train
 path_scatters = os.path.join(
