@@ -236,7 +236,10 @@ class Slice:
             )
 
         assert len(set(list_batchid_int)) == 1
-        self.ten_BatchEmb = (torch.eye(self._global_num_Batch)[list_batchid_int, :] + 0.0).to("cpu")
+        if self._global_num_Batch > 1:
+            self.ten_BatchEmb = (torch.eye(self._global_num_Batch)[list_batchid_int, :] + 0.0).to("cpu")
+        else:
+            self.ten_BatchEmb = torch.zeros(size=[self.adata.shape[0], 1]).to("cpu")
 
 
 
@@ -516,10 +519,11 @@ class Slice:
     def _set_global_num_Batch(self, global_num_Batch:int):
         self._global_num_Batch = global_num_Batch + 0
 
-        if self._global_num_Batch == 1:
-            raise NotImplementedError(
-                "When there is one batch --> all batch embeddings should be '0' instead of the current case of '1'."
-            )
+        # if self._global_num_Batch == 1:
+        #     raise NotImplementedError(
+        #         "When there is one batch --> all batch embeddings should be '0' instead of the current case of '1'."
+        #     )
+
 
 
     def _add_inflowCTcol(self, dict_rename):
