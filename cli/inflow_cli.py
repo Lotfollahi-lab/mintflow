@@ -1350,6 +1350,25 @@ if config_training['flag_finaleval_enable_alltissuecombined_eval']:
         )
 
 
+# dump the tissue samples ===
+path_dump_training_listtissue = os.path.join(
+    args.path_output,
+    "TrainingListTissue"
+)
+path_dump_testing_listtissue = os.path.join(
+    args.path_output,
+    "TestingListTissue"
+)
+try_mkdir(path_dump_training_listtissue)
+try_mkdir(path_dump_testing_listtissue)
+
+for idx_sl, sl in enumerate(list_slice.list_slice):
+    with open(os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pkl'.format(idx_sl+1)), 'wb') as f:
+        pickle.dump(sl, f)
+
+for idx_sl, sl in enumerate(test_list_slice.list_slice):
+    with open(os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pkl'.format(idx_sl+1)), 'wb') as f:
+        pickle.dump(sl, f)
 
 
 print("Finished running the script.")
