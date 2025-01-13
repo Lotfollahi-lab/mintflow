@@ -61,10 +61,14 @@ def vis(
             cut=0
         )
         plt.title(
-            "sample: {} \n in biological batch {} \n among readout counts={}".format(
+            "sample: {} \n in biological batch {} \n among readout counts={} \n {}".format(
                 str_sampleID,
                 str_batchID,
-                cnt_vertical_slice
+                cnt_vertical_slice,
+                "read counts not in & in LR-DB are {} and {} respectively".format(
+                    slice_pred_notinLR.shape[0],
+                    slice_pred_inLR.shape[0]
+                )
             )
         )
         plt.savefig(
