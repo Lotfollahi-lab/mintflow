@@ -43,7 +43,7 @@ def vis(
     ]
     list_geneindex_inLR.sort()
 
-    for cnt_vertical_slice in tqdm(range(min_cnt_vertical_slice, max_cnt_vertical_slice), desc="Creating violin plots for slide {}".format(idx_slplus1)):
+    for cnt_vertical_slice in tqdm(range(min_cnt_vertical_slice, max_cnt_vertical_slice), desc="Creating violin plots for tissue {}".format(idx_slplus1)):
 
         mask_inLR = adata_unnorm.X.toarray()[:, list_geneindex_inLR] == cnt_vertical_slice
         mask_notinLR = adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))] == cnt_vertical_slice
