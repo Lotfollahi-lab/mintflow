@@ -1374,13 +1374,23 @@ try_mkdir(path_dump_training_listtissue)
 try_mkdir(path_dump_testing_listtissue)
 
 for idx_sl, sl in enumerate(list_slice.list_slice):
-    with open(os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pkl'.format(idx_sl+1)), 'wb') as f:
-        pickle.dump(sl, f)
+    # with open(os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pkl'.format(idx_sl+1)), 'wb') as f:
+    #     pickle.dump(sl, f)
+
+    torch.save(
+        sl,
+        os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pkl'.format(idx_sl + 1))
+    )
 
 for idx_sl, sl in enumerate(test_list_slice.list_slice):
-    with open(os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pkl'.format(idx_sl+1)), 'wb') as f:
-        pickle.dump(sl, f)
 
+    # with open(os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pkl'.format(idx_sl+1)), 'wb') as f:
+    #     pickle.dump(sl, f)
+
+    torch.save(
+        sl,
+        os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pkl'.format(idx_sl + 1))
+    )
 
 print("Finished running the script.")
 
