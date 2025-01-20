@@ -1403,4 +1403,14 @@ print("Finished running the script.")
 
 # TODO: check if all tissue-s (training/testing) share the same set of cell types.
 
+# TODO: (if enabled) combine all tissues in a single anndata and dump.
+
+# TODO: change .pkl above to .pt so one does not load with pickle
+
+# TODO: copy the config files to args.path_output.
+
+
+
+# TODO: in the above part `correct for ...` add also x_int and x_spl as well.
+
 
