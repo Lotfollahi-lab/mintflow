@@ -110,17 +110,21 @@ class GNNDisentangler(nn.Module):
         # add the batch-specific shifts (to be applied on GNN's output)
         if self.flag_enable_batchtoken:
             if kwargs_genmodel['dict_varname_to_dim']['BatchEmb'] == 1:
-                raise NotImplementedError(
-                    "Not implemented for a single batch yet."
-                )
+                pass
+                # raise NotImplementedError(
+                #     "When having only one batch, in your `config_model.yml` file `flag_enable_batchtoken_disentangler` is required to be 'False'."
+                # )
 
-            self.param_batchshifts_4_gnnoutput = torch.nn.Parameter(
-                torch.randn(
-                    [kwargs_genmodel['dict_varname_to_dim']['BatchEmb']-1, self.module_gnn.dim_output],
+            if kwargs_genmodel['dict_varname_to_dim']['BatchEmb'] == 1:
+                self.param_batchshifts_4_gnnoutput = None
+            else:
+                self.param_batchshifts_4_gnnoutput = torch.nn.Parameter(
+                    torch.randn(
+                        [kwargs_genmodel['dict_varname_to_dim']['BatchEmb']-1, self.module_gnn.dim_output],
+                        requires_grad=True
+                    ),
                     requires_grad=True
-                ),
-                requires_grad=True
-            )  # [num_batch-1 x gnnoutput]
+                )  # [num_batch-1 x gnnoutput]
 
         # assert that the GNN backbone has as many hops as the generative model
         cnt_sage_conv = 0
@@ -425,16 +429,17 @@ class GNNDisentangler(nn.Module):
         )
 
         if self.flag_enable_batchtoken:
-            extended_batchemb = torch.cat(
-                [torch.zeros(self.module_gnn.dim_output, requires_grad=False).to(gnn_output.device).unsqueeze(0), self.param_batchshifts_4_gnnoutput],
-                0
-            )  # [num_batch x dim_out]
+            if self.param_batchshifts_4_gnnoutput is not None:  # it's the case when having one batch
+                extended_batchemb = torch.cat(
+                    [torch.zeros(self.module_gnn.dim_output, requires_grad=False).to(gnn_output.device).unsqueeze(0), self.param_batchshifts_4_gnnoutput],
+                    0
+                )  # [num_batch x dim_out]
 
-            ten_shift = torch.mm(
-                batch.y[:, rng_batchemb[0]:rng_batchemb[1]].to(device).detach(),
-                extended_batchemb
-            )  # [N x dim_out]
-            gnn_output = gnn_output + ten_shift
+                ten_shift = torch.mm(
+                    batch.y[:, rng_batchemb[0]:rng_batchemb[1]].to(device).detach(),
+                    extended_batchemb
+                )  # [N x dim_out]
+                gnn_output = gnn_output + ten_shift
 
         return gnn_output
 
