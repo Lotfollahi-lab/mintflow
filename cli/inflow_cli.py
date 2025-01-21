@@ -1403,7 +1403,7 @@ print("Finished running the script.")
 
 # TODO: check if all tissue-s (training/testing) share the same set of cell types.
 
-# TODO: (if enabled) combine all tissues in a single anndata and dump.
+# TODO: (if enabled) combine all tissues in a single anndata and dump (with predictions in adata.obsm).
 
 # TODO: change .pkl above to .pt so one does not load with pickle
 
