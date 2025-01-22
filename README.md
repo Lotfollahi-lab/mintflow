@@ -29,7 +29,7 @@ conda env create -f environment.yml --prefix SOME_EMPTY_PATH
 It's highly recommended to setup wandb before proceeding.
 
 To do so:
-- Go to https://wandb.ai/ and create and account.
+- Go to https://wandb.ai/ and create an account.
 - Create a project called "inFlow".
 
 ## Quick Start
