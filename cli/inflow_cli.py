@@ -1207,8 +1207,13 @@ with torch.no_grad():
          'x_spl']
         '''
 
+        # remove redundant fields ===
+        anal_dict_varname_to_output_slice.pop('output_imputer', None)
+        anal_dict_varname_to_output_slice.pop('x_int', None)
+        anal_dict_varname_to_output_slice.pop('x_spl', None)
 
-        # correct for the row-normalisation in pred_Xspl and pred_Xint
+
+        # get pred_Xspl and pred_Xint before row normalisation on adata.X
         rowcoef_correct4scppnormtotal = (np.array(sl.adata_before_scppnormalize_total.X.sum(1).tolist()) + 0.0) / (config_training['val_scppnorm_total'] + 0.0)
         if len(rowcoef_correct4scppnormtotal.shape) == 1:
             rowcoef_correct4scppnormtotal = np.expand_dims(rowcoef_correct4scppnormtotal, -1)  # [N x 1]
@@ -1216,8 +1221,8 @@ with torch.no_grad():
         assert rowcoef_correct4scppnormtotal.shape[0] == sl.adata_before_scppnormalize_total.shape[0]
         assert rowcoef_correct4scppnormtotal.shape[1] == 1
 
-        anal_dict_varname_to_output_slice['muxint'] = anal_dict_varname_to_output_slice['muxint'] * rowcoef_correct4scppnormtotal
-        anal_dict_varname_to_output_slice['muxspl'] = anal_dict_varname_to_output_slice['muxspl'] * rowcoef_correct4scppnormtotal
+        anal_dict_varname_to_output_slice['muxint_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxint'] * rowcoef_correct4scppnormtotal + 0.0
+        anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxspl'] * rowcoef_correct4scppnormtotal + 0.0
 
 
         # dump the predictions
@@ -1389,13 +1394,103 @@ for idx_sl, sl in enumerate(test_list_slice.list_slice):
 
     torch.save(
         sl,
-        os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pkl'.format(idx_sl + 1))
+        os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pt'.format(idx_sl + 1))
     )
+
+
+# dump the config dictionaries again, so any inconsistency (e.g. due to boolean variables being treated as str) becomes obvious.
+try_mkdir(os.path.join(args.path_output, 'ConfigFilesCopiedOver'))
+os.system(
+    "cp {} {}".format(
+        os.path.abspath(args.file_config_data_train),
+        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
+    )
+)
+os.system(
+    "cp {} {}".format(
+        os.path.abspath(args.file_config_data_test),
+        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
+    )
+)
+os.system(
+    "cp {} {}".format(
+        os.path.abspath(args.file_config_model),
+        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
+    )
+)
+os.system(
+    "cp {} {}".format(
+        os.path.abspath(args.file_config_training),
+        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
+    )
+)
+
+# (if enabled) combine all tissues in a single anndata and dump (with predictions in adata.obsm).
+if config_training['flag_finaleval_createanndata_alltissuescombined']:
+    gc.collect()
+    gc.collect()
+    time.sleep(1)
+
+    # create the normalised version: adata_inflowOutput_norm
+    list_anndata_norm = []
+    for idx_sl, sl in enumerate(test_list_slice.list_slice):
+        dict_temp = torch.load(
+            os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1))
+        )
+
+        for k in dict_temp.keys():
+            sl.adata.obsm['inflow_{}'.format(k)] = dict_temp[k] + 0.0
+
+        list_anndata_norm.append(sl.adata)
+        del dict_temp
+        gc.collect()
+
+    adata_norm = anndata.concat(list_anndata_norm)
+    adata_norm.uns['inflow_map_CT_to_inflowCT'] = test_list_slice.map_CT_to_inflowCT
+    adata_norm.uns['inflow_map_Batchname_to_inflowBatchID'] = test_list_slice.map_Batchname_to_inflowBatchID
+
+    adata_norm.write_h5ad(
+        os.path.join(
+            args.path_output,
+            'adata_inflowOutput_norm.h5ad'
+        )
+    )
+    del adata_norm
+
+    # create the unnormalised version: adata_inflowOutput_unnorm
+    list_anndata_unnorm = []
+    for idx_sl, sl in enumerate(test_list_slice.list_slice):
+        dict_temp = torch.load(
+            os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1))
+        )
+
+        dict_temp['muxint'] = dict_temp['muxint_before_sc_pp_normalize_total'] + 0.0  # muxint for the original adata.X
+        dict_temp['muxspl'] = dict_temp['muxspl_before_sc_pp_normalize_total'] + 0.0  # muxspl for the original adata.X
+
+        for k in dict_temp.keys():
+            sl.adata_before_scppnormalize_total.obsm['inflow_{}'.format(k)] = dict_temp[k] + 0.0
+
+        list_anndata_unnorm.append(sl.adata_before_scppnormalize_total)
+        del dict_temp
+        gc.collect()
+
+    adata_unnorm = anndata.concat(list_anndata_unnorm)
+    adata_unnorm.uns['inflow_map_CT_to_inflowCT'] = test_list_slice.map_CT_to_inflowCT
+    adata_unnorm.uns['inflow_map_Batchname_to_inflowBatchID'] = test_list_slice.map_Batchname_to_inflowBatchID
+
+    adata_unnorm.write_h5ad(
+        os.path.join(
+            args.path_output,
+            'adata_inflowOutput_unnorm.h5ad'
+        )
+    )
+
+
+
 
 print("Finished running the script.")
 
 
-# TODO: dump the config dictionaries again, so any inconsistency (e.g. due to boolean variables being treated as str) becomes obvious.
 
 # TODO: check if any of the config files contain true, flase or True/False without double-quotation s.
 
@@ -1403,7 +1498,6 @@ print("Finished running the script.")
 
 # TODO: check if all tissue-s (training/testing) share the same set of cell types.
 
-# TODO: (if enabled) combine all tissues in a single anndata and dump (with predictions in adata.obsm).
 
 # TODO: change .pkl above to .pt so one does not load with pickle
 

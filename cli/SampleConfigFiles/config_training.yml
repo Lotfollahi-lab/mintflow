@@ -60,3 +60,12 @@ flag_finaleval_enable_alltissuecombined_eval: "True"  # TODO:check
 flag_finaleval_enable_alltissue_violinplot: "True"  # TODO:check
 # Optionally you can disable only the violinplots when all tissues are combined in the end.
 # To do so, you can set `flag_finaleval_enable_alltissue_violinplot` to "False".
+
+
+flag_finaleval_createanndata_alltissuescombined: "True"  # TODO:check
+# If set to "True", in the end all tissue sections are combined in a single anndata containing all inflow predictions.
+# Inflow predictions are placed in `adata.obsm` and `adata.uns`.
+# Two .h5ad files are created in the output path
+#   - adata_inflowOutput_unnorm: the anndata "before" applying `sc.pp.normalize_total` where `adata.X` is not row normalised --> inflow predictions `Xint` and `Xspl` sum up to the unnormalised version of `adata.X`.
+#   - adata_inflowOutput_norm: the anndata "after" applying `sc.pp.normalize_total` where `adata.X` is row normalised --> inflow predictions `Xint` and `Xspl` sum up to the normalised version of `adata.X`.
+
