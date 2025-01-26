@@ -1384,7 +1384,7 @@ for idx_sl, sl in enumerate(list_slice.list_slice):
 
     torch.save(
         sl,
-        os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pkl'.format(idx_sl + 1))
+        os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pt'.format(idx_sl + 1))
     )
 
 for idx_sl, sl in enumerate(test_list_slice.list_slice):
@@ -1486,6 +1486,9 @@ if config_training['flag_finaleval_createanndata_alltissuescombined']:
     )
 
 
+# copy over the README file to each output folder ===
+
+
 
 
 print("Finished running the script.")
@@ -1498,8 +1501,6 @@ print("Finished running the script.")
 
 # TODO: check if all tissue-s (training/testing) share the same set of cell types.
 
-
-# TODO: change .pkl above to .pt so one does not load with pickle
 
 # TODO: copy the config files to args.path_output.
 
