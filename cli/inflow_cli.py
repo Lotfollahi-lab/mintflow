@@ -1486,8 +1486,35 @@ if config_training['flag_finaleval_createanndata_alltissuescombined']:
     )
 
 
-# copy over the README file to each output folder ===
+# copy over the README files to each output folder ===
+os.system(
+    "cp {} {}".format(
+        "./Files2Use_CLI/README_OutputPath.md",
+        os.path.join(
+            os.path.abspath(args.path_output),
+            'README_InflowOutput.md'
+        )
+    )
+)
 
+for u in [
+    'CheckpointAndPredictions',
+    'Results',
+    'TestingListTissue',
+    'Toinspect_CropsOnTissues',
+    'Toinspect_NeighbourhoodGraphs',
+    'TrainingListTissue'
+]:
+    if os.path.isdir(os.path.join(args.path_output, u)):  # because some could be disabled in the training config
+        os.system(
+            "cp {} {}".format(
+                "./Files2Use_CLI/README_{}.md".format(u),
+                os.path.join(
+                    os.path.abspath(args.path_output),
+                    u
+                )
+            )
+        )
 
 
 
