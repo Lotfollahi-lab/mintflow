@@ -90,6 +90,11 @@ python inflow_cli.py \
 --path_output "./Your/Output/Path/ToDump/Results/" \
 --flag_verbose "True" \
 ```
+The recommended way of accessing inflow predictions is by `adata_inflowOutput_norm.h5ad` and `adata_inflowOutput_unnorm.h5ad` created in the provided `--path_output`and `adata.obsm` and `adata.uns` in these files.
+In the former file `..._norm.h5ad` the readcount matrix `adata.X` as well as inflow predictions Xint and Xspl are row normalised, while in the latter file `_unnorm.h5ad` they are not.
+
+Inflow dumps a README file in the provided `--path_output`, as well as each subfolder therein.
+
 ## Common Issues
 - Use absolute paths (and not relative paths like `../../some/path/`) in the config files, as well as when running `python inflow_cli.py ...`.
 -
