@@ -27,8 +27,8 @@
 #     - In the above case since `anndata1` and `anndata2` come from the same batch, no batch correction is done on `anndata2` because inflow assumes the user has taged both samples as being from the same biological batch and there is no batch effect to correct for.
 #   - Having mentioned the above points, if multiple biological batches are present `anndata1` should be the biggest sample containing a diverse set of cell types so it suits as a reference sample for batch correction.
 
-list_tissue:  # this name is mandatory
-  anndata1:  # this name is mandatory (and other fields `anndata2`, `anndata3`, ...)
+list_tissue:
+  anndata1:
     file: ./NonGit/ListAnndata/adata_1.h5ad  # TODO:ESSENTIAL:TUNE, the file name for sample 1
     obskey_cell_type: mod_celltypes_new  # TODO:ESSENTIAL:TUNE, the cell type column in `adata.obs` to be used by inflow.
     obskey_sliceid_to_checkUnique: info_id  # TODO:ESSENTIAL:TUNE, inflow requires each sample to a have a unique ID stored in the `obskey_sliceid_to_checkUnique` column of `adata.obs`. This column is only used to double check that each anndata contains a unique sample and not >1 tissues.
@@ -50,7 +50,7 @@ list_tissue:  # this name is mandatory
       size: 10.0
     batchsize_compute_NCC: 10  # the batch size to compute NCC vectors (i.e. Neighbouhood Celltype Composition s)
 
-  anndata2:  # this name is mandatory (and other fields `anndata2`, `anndata3`, ...)
+  anndata2: 
     file: ./NonGit/ListAnndata/adata_2.h5ad  # TODO:ESSENTIAL:TUNE, the file name for sample 2
     obskey_cell_type: mod_celltypes_new  # TODO:ESSENTIAL:TUNE, the cell type column in `adata.obs` to be used by inflow.
     obskey_sliceid_to_checkUnique: info_id  # TODO:ESSENTIAL:TUNE, inflow requires each sample to a have a unique ID stored in the `obskey_sliceid_to_checkUnique` column of `adata.obs`. This column is only used to double check that each anndata contains a unique sample and not >1 tissues.
