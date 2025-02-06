@@ -1025,6 +1025,33 @@ if 'dict_measname_to_histmeas' not in globals():
     total_cnt_epoch = 0
     list_coef_anneal = []
 
+# dump the config dictionaries again, so any inconsistency (e.g. due to boolean variables being treated as str) becomes obvious.
+try_mkdir(os.path.join(args.path_output, 'ConfigFilesCopiedOver'))
+os.system(
+    "cp {} {}".format(
+        os.path.abspath(args.file_config_data_train),
+        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
+    )
+)
+os.system(
+    "cp {} {}".format(
+        os.path.abspath(args.file_config_data_test),
+        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
+    )
+)
+os.system(
+    "cp {} {}".format(
+        os.path.abspath(args.file_config_model),
+        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
+    )
+)
+os.system(
+    "cp {} {}".format(
+        os.path.abspath(args.file_config_training),
+        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
+    )
+)
+
 t_before_training = time.time()
 
 for idx_epoch in range(config_training['num_training_epochs']):
@@ -1397,33 +1424,6 @@ for idx_sl, sl in enumerate(test_list_slice.list_slice):
         os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pt'.format(idx_sl + 1))
     )
 
-
-# dump the config dictionaries again, so any inconsistency (e.g. due to boolean variables being treated as str) becomes obvious.
-try_mkdir(os.path.join(args.path_output, 'ConfigFilesCopiedOver'))
-os.system(
-    "cp {} {}".format(
-        os.path.abspath(args.file_config_data_train),
-        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
-    )
-)
-os.system(
-    "cp {} {}".format(
-        os.path.abspath(args.file_config_data_test),
-        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
-    )
-)
-os.system(
-    "cp {} {}".format(
-        os.path.abspath(args.file_config_model),
-        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
-    )
-)
-os.system(
-    "cp {} {}".format(
-        os.path.abspath(args.file_config_training),
-        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
-    )
-)
 
 # (if enabled) combine all tissues in a single anndata and dump (with predictions in adata.obsm).
 if config_training['flag_finaleval_createanndata_alltissuescombined']:
