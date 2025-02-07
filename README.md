@@ -99,6 +99,15 @@ Inflow dumps a README file in the provided `--path_output`, as well as each subf
 - Use absolute paths (and not relative paths like `../../some/path/`) in the config files, as well as when running `python inflow_cli.py ...`.
 - It's common to face out of memory issue in the very last step where the big anndata objects `adata_inflowOutput_norm.h5ad` and `adata_inflowOutput_unnorm.h5ad` are created and dumped.
 If that step fails, the results are still accesible in the output path the subfolder `CheckpointAndPredictions/`.
+One can laod the `.pt` files by
+```python
+import torch
+dict_results = torch.load(
+    "the/output/path/CheckpointAndPredictions/predictions_slice_1.pt",
+    map_location='cpu'
+)
+```
+
 ## Release notes
 TODOTODO
 See the [changelog][changelog].
