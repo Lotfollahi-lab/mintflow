@@ -177,18 +177,36 @@ config_data_test = parse_config_data_test.parse(
     )
 )
 
+
+
+
 for idx_sl, config_anndata_test in enumerate(config_data_test):
     # read the anndata and predictions ===
     adata_before_scppnormalize_total = sc.read_h5ad(
         config_anndata_test['file']
     )
 
+    # load LR-DB and the ones found in the shared gene panel of tissues ===
+    if 'list_LR' not in globals():
+        df_LRpairs = pd.read_csv("./Files2Use_CLI/df_LRpairs_Armingoletal.txt")
+        list_known_LRgenes_inDB = [
+            genename
+            for colname in ['LigName', 'RecName'] for group in df_LRpairs[colname].tolist() for genename in str(group).split("__")
+        ]
+        list_known_LRgenes_inDB = set(list_known_LRgenes_inDB)
+        list_LR = []
+        for gene_name in adata_before_scppnormalize_total.var.index.tolist():
+            if gene_name in list_known_LRgenes_inDB:
+                list_LR.append(gene_name)
+
+        print(">>>>>>>>>>>>>> {} genes were found in the LR-DB.")
+
     path_dump_checkpoint = os.path.join(
         args.path_output_inflow_cli_dot_py,
         'CheckpointAndPredictions'
     )
     if args.flag_verbose:
-        print("Loading predictions from {}.".format(
+        print("\n\n ..... Loading predictions from {}.\n\n".format(
             os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1))
         ))
 
