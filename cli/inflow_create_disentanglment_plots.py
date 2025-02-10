@@ -151,6 +151,12 @@ parser.add_argument(
 args = parser.parse_args()
 print("args = {}".format(args)) # ======================================================
 
+# modify/check args ===
+assert isinstance(args.flag_verbose, str)
+assert args.flag_verbose in ['True', 'False']
+args.flag_verbose = (args.flag_verbose == 'True')
+
+
 
 def try_mkdir(path_in):
     if not os.path.isdir(path_in):
@@ -202,7 +208,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     try_mkdir(os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl + 1)))
 
     print("Creating joint plots in {}/Tissue_{}/".format(path_result_disent, idx_sl+1))
-    
+
     disentanglement_jointplot.vis(
         adata_unnorm=adata_before_scppnormalize_total,
         pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
