@@ -199,7 +199,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
             if gene_name in list_known_LRgenes_inDB:
                 list_LR.append(gene_name)
 
-        print(">>>>>>>>>>>>>> {} genes were found in the LR-DB.")
+        print(">>>>>>>>>>>>>> {} genes were found in the LR-DB.".format(len(list_LR)))
 
     path_dump_checkpoint = os.path.join(
         args.path_output_inflow_cli_dot_py,
