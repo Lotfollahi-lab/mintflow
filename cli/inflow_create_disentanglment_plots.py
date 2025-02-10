@@ -178,7 +178,13 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
         map_location='cpu'
     )
 
-    
+    if args.flag_verbose:
+        print("Loaded checkpoint and predictions for slice {}".format(idx_sl))
+
+
+    assert (
+        anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'].shape[0] == adata_before_scppnormalize_total.shape[0]
+    )
 
     # dump the jointplots ====
     path_result_disent = os.path.join(
@@ -195,15 +201,23 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
 
     try_mkdir(os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl + 1)))
 
+    print("Creating joint plots in {}/Tissue_{}/".format(path_result_disent, idx_sl+1))
+    
     disentanglement_jointplot.vis(
         adata_unnorm=adata_before_scppnormalize_total,
-        pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl'],
+        pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
         list_LR=list_LR,
-        fname_dump_red=os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl + 1),
-                                    'jointplot_red_{}.png'.format(idx_sl + 1)),
-        fname_dump_blue=os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl + 1),
-                                     'jointplot_blue_{}.png'.format(idx_sl + 1)),
-        str_sampleID=set(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']]),
-        str_batchID=set(sl.adata.obs[sl.dict_obskey['biological_batch_key']])
+        fname_dump_red=os.path.join(
+            path_result_disent,
+            'Tissue_{}'.format(idx_sl + 1),
+            'jointplot_red_{}.png'.format(idx_sl + 1)
+        ),
+        fname_dump_blue=os.path.join(
+            path_result_disent,
+            'Tissue_{}'.format(idx_sl + 1),
+            'jointplot_blue_{}.png'.format(idx_sl + 1)
+        ),
+        str_sampleID=set(adata_before_scppnormalize_total.obs[config_anndata_test['sliceid_to_checkUnique']]),
+        str_batchID=set(adata_before_scppnormalize_total.obs[config_anndata_test['biological_batch_key']])
     )
 
