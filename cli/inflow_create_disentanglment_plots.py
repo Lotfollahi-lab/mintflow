@@ -183,7 +183,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
 
     break  # ---override for debug TODO:revert
 
-    
+
     # read the anndata and predictions ===
     adata_before_scppnormalize_total = sc.read_h5ad(
         config_anndata_test['file']
@@ -292,7 +292,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
 
 # dump the combined jointplots ====
 list_predXspl = []
-for idx_sl, _ in enumerate(config_data_tests):
+for idx_sl, _ in enumerate(config_data_test):
     vects_sl = torch.load(
         os.path.join(
             args.path_output_inflow_cli_dot_py,
@@ -308,7 +308,7 @@ for idx_sl, _ in enumerate(config_data_tests):
     gc.collect()
     gc.collect()
 
-alltissue_adata = anndata.concat([sc.read_h5ad(config_anndata_test['file']) for config_anndata_test in config_data_tests])
+alltissue_adata = anndata.concat([sc.read_h5ad(config_anndata_test['file']) for config_anndata_test in config_data_test])
 alltissue_pred_Xspl = np.concatenate(list_predXspl, 0)
 
 disentanglement_jointplot.vis(
