@@ -12,6 +12,13 @@ import seaborn as sns
 import pandas as pd
 from tqdm.autonotebook import tqdm
 
+
+def func_eqeq(a, b):
+    return a==b
+
+def func_biggerthaneq(a, b):
+    return a >= b
+
 def vis(
     adata_unnorm,
     pred_Xspl_rownormcorrected,
@@ -45,15 +52,15 @@ def vis(
 
     for cnt_vertical_slice in tqdm(range(min_cnt_vertical_slice, max_cnt_vertical_slice), desc="Creating violin plots for tissue {}".format(idx_slplus1)):
 
-        for nameop, op_eqorbiggerthaneq in zip(['eq', 'biggerthaneq'], ['==', '>=']):
+        for nameop, op_eqorbiggerthaneq, func_operator in zip(['eq', 'biggerthaneq'], ['==', '>='], [func_eqeq, func_biggerthaneq]):
 
-            exec('mask_inLR = adata_unnorm.X.toarray()[:, list_geneindex_inLR] {} cnt_vertical_slice'.format(op_eqorbiggerthaneq))
-            print('mask_inLR' in globals())
-            exec('mask_notinLR = adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))] {} cnt_vertical_slice'.format(op_eqorbiggerthaneq))
-            print('mask_notinLR' in globals())
-            exec('mask_all = adata_unnorm.X.toarray() {} cnt_vertical_slice'.format(op_eqorbiggerthaneq))
-            print('mask_all' in globals())
-            
+            mask_inLR = func_operator(adata_unnorm.X.toarray()[:, list_geneindex_inLR], cnt_vertical_slice)
+
+            mask_notinLR = func_operator(adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))], cnt_vertical_slice)
+
+            mask_all = func_operator(adata_unnorm.X.toarray(), cnt_vertical_slice)
+
+
             slice_pred_inLR = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
             slice_pred_notinLR = pred_Xspl_rownormcorrected[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
 
@@ -80,7 +87,7 @@ def vis(
             plt.savefig(
                 os.path.join(
                     path_dump,
-                    'readcount_{}_{}.png'.format(op_eqorbiggerthaneq, cnt_vertical_slice)
+                    'readcount_{}_{}.png'.format(nameop, cnt_vertical_slice)
                 ),
                 bbox_inches='tight',
                 pad_inches=0
