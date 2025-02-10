@@ -246,7 +246,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     # dump the jointplots ====
     path_result_disent = os.path.join(
         args.path_output_inflow_cli_dot_py,
-        "Results"
+        "Results_{}".format("rownormalised" if args.flag_rownorm_adatadotX else "not_rownormalised")
     )
     try_mkdir(path_result_disent)
 
@@ -284,7 +284,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     # dump the violin plots ====
     path_violinplots = os.path.join(
         args.path_output_inflow_cli_dot_py,
-        'Results',
+        'Results_{}'.format("rownormalised" if args.flag_rownorm_adatadotX else "not_rownormalised"),
         'ViolinPlots'
     )
     try_mkdir(path_violinplots)
@@ -348,15 +348,15 @@ disentanglement_jointplot.vis(
     adata_unnorm=alltissue_adata,
     pred_Xspl_rownormcorrected=alltissue_pred_Xspl,
     list_LR=list_LR,
-    fname_dump_red=os.path.join(args.path_output_inflow_cli_dot_py, 'Results', 'JointPlots', 'jointplot_alltissuescombined_red.png'),
-    fname_dump_blue=os.path.join(args.path_output_inflow_cli_dot_py, 'Results', 'JointPlots', 'jointplot_alltissuescombined_blue.png'),
+    fname_dump_red=os.path.join(args.path_output_inflow_cli_dot_py, 'Results_{}'.format("rownormalised" if args.flag_rownorm_adatadotX else "not_rownormalised"), 'JointPlots', 'jointplot_alltissuescombined_red.png'),
+    fname_dump_blue=os.path.join(args.path_output_inflow_cli_dot_py, 'Results_{}'.format("rownormalised" if args.flag_rownorm_adatadotX else "not_rownormalised"), 'JointPlots', 'jointplot_alltissuescombined_blue.png'),
     str_sampleID='combined (all tissues)',
     str_batchID='combined (all tissues)'
 )
 
 path_combined_violinplots = os.path.join(
     args.path_output_inflow_cli_dot_py,
-    'Results',
+    'Results_{}'.format("rownormalised" if args.flag_rownorm_adatadotX else "not_rownormalised"),
     'ViolinPlots',
     'AllTissues_Combined'
 )
