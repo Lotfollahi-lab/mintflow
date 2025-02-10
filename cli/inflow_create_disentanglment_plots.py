@@ -239,9 +239,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     try_mkdir(os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl + 1)))
 
     print("Creating joint plots in {}/Tissue_{}/".format(path_result_disent, idx_sl+1))
-
-    print(config_anndata_test)
-    print(type(config_anndata_test))
+    
 
     disentanglement_jointplot.vis(
         adata_unnorm=adata_before_scppnormalize_total,
@@ -257,7 +255,8 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
             'Tissue_{}'.format(idx_sl + 1),
             'jointplot_blue_{}.png'.format(idx_sl + 1)
         ),
-        str_sampleID=set(adata_before_scppnormalize_total.obs[config_anndata_test['sliceid_to_checkUnique']]),
-        str_batchID=set(adata_before_scppnormalize_total.obs[config_anndata_test['biological_batch_key']])
+        str_sampleID=set(adata_before_scppnormalize_total.obs[config_anndata_test['obskey_sliceid_to_checkUnique']]),
+        str_batchID=set(adata_before_scppnormalize_total.obs[config_anndata_test['obskey_biological_batch_key']])
     )
+
 
