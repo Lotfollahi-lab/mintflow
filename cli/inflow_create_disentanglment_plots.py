@@ -179,7 +179,6 @@ config_data_test = parse_config_data_test.parse(
 
 
 
-
 for idx_sl, config_anndata_test in enumerate(config_data_test):
     # read the anndata and predictions ===
     adata_before_scppnormalize_total = sc.read_h5ad(
@@ -238,7 +237,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
 
     try_mkdir(os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl + 1)))
 
-    print("Creating joint plots in {}/Tissue_{}/".format(path_result_disent, idx_sl+1))
+    print("\n\n .... Creating joint plots in {}/Tissue_{}/".format(path_result_disent, idx_sl+1))
 
     disentanglement_jointplot.vis(
         adata_unnorm=adata_before_scppnormalize_total,
@@ -271,7 +270,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     )
     try_mkdir(path_violinplots)
 
-    print("Creating violin plots in {}.".format(path_violinplots))
+    print("\n\n .... Creating violin plots in {}.".format(path_violinplots))
     disentanglement_violinplot.vis(
         adata_unnorm=adata_before_scppnormalize_total,
         pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
@@ -283,6 +282,62 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
         str_batchID=set(adata_before_scppnormalize_total.obs[config_anndata_test['obskey_biological_batch_key']]),
         idx_slplus1=idx_sl + 1
     )
-    
+
+    break  # ---override for debug TODO:revert
+
+
+
+# dump the combined jointplots ====
+list_predXspl = []
+for idx_sl, _ in enumerate(config_data_tests):
+    vects_sl = torch.load(
+        os.path.join(
+            args.path_output_inflow_cli_dot_py,
+            'CheckpointAndPredictions',
+            'predictions_slice_{}.pt'.format(idx_sl+1)
+        )
+    )
+    list_predXspl.append(vects_sl['muxspl_before_sc_pp_normalize_total'])
+
+    del vects_sl
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    gc.collect()
+
+alltissue_adata = anndata.concat([sc.read_h5ad(config_anndata_test['file']) for config_anndata_test in config_data_tests])
+alltissue_pred_Xspl = np.concatenate(list_predXspl, 0)
+
+disentanglement_jointplot.vis(
+    adata_unnorm=alltissue_adata,
+    pred_Xspl_rownormcorrected=alltissue_pred_Xspl,
+    list_LR=list_LR,
+    fname_dump_red=os.path.join(args.path_output_inflow_cli_dot_py, 'Results', 'JointPlots', 'jointplot_alltissuescombined_red.png'),
+    fname_dump_blue=os.path.join(args.path_output_inflow_cli_dot_py, 'Results', 'JointPlots', 'jointplot_alltissuescombined_blue.png'),
+    str_sampleID='combined (all tissues)',
+    str_batchID='combined (all tissues)'
+)
+
+if config_training['flag_finaleval_enable_alltissue_violinplot']:
+    path_combined_violinplots = os.path.join(
+        args.path_output_inflow_cli_dot_py,
+        'Results',
+        'ViolinPlots',
+        'AllTissues_Combined'
+    )
+    try_mkdir(path_combined_violinplots)
+
+    disentanglement_violinplot.vis(
+        adata_unnorm=alltissue_adata,
+        pred_Xspl_rownormcorrected=alltissue_pred_Xspl,
+        min_cnt_vertical_slice=1,
+        max_cnt_vertical_slice=int(alltissue_adata.X.max()),
+        list_LR=list_LR,
+        path_dump=path_combined_violinplots,
+        str_sampleID='combined (all tissues)',
+        str_batchID='combined (all tissues)',
+        idx_slplus1="combined"
+    )
+
 
 
