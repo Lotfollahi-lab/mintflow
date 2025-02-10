@@ -320,26 +320,25 @@ disentanglement_jointplot.vis(
     str_batchID='combined (all tissues)'
 )
 
-if config_training['flag_finaleval_enable_alltissue_violinplot']:
-    path_combined_violinplots = os.path.join(
-        args.path_output_inflow_cli_dot_py,
-        'Results',
-        'ViolinPlots',
-        'AllTissues_Combined'
-    )
-    try_mkdir(path_combined_violinplots)
+path_combined_violinplots = os.path.join(
+    args.path_output_inflow_cli_dot_py,
+    'Results',
+    'ViolinPlots',
+    'AllTissues_Combined'
+)
+try_mkdir(path_combined_violinplots)
 
-    disentanglement_violinplot.vis(
-        adata_unnorm=alltissue_adata,
-        pred_Xspl_rownormcorrected=alltissue_pred_Xspl,
-        min_cnt_vertical_slice=1,
-        max_cnt_vertical_slice=int(alltissue_adata.X.max()),
-        list_LR=list_LR,
-        path_dump=path_combined_violinplots,
-        str_sampleID='combined (all tissues)',
-        str_batchID='combined (all tissues)',
-        idx_slplus1="combined"
-    )
+disentanglement_violinplot.vis(
+    adata_unnorm=alltissue_adata,
+    pred_Xspl_rownormcorrected=alltissue_pred_Xspl,
+    min_cnt_vertical_slice=1,
+    max_cnt_vertical_slice=int(alltissue_adata.X.max()),
+    list_LR=list_LR,
+    path_dump=path_combined_violinplots,
+    str_sampleID='combined (all tissues)',
+    str_batchID='combined (all tissues)',
+    idx_slplus1="combined"
+)
 
 
 
