@@ -181,9 +181,6 @@ config_data_test = parse_config_data_test.parse(
 
 for idx_sl, config_anndata_test in enumerate(config_data_test):
 
-    break  # ---override for debug TODO:revert
-
-
     # read the anndata and predictions ===
     adata_before_scppnormalize_total = sc.read_h5ad(
         config_anndata_test['file']
@@ -225,6 +222,8 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     assert (
         anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'].shape[0] == adata_before_scppnormalize_total.shape[0]
     )
+
+    break  # ---override for debug TODO:revert
 
     # dump the jointplots ====
     path_result_disent = os.path.join(
