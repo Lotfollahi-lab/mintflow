@@ -1283,7 +1283,7 @@ with torch.no_grad():
 
         disentanglement_jointplot.vis(
             adata_unnorm=sl.adata_before_scppnormalize_total,
-            pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl'],
+            pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
             list_LR=list_LR,
             fname_dump_red=os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl+1), 'jointplot_red_{}.png'.format(idx_sl+1)),
             fname_dump_blue=os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl + 1), 'jointplot_blue_{}.png'.format(idx_sl+1)),
@@ -1307,7 +1307,7 @@ with torch.no_grad():
         if config_training['flag_finaleval_enable_pertissue_violinplot']:
             disentanglement_violinplot.vis(
                 adata_unnorm=sl.adata_before_scppnormalize_total,
-                pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl'],
+                pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
                 min_cnt_vertical_slice=1,
                 max_cnt_vertical_slice=int(sl.adata_before_scppnormalize_total.X.max()),
                 list_LR=list_LR,
