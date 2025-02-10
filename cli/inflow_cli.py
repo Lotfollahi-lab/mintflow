@@ -1030,7 +1030,7 @@ tmp_check_unique = [
     os.path.split(args.file_config_data_train)[1],
     os.path.split(args.file_config_data_test)[1],
     os.path.split(args.file_config_model)[1],
-    os.path.split(args.file_config_trainings)[1]
+    os.path.split(args.file_config_training)[1]
 ]
 for u in tmp_check_unique:
     if tmp_check_unique.count(u) > 1:
@@ -1073,7 +1073,7 @@ with open(os.path.join(args.path_output, 'ConfigFilesCopiedOver', 'args.yml'), '
             'file_config_data_train':os.path.split(args.file_config_data_train)[1],
             'file_config_data_test':os.path.split(args.file_config_data_test)[1],
             'file_config_model':os.path.split(args.file_config_model)[1],
-            'file_config_trainings':os.path.split(args.file_config_trainings)[1]
+            'file_config_training':os.path.split(args.file_config_training)[1]
         },
         f,
         default_flow_style=False
