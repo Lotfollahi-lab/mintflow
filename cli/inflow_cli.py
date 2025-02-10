@@ -1070,10 +1070,10 @@ os.system(
 with open(os.path.join(args.path_output, 'ConfigFilesCopiedOver', 'args.yml'), 'w') as f:
     yaml.dump(
         {
-            'file_config_data_train':args.file_config_data_train,
-            'file_config_data_test':args.file_config_data_test,
-            'file_config_model':args.file_config_model,
-            'file_config_trainings':args.file_config_trainings
+            'file_config_data_train':os.path.split(args.file_config_data_train)[1],
+            'file_config_data_test':os.path.split(args.file_config_data_test)[1],
+            'file_config_model':os.path.split(args.file_config_model)[1],
+            'file_config_trainings':os.path.split(args.file_config_trainings)[1]
         },
         f,
         default_flow_style=False
