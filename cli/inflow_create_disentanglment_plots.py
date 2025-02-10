@@ -148,6 +148,12 @@ parser.add_argument(
     help="Whether the script is verbose, a string in ['True', 'False']"
 )
 
+parser.add_argument(
+    '--flag_rownorm_adatadotX',
+    type=str,
+    help="Whether the figures are created with row-normalised version of adata.X or not, a string in ['True', 'False']"
+)
+
 args = parser.parse_args()
 print("args = {}".format(args)) # ======================================================
 
@@ -155,6 +161,10 @@ print("args = {}".format(args)) # ==============================================
 assert isinstance(args.flag_verbose, str)
 assert args.flag_verbose in ['True', 'False']
 args.flag_verbose = (args.flag_verbose == 'True')
+
+assert isinstance(args.flag_rownorm_adatadotX, str)
+assert args.flag_rownorm_adatadotX in ['True', 'False']
+args.flag_rownorm_adatadotX = (args.flag_rownorm_adatadotX == 'True')
 
 
 # read the original args when inflow_cli.py script was run ===
@@ -174,6 +184,14 @@ config_data_test = parse_config_data_test.parse(
         args.path_output_inflow_cli_dot_py,
         'ConfigFilesCopiedOver',
         dict_args_inflowclidotpy['file_config_data_test']
+    )
+)
+
+config_training = parse_config_training.parse(
+    os.path.join(
+        args.path_output_inflow_cli_dot_py,
+        'ConfigFilesCopiedOver',
+        dict_args_inflowclidotpy['file_config_training']
     )
 )
 
@@ -242,9 +260,12 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
 
     print("\n\n .... Creating joint plots in {}/Tissue_{}/".format(path_result_disent, idx_sl+1))
 
+    if args.flag_rownorm_adatadotX:
+        sc.pp.normalize_total(adata_before_scppnormalize_total, inplace=True, target_sum=config_training['val_scppnorm_total'])
+
     disentanglement_jointplot.vis(
         adata_unnorm=adata_before_scppnormalize_total,
-        pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
+        pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl'] if(args.flag_rownorm_adatadotX) else anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
         list_LR=list_LR,
         fname_dump_red=os.path.join(
             path_result_disent,
@@ -276,7 +297,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     print("\n\n .... Creating violin plots in {}.".format(path_violinplots))
     disentanglement_violinplot.vis(
         adata_unnorm=adata_before_scppnormalize_total,
-        pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
+        pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl'] if(args.flag_rownorm_adatadotX) else anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
         min_cnt_vertical_slice=1,
         max_cnt_vertical_slice=int(adata_before_scppnormalize_total.X.max()),
         list_LR=list_LR,
@@ -306,7 +327,7 @@ for idx_sl, _ in enumerate(config_data_test):
             'predictions_slice_{}.pt'.format(idx_sl+1)
         )
     )
-    list_predXspl.append(vects_sl['muxspl_before_sc_pp_normalize_total'])
+    list_predXspl.append(vects_sl['muxspl'] if(args.flag_rownorm_adatadotX) else vects_sl['muxspl_before_sc_pp_normalize_total'])
 
     del vects_sl
     gc.collect()
@@ -316,7 +337,11 @@ for idx_sl, _ in enumerate(config_data_test):
 
     time.sleep(30)  # TODO: make tunable
 
+
 alltissue_adata = anndata.concat([sc.read_h5ad(config_anndata_test['file']) for config_anndata_test in config_data_test])
+if args.flag_rownorm_adatadotX:
+    sc.pp.normalize_total(alltissue_adata, inplace=True, target_sum=config_training['val_scppnorm_total'])
+
 alltissue_pred_Xspl = np.concatenate(list_predXspl, 0)
 
 disentanglement_jointplot.vis(
