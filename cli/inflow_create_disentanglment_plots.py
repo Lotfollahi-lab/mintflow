@@ -286,6 +286,13 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
         idx_slplus1=idx_sl + 1
     )
 
+    del adata_before_scppnormalize_total, anal_dict_varname_to_output_slice
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    time.sleep(30)  # TODO: make tunable
+
 
 
 
@@ -306,6 +313,8 @@ for idx_sl, _ in enumerate(config_data_test):
     gc.collect()
     gc.collect()
     gc.collect()
+
+    time.sleep(30)  # TODO: make tunable
 
 alltissue_adata = anndata.concat([sc.read_h5ad(config_anndata_test['file']) for config_anndata_test in config_data_test])
 alltissue_pred_Xspl = np.concatenate(list_predXspl, 0)
