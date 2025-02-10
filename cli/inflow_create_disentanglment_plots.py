@@ -159,7 +159,7 @@ args.flag_verbose = (args.flag_verbose == 'True')
 
 # read the original args when inflow_cli.py script was run ===
 with open(os.path.join(args.path_output_inflow_cli_dot_py, 'ConfigFilesCopiedOver', 'args.yml'), 'r') as f:
-    dict_args_inflowclidotpy = yaml.load(f)
+    dict_args_inflowclidotpy = yaml.load(f, Loader=yaml.Loader)  # the path tails are saved only.
 
 
 def try_mkdir(path_in):
