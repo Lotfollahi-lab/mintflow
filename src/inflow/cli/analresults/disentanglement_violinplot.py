@@ -67,8 +67,8 @@ def vis(
             plt.figure()
             sns.violinplot(
                 data={
-                    'not in LR-DB': slice_pred_notinLR / ((cnt_vertical_slice + 0.0) if(op_eqorbiggerthaneq == '==') else adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))]),
-                    'in LR-DB': slice_pred_inLR / ((cnt_vertical_slice + 0.0) if(op_eqorbiggerthaneq == '==') else adata_unnorm.X.toarray()[:, list_geneindex_inLR]),
+                    'not in LR-DB': slice_pred_notinLR / ((cnt_vertical_slice + 0.0) if(op_eqorbiggerthaneq == '==') else adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()),
+                    'in LR-DB': slice_pred_inLR / ((cnt_vertical_slice + 0.0) if(op_eqorbiggerthaneq == '==') else adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten()),
                 },
                 cut=0
             )
