@@ -1026,6 +1026,21 @@ if 'dict_measname_to_histmeas' not in globals():
     list_coef_anneal = []
 
 # dump the config dictionaries again, so any inconsistency (e.g. due to boolean variables being treated as str) becomes obvious.
+tmp_check_unique = [
+    os.path.split(args.file_config_data_train)[1],
+    os.path.split(args.file_config_data_test)[1],
+    os.path.split(args.file_config_model)[1],
+    os.path.split(args.file_config_trainings)[1]
+]
+for u in tmp_check_unique:
+    if tmp_check_unique.count(u) > 1:
+        raise Exception(
+            "In the provided config files the file name '{}' is repeated {} times, although probably in different directories. \n Please avoid this repeatition and try again".format(
+                u,
+                tmp_check_unique.count(u)
+            )
+        )
+
 try_mkdir(os.path.join(args.path_output, 'ConfigFilesCopiedOver'))
 os.system(
     "cp {} {}".format(
@@ -1051,6 +1066,19 @@ os.system(
         os.path.join(args.path_output, 'ConfigFilesCopiedOver')
     )
 )
+
+with open(os.path.join(args.path_output, 'ConfigFilesCopiedOver', 'args.yml'), 'w') as f:
+    yaml.dump(
+        {
+            'file_config_data_train':args.file_config_data_train,
+            'file_config_data_test':args.file_config_data_test,
+            'file_config_model':args.file_config_model,
+            'file_config_trainings':args.file_config_trainings
+        },
+        f,
+        default_flow_style=False
+    )
+
 
 t_before_training = time.time()
 

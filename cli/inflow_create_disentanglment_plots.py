@@ -157,6 +157,10 @@ assert args.flag_verbose in ['True', 'False']
 args.flag_verbose = (args.flag_verbose == 'True')
 
 
+# read the original args when inflow_cli.py script was run ===
+with open(os.path.join(path_output_inflow_cli_dot_py, 'ConfigFilesCopiedOver', 'args.yml'), 'r') as f:
+    dict_args_inflowclidotpy = yaml.load(f)
+
 
 def try_mkdir(path_in):
     if not os.path.isdir(path_in):
@@ -166,7 +170,7 @@ def try_mkdir(path_in):
 
 # read the test anndata-s 1by1 ===
 config_data_test = parse_config_data_test.parse(
-    args.file_config_data_test
+    dict_args_inflowclidotpy['file_config_data_test']
 )
 
 for idx_sl, config_anndata_test in enumerate(config_data_test):
