@@ -180,6 +180,10 @@ config_data_test = parse_config_data_test.parse(
 
 
 for idx_sl, config_anndata_test in enumerate(config_data_test):
+
+    break  # ---override for debug TODO:revert
+
+    
     # read the anndata and predictions ===
     adata_before_scppnormalize_total = sc.read_h5ad(
         config_anndata_test['file']
@@ -283,7 +287,6 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
         idx_slplus1=idx_sl + 1
     )
 
-    break  # ---override for debug TODO:revert
 
 
 
