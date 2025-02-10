@@ -45,41 +45,44 @@ def vis(
 
     for cnt_vertical_slice in tqdm(range(min_cnt_vertical_slice, max_cnt_vertical_slice), desc="Creating violin plots for tissue {}".format(idx_slplus1)):
 
-        mask_inLR = adata_unnorm.X.toarray()[:, list_geneindex_inLR] == cnt_vertical_slice
-        mask_notinLR = adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))] == cnt_vertical_slice
-        mask_all = adata_unnorm.X.toarray() == cnt_vertical_slice
+        for nameop, op_eqorbiggerthaneq in zip(['eq', 'biggerthaneq'], ['==', '>=']):
 
-        slice_pred_inLR = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
-        slice_pred_notinLR = pred_Xspl_rownormcorrected[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
+            exec('mask_inLR = adata_unnorm.X.toarray()[:, list_geneindex_inLR] {} cnt_vertical_slice'.format(op_eqorbiggerthaneq))
+            exec ('mask_notinLR = adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))] {} cnt_vertical_slice'.format(op_eqorbiggerthaneq))
+            exec('mask_all = adata_unnorm.X.toarray() {} cnt_vertical_slice'.format(op_eqorbiggerthaneq))
 
-        plt.figure()
-        sns.violinplot(
-            data={
-                'not in LR-DB': slice_pred_notinLR / (cnt_vertical_slice + 0.0),
-                'in LR-DB': slice_pred_inLR / (cnt_vertical_slice + 0.0),
-            },
-            cut=0
-        )
-        plt.title(
-            "sample: {} \n in biological batch {} \n among readout counts={} \n {}".format(
-                str_sampleID,
-                str_batchID,
-                cnt_vertical_slice,
-                "read counts not in & in LR-DB are {} and {} respectively".format(
-                    slice_pred_notinLR.shape[0],
-                    slice_pred_inLR.shape[0]
+            slice_pred_inLR = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
+            slice_pred_notinLR = pred_Xspl_rownormcorrected[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
+
+            plt.figure()
+            sns.violinplot(
+                data={
+                    'not in LR-DB': slice_pred_notinLR / (cnt_vertical_slice + 0.0),
+                    'in LR-DB': slice_pred_inLR / (cnt_vertical_slice + 0.0),
+                },
+                cut=0
+            )
+            plt.title(
+                "sample: {} \n in biological batch {} \n among readout counts{}{} \n {}".format(
+                    str_sampleID,
+                    str_batchID,
+                    op_eqorbiggerthaneq,
+                    cnt_vertical_slice,
+                    "read counts not in & in LR-DB are {} and {} respectively".format(
+                        slice_pred_notinLR.shape[0],
+                        slice_pred_inLR.shape[0]
+                    )
                 )
             )
-        )
-        plt.savefig(
-            os.path.join(
-                path_dump,
-                '{}.png'.format(cnt_vertical_slice)
-            ),
-            bbox_inches='tight',
-            pad_inches=0
-        )
-        plt.close()
+            plt.savefig(
+                os.path.join(
+                    path_dump,
+                    'readcount_{}_{}.png'.format(op_eqorbiggerthaneq, cnt_vertical_slice)
+                ),
+                bbox_inches='tight',
+                pad_inches=0
+            )
+            plt.close()
 
         # plt.show()
 
