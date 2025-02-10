@@ -216,7 +216,7 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     )
 
     if args.flag_verbose:
-        print("Loaded checkpoint and predictions for slice {}".format(idx_sl))
+        print("Loaded checkpoint and predictions for slice {}".format(idx_sl + 1))
 
 
     assert (
@@ -239,7 +239,6 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
     try_mkdir(os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl + 1)))
 
     print("Creating joint plots in {}/Tissue_{}/".format(path_result_disent, idx_sl+1))
-    
 
     disentanglement_jointplot.vis(
         adata_unnorm=adata_before_scppnormalize_total,
@@ -258,5 +257,32 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
         str_sampleID=set(adata_before_scppnormalize_total.obs[config_anndata_test['obskey_sliceid_to_checkUnique']]),
         str_batchID=set(adata_before_scppnormalize_total.obs[config_anndata_test['obskey_biological_batch_key']])
     )
+
+    # dump the violin plots ====
+    path_violinplots = os.path.join(
+        args.path_output_inflow_cli_dot_py,
+        'Results',
+        'ViolinPlots'
+    )
+    try_mkdir(path_violinplots)
+    path_violinplots = os.path.join(
+        path_violinplots,
+        'ViolinPlots_Tissue_{}'.format(idx_sl + 1)
+    )
+    try_mkdir(path_violinplots)
+
+    print("Creating violin plots in {}.".format(path_violinplots))
+    disentanglement_violinplot.vis(
+        adata_unnorm=adata_before_scppnormalize_total,
+        pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
+        min_cnt_vertical_slice=1,
+        max_cnt_vertical_slice=int(adata_before_scppnormalize_total.X.max()),
+        list_LR=list_LR,
+        path_dump=path_violinplots,
+        str_sampleID=set(adata_before_scppnormalize_total.obs[config_anndata_test['obskey_sliceid_to_checkUnique']]),
+        str_batchID=set(adata_before_scppnormalize_total.obs[config_anndata_test['obskey_biological_batch_key']]),
+        idx_slplus1=idx_sl + 1
+    )
+    
 
 
