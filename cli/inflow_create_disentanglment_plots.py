@@ -187,6 +187,11 @@ for idx_sl, config_anndata_test in enumerate(config_data_test):
         args.path_output_inflow_cli_dot_py,
         'CheckpointAndPredictions'
     )
+    if args.flag_verbose:
+        print("Loading predictions from {}.".format(
+            os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1))
+        ))
+
     anal_dict_varname_to_output_slice = torch.load(
         os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1)),
         map_location='cpu'
