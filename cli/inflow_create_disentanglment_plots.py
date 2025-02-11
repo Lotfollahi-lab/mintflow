@@ -151,6 +151,7 @@ parser.add_argument(
 parser.add_argument(
     '--flag_rownorm_adatadotX',
     type=str,
+    default='False',
     help="Whether the figures are created with row-normalised version of adata.X or not, a string in ['True', 'False']"
 )
 
