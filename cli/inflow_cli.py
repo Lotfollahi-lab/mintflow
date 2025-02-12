@@ -798,7 +798,14 @@ module_varphi_enc_int = EncX2Xbar(
     dim_xbar=kwargs_genmodel['dict_varname_to_dim']['z'],
     flag_enable_batchEmb=config_model['flag_enable_batchtoken_encxbar']
 )
-module_varphi_enc_spl = module_varphi_enc_int
+module_varphi_enc_spl = EncX2Xbar(
+    module_encX=module_encX,
+    num_batches=kwargs_genmodel['dict_varname_to_dim']['BatchEmb'],
+    dim_xbar=kwargs_genmodel['dict_varname_to_dim']['z'],
+    flag_enable_batchEmb=config_model['flag_enable_batchtoken_encxbar']
+)
+
+# module_varphi_enc_spl = module_varphi_enc_int
 
 
 exec('dict_varname_to_takeCT_takeNCC = {}'.format(config_model['CTNCC_usage_modulecond4flow']))
