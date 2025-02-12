@@ -10,7 +10,7 @@
 
 list_tissue:
   anndata1:
-    file: ./NonGit/ListAnndata/adata_1.h5ad  # TODO:ESSENTIAL:TUNE, the file name for sample 1
+    file: /absolute/path/to/ListAnndata/adata_1.h5ad  # TODO:ESSENTIAL:TUNE, the file name for sample 1
     obskey_cell_type: mod_celltypes_new  # TODO:ESSENTIAL:TUNE, the cell type column in `adata.obs` to be used by inflow.
     obskey_sliceid_to_checkUnique: info_id  # TODO:ESSENTIAL:TUNE, inflow requires each sample to a have a unique ID stored in the `obskey_sliceid_to_checkUnique` column of `adata.obs`. This column is only used to double check that each anndata contains a unique sample and not >1 tissues.
     obskey_x: x_centroid  # TODO:ESSENTIAL:TUNE, the column in `adata.obs` containing the sptial X position of cells.
@@ -32,7 +32,7 @@ list_tissue:
     batchsize_compute_NCC: 10  # the batch size to compute NCC vectors (i.e. Neighbouhood Celltype Composition s)
 
   anndata2:
-    file: ./NonGit/ListAnndata/adata_2.h5ad  # TODO:ESSENTIAL:TUNE, the file name for sample 2
+    file: /absolute/path/to/ListAnndata/adata_2.h5ad  # TODO:ESSENTIAL:TUNE, the file name for sample 2
     obskey_cell_type: mod_celltypes_new  # TODO:ESSENTIAL:TUNE, the cell type column in `adata.obs` to be used by inflow.
     obskey_sliceid_to_checkUnique: info_id  # TODO:ESSENTIAL:TUNE, inflow requires each sample to a have a unique ID stored in the `obskey_sliceid_to_checkUnique` column of `adata.obs`. This column is only used to double check that each anndata contains a unique sample and not >1 tissues.
     obskey_x: x_centroid  # TODO:ESSENTIAL:TUNE, the column in `adata.obs` containing the sptial X position of cells.
@@ -54,7 +54,7 @@ list_tissue:
     batchsize_compute_NCC: 10  # the batch size to compute NCC vectors (i.e. Neighbouhood Celltype Composition s)
 
   anndata3:
-    file: ./NonGit/ListAnndata/adata_3.h5ad  # TODO:ESSENTIAL:TUNE, the file name for sample 3
+    file: /absolute/path/to/ListAnndata/adata_3.h5ad  # TODO:ESSENTIAL:TUNE, the file name for sample 3
     obskey_cell_type: mod_celltypes_new  # TODO:ESSENTIAL:TUNE, the cell type column in `adata.obs` to be used by inflow.
     obskey_sliceid_to_checkUnique: info_id  # TODO:ESSENTIAL:TUNE, inflow requires each sample to a have a unique ID stored in the `obskey_sliceid_to_checkUnique` column of `adata.obs`. This column is only used to double check that each anndata contains a unique sample and not >1 tissues.
     obskey_x: x_centroid  # TODO:ESSENTIAL:TUNE, the column in `adata.obs` containing the sptial X position of cells.
