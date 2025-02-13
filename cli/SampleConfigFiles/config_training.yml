@@ -44,7 +44,7 @@ sleeptime_gccollect_aftertraining: 120  #TODO:TUNE
 # After training for `num_training_epochs`, garbage collection is called followed by `time.sleep(sleeptime_gccollect_aftertraining)` so some system/gpu memory is potentially released.
 # `sleeptime_gccollect_aftertraining` is in sleeping time in seconds.
 
-sleeptime_gccollect_dumpOnePred: 15 #TODO:cehck
+sleeptime_gccollect_dumpOnePred: 60 #TODO:cehck
 # Similar to above, but after dumping the predictions for each tissue sample
 
 
