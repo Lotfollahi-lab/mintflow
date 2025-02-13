@@ -787,18 +787,30 @@ exec('flowmatching_mode_fmloss = {}'.format(config_model['flowmatching_mode_fmlo
 
 
 exec(
-    "module_encX = {}".format(
+    "module_encX_int = {}".format(
+        config_model['arch_module_encoder_X2Xbar']
+    )
+)
+exec(
+    "module_encX_spl = {}".format(
         config_model['arch_module_encoder_X2Xbar']
     )
 )
 
 module_varphi_enc_int = EncX2Xbar(
-    module_encX=module_encX,
+    module_encX=module_encX_int,
     num_batches=kwargs_genmodel['dict_varname_to_dim']['BatchEmb'],
     dim_xbar=kwargs_genmodel['dict_varname_to_dim']['z'],
     flag_enable_batchEmb=config_model['flag_enable_batchtoken_encxbar']
 )
-module_varphi_enc_spl = module_varphi_enc_int
+module_varphi_enc_spl = EncX2Xbar(
+    module_encX=module_encX_spl,
+    num_batches=kwargs_genmodel['dict_varname_to_dim']['BatchEmb'],
+    dim_xbar=kwargs_genmodel['dict_varname_to_dim']['z'],
+    flag_enable_batchEmb=config_model['flag_enable_batchtoken_encxbar']
+)
+
+# module_varphi_enc_spl = module_varphi_enc_int
 
 
 exec('dict_varname_to_takeCT_takeNCC = {}'.format(config_model['CTNCC_usage_modulecond4flow']))

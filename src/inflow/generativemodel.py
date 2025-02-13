@@ -136,17 +136,15 @@ class InFlowGenerativeModel(nn.Module):
                **kwargs_w_dec
                }
         )
-        self.module_w_dec_spl = self.module_w_dec_int
 
-        '''
+        # self.module_w_dec_spl = self.module_w_dec_int
         self.module_w_dec_spl = type_w_dec(
             **{**{
-                'dim_input':self.dict_varname_to_dim['s'],
-                'dim_output':self.dict_varname_to_dim['x']},
+                'dim_input': self.dict_varname_to_dim['BatchEmb'] + self.dict_varname_to_dim['z'],
+                'dim_output': self.dict_varname_to_dim['x']},
                **kwargs_w_dec
-            }
+               }
         )
-        '''
 
         # make the theta parameters of NegBin intrinsic and NegBin spatial
         # for intrinsic
