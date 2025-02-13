@@ -1295,7 +1295,8 @@ with torch.no_grad():
         # dump the predictions
         torch.save(
             anal_dict_varname_to_output_slice,
-            os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1))
+            os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1)),
+            pickle_protocol=4
         )
 
 
@@ -1375,7 +1376,8 @@ torch.save(
     os.path.join(
         path_dump_checkpoint,
         'inflow_model.pt'
-    )
+    ),
+    pickle_protocol=4
 )
 
 
@@ -1451,7 +1453,8 @@ for idx_sl, sl in enumerate(list_slice.list_slice):
 
     torch.save(
         sl,
-        os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pt'.format(idx_sl + 1))
+        os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pt'.format(idx_sl + 1)),
+        pickle_protocol=4
     )
 
 for idx_sl, sl in enumerate(test_list_slice.list_slice):
@@ -1461,7 +1464,8 @@ for idx_sl, sl in enumerate(test_list_slice.list_slice):
 
     torch.save(
         sl,
-        os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pt'.format(idx_sl + 1))
+        os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pt'.format(idx_sl + 1)),
+        pickle_protocol=4
     )
 
 
