@@ -292,7 +292,7 @@ coef_rankloss_Z: 0.0
 coef_xbarint2notbatchID_loss: 1.0  # TODO:TUNE
 coef_xbarspl2notbatchID_loss: 0.01  # TODO:TUNE
 # The above two parameters are essential to tune and are the weight of batch mixing losses on xbar_int and xbar_spl.
-# The higher these values, the more
+# The higher these values, the more the corresponding embeddings (Xbar_int and Xbar_spl) are encouraged to mix based on biological batch ID.
 # At the moment we've observed that batch mixing should be done mainly with xbarint and not with xbarspl.
 # Therefore in above the recommended values are 1.0 (for xbarint) and 0.01 (for xbarspl) respectively.
 # One may say setting these parameters to large values may blindly mix embedding which should not be biologically mixed.
