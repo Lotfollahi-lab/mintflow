@@ -9,6 +9,7 @@ assert(
 import os, sys
 import warnings
 import scipy
+from scipy.sparse import coo_matrix, issparse
 import yaml
 import gc
 from IPython.utils import io
@@ -1291,6 +1292,33 @@ with torch.no_grad():
         anal_dict_varname_to_output_slice['muxint_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxint'] * rowcoef_correct4scppnormtotal + 0.0
         anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxspl'] * rowcoef_correct4scppnormtotal + 0.0
 
+        '''
+        Sparsify the following vars
+        - muxint
+        - muxspl
+        - x_int
+        - x_spl
+        - muxint_before_sc_pp_normalize_total
+        - muxspl_before_sc_pp_normalize_total
+        -
+        '''
+        tmp_mask = test_list_slice.list_slice[idx_sl].adata.X + 0
+        if issparse(tmp_mask):
+            tmp_mask = tmp_mask.toarray()
+        tmp_mask = ((tmp_mask > 0) + 0).astype(int)
+
+        for var in [
+            'muxint',
+            'muxspl',
+            'x_int',
+            'x_spl',
+            'muxint_before_sc_pp_normalize_total',
+            'muxspl_before_sc_pp_normalize_total'
+        ]:
+            anal_dict_varname_to_output_slice[var] = coo_matrix(anal_dict_varname_to_output_slice[var] * tmp_mask)
+            assert len(anal_dict_varname_to_output_slice[var].data) == tmp_mask.sum()
+            gc.collect()
+
 
         # dump the predictions
         torch.save(
@@ -1298,13 +1326,6 @@ with torch.no_grad():
             os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1)),
             pickle_protocol=4
         )
-
-
-        # with open(os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl+1)), 'wb') as f:
-        #     pickle.dump(
-        #         anal_dict_varname_to_output_slice,
-        #         f
-        #     )
 
 
         # dump the jointplots ====
