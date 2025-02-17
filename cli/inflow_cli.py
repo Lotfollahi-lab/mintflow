@@ -1296,8 +1296,6 @@ with torch.no_grad():
         Sparsify the following vars
         - muxint
         - muxspl
-        - x_int
-        - x_spl
         - muxint_before_sc_pp_normalize_total
         - muxspl_before_sc_pp_normalize_total
         -
@@ -1310,8 +1308,6 @@ with torch.no_grad():
         for var in [
             'muxint',
             'muxspl',
-            'x_int',
-            'x_spl',
             'muxint_before_sc_pp_normalize_total',
             'muxspl_before_sc_pp_normalize_total'
         ]:
