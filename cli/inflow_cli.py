@@ -1368,6 +1368,10 @@ with torch.no_grad():
 
         try_mkdir(os.path.join(path_result_disent, 'Tissue_{}'.format(idx_sl+1)))
 
+        if issparse(anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total']):
+            anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'].toarray()
+            # TODO:implement visualizations directly for sparse Xspl.
+
         disentanglement_jointplot.vis(
             adata_unnorm=sl.adata_before_scppnormalize_total,
             pred_Xspl_rownormcorrected=anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'],
@@ -1438,6 +1442,10 @@ if config_training['flag_finaleval_enable_alltissuecombined_eval']:
                 'predictions_slice_{}.pt'.format(idx_sl+1)
             )
         )
+
+        if issparse(vects_sl['muxspl']):
+            vects_sl['muxspl'] = vects_sl['muxspl'].toarray()  # TODO:implement visualizations directly for sparse Xspl.
+
         list_predXspl.append(vects_sl['muxspl'])
 
         del vects_sl
