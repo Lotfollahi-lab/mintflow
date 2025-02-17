@@ -1312,7 +1312,10 @@ with torch.no_grad():
             'muxspl_before_sc_pp_normalize_total'
         ]:
             anal_dict_varname_to_output_slice[var] = coo_matrix(anal_dict_varname_to_output_slice[var] * tmp_mask)
-            if len(anal_dict_varname_to_output_slice[var].data) != tmp_mask.sum():
+
+            '''
+            The sparse format may have more 0-s than tmp_mask, so the check below was removed.
+            if len(anal_dict_varname_to_output_slice[var].data) == tmp_mask.sum():
                 path_debug_output = os.path.join(
                     args.path_output,
                     'DebugInfo'
@@ -1341,6 +1344,7 @@ with torch.no_grad():
                 raise Exception(
                     "Something went wrong when trying to sparsify {}".format(var)
                 )
+            '''
 
             gc.collect()
 
