@@ -1316,7 +1316,36 @@ with torch.no_grad():
             'muxspl_before_sc_pp_normalize_total'
         ]:
             anal_dict_varname_to_output_slice[var] = coo_matrix(anal_dict_varname_to_output_slice[var] * tmp_mask)
-            assert len(anal_dict_varname_to_output_slice[var].data) == tmp_mask.sum()
+            if len(anal_dict_varname_to_output_slice[var].data) != tmp_mask.sum():
+                path_debug_output = os.path.join(
+                    args.path_output,
+                    'DebugInfo'
+                )
+                try_mkdir(path_debug_output)
+
+                # dump the anndata ===
+                test_list_slice.list_slice[idx_sl].adata.write(
+                    os.path.join(
+                        path_debug_output,
+                        'adata.h5ad'
+                    )
+                )
+
+                # dump `tmp_mask` ===
+                with open(os.path.join(path_debug_output, 'tmp_mask.pkl'), 'wb') as f:
+                    pickle.dump(tmp_mask, f)
+
+                # dump anal_dict_varname_to_output_slice[var]
+                with open(os.path.join(path_debug_output, 'var_{}.pkl'.format(var)), 'wb') as f:
+                    pickle.dump(
+                        anal_dict_varname_to_output_slice[var],
+                        f
+                    )
+
+                raise Exception(
+                    "Something went wrong when trying to sparsify {}".format(var)
+                )
+
             gc.collect()
 
 
