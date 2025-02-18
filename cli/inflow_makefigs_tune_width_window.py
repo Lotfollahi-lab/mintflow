@@ -174,6 +174,12 @@ parser.add_argument(
     help="Whether the script is verbose, a string in ['True', 'False']"
 )
 
+parser.add_argument(
+    '--flag_use_GPU',
+    type=str,
+    help="Whether GPU is used, a string in ['True', 'False']"
+)
+
 args = parser.parse_args()
 print("args = {}".format(args)) # ======================================================
 
@@ -187,6 +193,11 @@ def try_mkdir(path_in):
 assert isinstance(args.flag_verbose, str)
 assert args.flag_verbose in ['True', 'False']
 args.flag_verbose = (args.flag_verbose == 'True')
+
+assert isinstance(args.flag_use_GPU, str)
+assert args.flag_use_GPU in ['True', 'False']
+args.flag_use_GPU = (args.flag_use_GPU == 'True')
+
 
 
 list_potential_width_window = []
@@ -260,7 +271,7 @@ for current_width_window in list_potential_width_window:
     gc.collect()
 
     # set device ===
-    if config_training['flag_use_GPU']:
+    if args.flag_use_GPU:
         if torch.cuda.is_available():
             device = torch.device("cuda:0")
         else:
