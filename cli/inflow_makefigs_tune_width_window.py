@@ -214,14 +214,6 @@ for current_width_window in list_potential_width_window:
         args.file_config_data_test
     )
 
-    config_training = parse_config_training.parse(
-        args.file_config_training
-    )
-
-
-    config_model = parse_config_model.parse(
-        args.file_config_model
-    )
 
     # modify width_window fields in `config_data_train` and `config_data_test` ===
     for idx_config in range(len(config_data_train)):
