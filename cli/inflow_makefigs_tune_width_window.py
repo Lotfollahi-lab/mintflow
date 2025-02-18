@@ -275,8 +275,8 @@ for current_width_window in list_potential_width_window:
         if torch.cuda.is_available():
             device = torch.device("cuda:0")
         else:
-            print("Although flag_use_GPU is set True in {}, but cuda is not available --> falling back to CPU.".format(
-                args.file_config_training
+            print("Although flag_use_GPU is set True by {}, but cuda is not available --> falling back to CPU.".format(
+                'args.flag_use_GPU'
             ))
             device = torch.device("cpu")
     else:
@@ -312,7 +312,7 @@ for current_width_window in list_potential_width_window:
         unnorm_anndata = current_anndata.copy()
         sc.pp.normalize_total(
             current_anndata,
-            target_sum=config_training['val_scppnorm_total'],
+            target_sum=10000,  # In this script it doesn't matter if it's different from the actual value in config files.
             inplace=True
         )
 
@@ -374,7 +374,7 @@ for current_width_window in list_potential_width_window:
         unnorm_anndata = current_anndata.copy()
         sc.pp.normalize_total(
             current_anndata,
-            target_sum=config_training['val_scppnorm_total'],
+            target_sum=10000,  # In this script it doesn't matter if it's different from the actual value in config files.
             inplace=True
         )
 
