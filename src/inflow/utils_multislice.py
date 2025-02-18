@@ -455,6 +455,7 @@ class Slice:
 
                 plt.show()
 
+
     def _show_pygbatch_window_4cli(self, fname_output, str_train_or_test, dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize):
         """
         Shows a sample window on tissue 4 the command line interface (CLI), so one can inspect if the window size is appropriate for the tissue based on size etc.
@@ -780,6 +781,7 @@ class ListSlice:
                 dict_slideID_to_maxnumcentralnodes=dict_slideID_to_maxnumcentralnodes,
                 dict_slideID_to_worsecasebatchsize=dict_slideID_to_worsecasebatchsize
             )
+
 
     def _check_args(self):
         assert isinstance(self.list_slice, list)
