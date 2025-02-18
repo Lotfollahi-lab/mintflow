@@ -157,6 +157,20 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--file_config_model',
+    type=str,
+    help='The yaml file to configure architecture of inflow modules (e.g. encoders etc.) .\n' +\
+    'Please refere to TODO: for an example such file.'
+)
+
+parser.add_argument(
+    '--file_config_training',
+    type=str,
+    help="The yaml file to configure inflow's training (e.g. learning rate, number of epochs, etc.) .\n" +\
+    'Please refere to TODO: for an example such file.'
+)
+
+parser.add_argument(
     '--list_potential_width_window',
     type=str,
     help="List of potential values for width_window, separated by underscore. For example: 500_600_700_800"
@@ -224,7 +238,12 @@ for current_width_window in list_potential_width_window:
     config_data_test = parse_config_data_test.parse(
         args.file_config_data_test
     )
-
+    config_training = parse_config_training.parse(
+        args.file_config_training
+    )
+    config_model = parse_config_model.parse(
+        args.file_config_model
+    )
 
     # modify width_window fields in `config_data_train` and `config_data_test` ===
     for idx_config in range(len(config_data_train)):
