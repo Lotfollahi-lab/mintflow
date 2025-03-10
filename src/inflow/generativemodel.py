@@ -484,7 +484,7 @@ class InFlowGenerativeModel(nn.Module):
             x=xbar_spl,
             batch_size=batch_size_feedforward
         )
-        
+
         dict_toret = dict(
             ten_u_int=ten_u_int,
             ten_u_spl=ten_u_spl,
