@@ -335,34 +335,39 @@ class InFlowGenerativeModel(nn.Module):
         device,
         batch_size_feedforward,
         kwargs_dl_neighbourloader,
-        ten_u_int : torch.Tensor | None,
-        ten_u_spl : torch.Tensor | None,
-        np_size_factor:np.ndarray
+        ten_CT: torch.Tensor,
+        ten_BatchEmb_in:torch.Tensor
     ):
-        '''
-        Generates a single sample from all variables.
-        :param edge_index: the edges of the neighbourhood graph, must not contain self-loops.
-        :param t_num_steps: the number of time steps between 0 and 1 for the neural ODE.
-        :param batch_size_feedforward: when `num_cells` is huge different representations are processed
-            batch by batch, where each batch is determined by this argument.
+        """
+        :param edge_index:
+        :param t_num_steps:
+        :param device:
+        :param batch_size_feedforward:
+        :param kwargs_dl_neighbourloader:
+        :param ten_CT:s
+        :param ten_BatchEmb_in:
+        :param np_size_factor:
         :return:
-        '''
+        """
+        ten_u_int = (ten_CT + 0) if (self.flag_use_int_u) else None
+        ten_u_spl = (ten_CT + 0) if (self.flag_use_spl_u) else None
 
-        raise NotImplementedError(
-            "Check the implementation after batch tokens are added."
-        )
 
-        assert(
-            not pyg.utils.contains_self_loops(edge_index)
-        )
-        assert (
-            torch.all(
-                torch.eq(
-                    torch.tensor(edge_index),
-                    pyg.utils.to_undirected(edge_index)
-                )
+        if pyg.utils.contains_self_loops(edge_index):
+            raise Exception(
+                "The provided graph contains seelf loops. Please ensure it doesn't have them and try again."
             )
-        )
+
+        if not torch.all(
+            torch.eq(
+                torch.tensor(edge_index),
+                pyg.utils.to_undirected(edge_index)
+            )
+        ):
+            raise Exception(
+                "The provided graph may contain seelf loops? If so, please ensure it doesn't have them and try again."
+            )
+
         if self.flag_use_int_u:
             assert (ten_u_int is not None)
             assert (isinstance(ten_u_int, torch.Tensor))
@@ -406,8 +411,6 @@ class InFlowGenerativeModel(nn.Module):
             scale=self.dict_pname_to_scaleandunweighted['sin'][0],
             flag_unweighted=self.dict_pname_to_scaleandunweighted['sin'][1]
         ).sample().to(device) # [num_cell, dim_s]
-        # #TODO: add description of `evaluate_layered` with x and edge_index signatures.
-        #TODO: assert the evalu_layered function and args.
 
 
         if not self.flag_use_int_u:
@@ -432,12 +435,6 @@ class InFlowGenerativeModel(nn.Module):
                 ).sample().to(device)  # [num_cell, dim_z]
 
 
-        '''
-        recall the output from neuralODE module is as follows
-        - output[0]: is the t_range.
-        - output[1]: is of shape [len(t_range), N, D].
-        '''
-
         # TODO: is the below part needed?
         '''
         OLD: no conddist on the output of neural ODE
@@ -453,13 +450,15 @@ class InFlowGenerativeModel(nn.Module):
         ).sample().to(device)  # [num_cell, dim_z+dim_s]
         '''
 
-        output_neuralODE = utils.func_feed_x_to_neuralODEmodule(
-            module_input=self.module_flow,
-            x=torch.cat([z, s_in], 1),
-            batch_size=batch_size_feedforward,
-            t_span=torch.linspace(0, 1, t_num_steps).to(device)
-        )  # [num_cell, dim_z+dim_s]
-        # TODO:backtrace the flow module is totally changed, so here must be changed.
+        output_neuralODE = self.module_flow(
+            t_in=torch.linspace(0, 1, t_num_steps).to(device),
+            x_in=torch.cat(
+                [z, s_in],
+                1
+            ),
+            ten_BatchEmb_in=ten_BatchEmb_in
+        )
+
 
         xbar_int = probutils.ExtenededNormal(
             loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
@@ -474,38 +473,18 @@ class InFlowGenerativeModel(nn.Module):
         ).sample().to(device)  # [num_cells, dim_s]
 
 
-
-        #feed to NegativeBinomial distributions ===
-        assert len(np_size_factor.shape) == 1
-        assert np_size_factor.shape[0] == xbar_spl.size()[0]
-        x_int = ZeroInflatedNegativeBinomial(
-            **{**{'mu': utils.func_feed_x_to_module(
-                    module_input=self.module_w_dec_int,
-                    x=xbar_int,
-                    batch_size=batch_size_feedforward) * torch.tensor(np_size_factor, device=device, requires_grad=False).unsqueeze(1),
-                  'theta':torch.exp(self.theta_negbin_int)},
-                **self.kwargs_negbin_int}
-        ).sample() #[num_cells, num_genes]
-        x_spl = ZeroInflatedNegativeBinomial(
-            **{**{'mu': utils.func_feed_x_to_module(
-                    module_input=self.module_w_dec_spl,
-                    x=xbar_spl,
-                    batch_size=batch_size_feedforward) * torch.tensor(np_size_factor, device=device, requires_grad=False).unsqueeze(1),
-                  'theta':torch.exp(self.theta_negbin_spl)},
-                **self.kwargs_negbin_spl}
-        ).sample()  # [num_cells, num_genes]
-
-        #generate x ===
-        x = x_int + x_spl  # [num_cells, num_genes]
-        '''
-        OLD: during sample generation x=x_int + x_spl deterministically. Because otherwise x would contain continuous values.
-        x = probutils.ExtenededNormal(
-            loc=x_int+x_spl,
-            scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_sum'])),
-            flag_unweighted=True
-        ).sample()  # [num_cells, num_genes]
-        '''
-
+        # get the sotfmax mean values for Xint and Xspl ===
+        x_int_softmax = utils.func_feed_x_to_module(
+            module_input=self.module_w_dec_int,
+            x=xbar_int,
+            batch_size=batch_size_feedforward
+        )
+        x_spl_softmax = utils.func_feed_x_to_module(
+            module_input=self.module_w_dec_spl,
+            x=xbar_spl,
+            batch_size=batch_size_feedforward
+        )
+        
         dict_toret = dict(
             ten_u_int=ten_u_int,
             ten_u_spl=ten_u_spl,
@@ -514,9 +493,8 @@ class InFlowGenerativeModel(nn.Module):
             z=z,
             xbar_int=xbar_int,
             xbar_spl=xbar_spl,
-            x_int=x_int,
-            x_spl=x_spl,
-            x=x
+            x_int_softmax=x_int_softmax,
+            x_spl_softmax=x_spl_softmax
         )
         return dict_toret
 
