@@ -476,12 +476,18 @@ class InFlowGenerativeModel(nn.Module):
         # get the sotfmax mean values for Xint and Xspl ===
         x_int_softmax = utils.func_feed_x_to_module(
             module_input=self.module_w_dec_int,
-            x=xbar_int,
+            x=torch.cat(
+                [ten_BatchEmb_in, xbar_int],
+                1
+            ),
             batch_size=batch_size_feedforward
         )
         x_spl_softmax = utils.func_feed_x_to_module(
             module_input=self.module_w_dec_spl,
-            x=xbar_spl,
+            x=torch.cat(
+                [ten_BatchEmb_in, xbar_spl],
+                1
+            ),
             batch_size=batch_size_feedforward
         )
 
