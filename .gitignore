@@ -30,3 +30,6 @@ __pycache__/
 # IDEs
 /.idea/
 /.vscode/
+
+# Data
+data/

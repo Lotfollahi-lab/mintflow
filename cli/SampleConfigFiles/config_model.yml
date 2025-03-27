@@ -62,13 +62,13 @@ args_list_adjmatloss: ""
 # Variable names can be chosen from: z, s_in, s_out, xbar_int, xbar_spl, x_int, and x_spl.
 
 
-CTNCC_usage_moduledisent: "{'CT':inflow.modules.gnn_disentangler.ArchInsertionPoint.NONE, 'NCC':inflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO:TUNE  TODO:internalcheck
+CTNCC_usage_moduledisent: "{'CT':inigen.modules.gnn_disentangler.ArchInsertionPoint.NONE, 'NCC':inigen.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO:TUNE  TODO:internalcheck
 # Specifies how CT (i.e. cell type) and NCC (neighbourhood cell type composition) are fed to the disentangler module, i.e. the encoder for x --> [x_int, x_spl]
 # Different assignable values to each of the `CT` and `NCC` keys
-#     - inflow.modules.gnn_disentangler.ArchInsertionPoint.NONE: `CT` or `NCC` not fed to the disentangler module
-#     - inflow.modules.gnn_disentangler.ArchInsertionPoint.BACKBONE: `CT` or `NCC` is fed to GNN backbone.
-#     - inflow.modules.gnn_disentangler.ArchInsertionPoint.HEADINT: `CT` or `NCC` is fed to the intrinsic output head.
-#     - inflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL: `CT` or `NCC` is fed to the spatial output head.
+#     - inigen.modules.gnn_disentangler.ArchInsertionPoint.NONE: `CT` or `NCC` not fed to the disentangler module
+#     - inigen.modules.gnn_disentangler.ArchInsertionPoint.BACKBONE: `CT` or `NCC` is fed to GNN backbone.
+#     - inigen.modules.gnn_disentangler.ArchInsertionPoint.HEADINT: `CT` or `NCC` is fed to the intrinsic output head.
+#     - inigen.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL: `CT` or `NCC` is fed to the spatial output head.
 
 
 dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_spl#0.0#True&varphi_enc_int#0.0#True&varphi_enc_spl#0.0#True&z#0.0#True&sin#0.0#True&sout#0.0#True"
@@ -97,8 +97,8 @@ flag_enable_batchtoken_disentangler: 'True'
 
 
 
-coef_flowmatchingloss: 0.0  # TODO:TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
-flowmatching_mode_samplex0: 'ModeSampleX0.FROMINFLOW'
+coef_flowmatchingloss: 0.0  # TODO:TUNE, if one uses inigen only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
+flowmatching_mode_samplex0: 'ModeSampleX0.FROMINIGEN'
 flowmatching_mode_minibatchper: 'ModeMinibatchPerm.RANDOM'
 flowmatching_mode_timesched: 'ModeTimeSched.UNIFORM'
 flowmatching_sigma: 0.01

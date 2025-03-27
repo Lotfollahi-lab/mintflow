@@ -1,0 +1,4 @@
+file_config_data_test: YOUR_CONFIG_DATA_TEST.yml
+file_config_data_train: YOUR_CONFIG_DATA_TRAIN.yml
+file_config_model: YOUR_CONFIG_MODEL.yml
+file_config_training: YOUR_CONFIG_TRAINING.yml

@@ -3,53 +3,87 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [project]
-name = "celldino"
+name = "inigen"
 version = "0.0.1"
-description = "Cellular decomposition of intrinsic and neighborhood-induced omic variation"
+description = "Intrinsic and neighborhood-induced gene expression generation"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10,<3.12"
 license = {file = "LICENSE"}
 authors = [
+    {name = "Amir Hossein Hosseini Akbarnejad"},
     {name = "Sebastian Birk"},
 ]
 maintainers = [
+    {name = "Amir Hossein Hosseini Akbarnejad", email = "aa36@sanger.ac.uk"},
     {name = "Sebastian Birk", email = "sebastian.birk@outlook.com"},
 ]
-urls.Documentation = "https://celldino.readthedocs.io/"
-urls.Source = "https://github.com/sebastianbirk/celldino"
-urls.Home-page = "https://github.com/sebastianbirk/celldino"
+urls.Documentation = "https://inigen.readthedocs.io/"
+urls.Source = "https://github.com/Lotfollahi-lab/inigen"
+urls.Home-page = "https://github.com/Lotfollahi-lab/inigen"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
 dependencies = [
     "anndata",
-    # for debug logging (referenced from the issue template)
-    "session-info",
+    "scipy",
+    "pyyaml",
+    "scikit-learn",
+    "ipython",
+    "wandb",
+    "pillow",
+    "squidpy",
+    "torch",
+    "torch_geometric",
+    "torchdyn",
+    "torchcfm",
+    "gdown",
+    "scvi-tools",
+    "linformer_pytorch",
+    "scib-metrics",
+    #"torch-sparse",
 ]
-
-[project.optional-dependencies]
-dev = [
+optional-dependencies.dev = [
     "pre-commit",
     "twine>=4.0.2",
 ]
-doc = [
+optional-dependencies.docs = [
     "docutils>=0.8,!=0.18.*,!=0.19.*",
-    "sphinx>=4",
+    "sphinx>=4.1",
     "sphinx-book-theme>=1.0.0",
     "myst-nb",
+    "myst-parser",
     "sphinxcontrib-bibtex>=1.0.0",
     "sphinx-autodoc-typehints",
+    "sphinx_rtd_theme",
     "sphinxext-opengraph",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "sphinx-hoverxref",
     # For notebooks
     "ipykernel",
     "ipython",
-    "sphinx-copybutton",
     "pandas",
 ]
-test = [
+optional-dependencies.docsbuild = [
+    "inigen[docs]"
+]  # docs build dependencies
+optional-dependencies.tests = [
     "pytest",
     "coverage",
 ]
+optional-dependencies.tutorials = [
+    "jupyterlab",
+]
+all = ["inigen[dev,docs,tests,tutorials]"]
 
 [tool.coverage.run]
-source = ["celldino"]
+source = ["inigen"]
 omit = [
     "**/test_*.py",
 ]
