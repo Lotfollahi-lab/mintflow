@@ -1450,7 +1450,7 @@ if config_training['flag_finaleval_enable_alltissuecombined_eval']:
         if issparse(vects_sl['muxspl']):
             vects_sl['muxspl'] = vects_sl['muxspl'].toarray()  # TODO:implement visualizations directly for sparse Xspl.
 
-        list_predXspl.append(vects_sl['muxspl'])
+        list_predXspl.append(vects_sl['muxspl_before_sc_pp_normalize_total'])
 
         del vects_sl
         gc.collect()

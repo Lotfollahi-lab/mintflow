@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 from tqdm.autonotebook import tqdm
+from scipy.sparse import issparse
 
 
 def func_eqeq(a, b):
@@ -50,25 +51,37 @@ def vis(
     ]
     list_geneindex_inLR.sort()
 
+    np_X = adata_unnorm.X
+    if issparse(np_X):
+        np_X = np_X.toarray()
+
     for cnt_vertical_slice in tqdm(range(min_cnt_vertical_slice, max_cnt_vertical_slice), desc="Creating violin plots for tissue {}".format(idx_slplus1)):
 
         for nameop, op_eqorbiggerthaneq, func_operator in zip(['eq', 'biggerthaneq'], ['==', '>='], [func_eqeq, func_biggerthaneq]):
 
-            mask_inLR = func_operator(adata_unnorm.X.toarray()[:, list_geneindex_inLR], cnt_vertical_slice)
+            mask_inLR = func_operator(np_X[:, list_geneindex_inLR], cnt_vertical_slice)
 
-            mask_notinLR = func_operator(adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))], cnt_vertical_slice)
+            mask_notinLR = func_operator(np_X[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))], cnt_vertical_slice)
 
-            mask_all = func_operator(adata_unnorm.X.toarray(), cnt_vertical_slice)
+            mask_all = func_operator(np_X, cnt_vertical_slice)
 
 
             slice_pred_inLR = pred_Xspl_rownormcorrected[:, list_geneindex_inLR][mask_inLR].flatten()
             slice_pred_notinLR = pred_Xspl_rownormcorrected[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
 
+            # make the denumerators `denum_notinLRDB` and `denum_inLRDB`
+            if op_eqorbiggerthaneq == '==':
+                denum_notinLRDB = cnt_vertical_slice
+                denum_inLRDB = cnt_vertical_slice
+            else:
+                denum_notinLRDB = np_X[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()
+                denum_inLRDB = np_X[:, list_geneindex_inLR][mask_inLR].flatten()
+
             plt.figure()
             sns.violinplot(
                 data={
-                    'not in LR-DB': slice_pred_notinLR / ((cnt_vertical_slice + 0.0) if(op_eqorbiggerthaneq == '==') else adata_unnorm.X.toarray()[:, list(set(range(adata_unnorm.shape[1])) - set(list_geneindex_inLR))][mask_notinLR].flatten()),
-                    'in LR-DB': slice_pred_inLR / ((cnt_vertical_slice + 0.0) if(op_eqorbiggerthaneq == '==') else adata_unnorm.X.toarray()[:, list_geneindex_inLR][mask_inLR].flatten()),
+                    'not in LR-DB': slice_pred_notinLR / denum_notinLRDB,
+                    'in LR-DB': slice_pred_inLR / denum_inLRDB,
                 },
                 cut=0
             )
