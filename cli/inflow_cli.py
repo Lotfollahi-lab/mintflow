@@ -594,7 +594,8 @@ kwargs_genmodel = {
     'coef_zinb_spl_loglik': 1.0,
     'dict_config_batchtoken': {
         'flag_enable_batchtoken_flowmodule': config_model['flag_enable_batchtoken_flowmodule']
-    }
+    },
+    'method_ODE_solver':config_training['method_ODE_solver']
 }
 
 # create a list of `AdjMatPredLoss`-s ====

@@ -39,7 +39,8 @@ class InFlowGenerativeModel(nn.Module):
             flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
             coef_zinb_int_loglik: float,
             coef_zinb_spl_loglik: float,
-            dict_config_batchtoken: dict
+            dict_config_batchtoken: dict,
+            method_ODE_solver: str
     ):
         '''
 
@@ -75,8 +76,7 @@ class InFlowGenerativeModel(nn.Module):
             - flag_enable_batchtoken_flowmodule: whether the flow part of decoder is conditioned on batch token.
             - TODO: maybe add more?
         :param TODO:complete
-
-
+        :param method_ODE_solver: The ODE solver, i.e. the `method` argument passed to the function `torchdiffeq.odeint`.
         '''
         super(InFlowGenerativeModel, self).__init__()
         #grab args ===
@@ -95,6 +95,7 @@ class InFlowGenerativeModel(nn.Module):
         self.coef_zinb_int_loglik = coef_zinb_int_loglik
         self.coef_zinb_spl_loglik = coef_zinb_spl_loglik
         self.dict_config_batchtoken = dict_config_batchtoken
+        self.method_ODE_solver = method_ODE_solver
 
         assert self.coef_zinb_int_loglik == 1.0, "coef_zinb_int_loglik has to be 1.0, since that's handled by annealing now."
         assert self.coef_zinb_spl_loglik == 1.0, "coef_zinb_spl_loglik has to be 1.0, since that's handled by annealing now."
@@ -124,7 +125,7 @@ class InFlowGenerativeModel(nn.Module):
             kwargs_odeint={
                 'atol':1e-4,
                 'rtol':1e-4,
-                'method':"dopri5"
+                'method':self.method_ODE_solver
             }
         )
         # torch_wrapper is not needed:
