@@ -1,4 +1,4 @@
-<img src="https://github.com/Lotfollahi-lab/mintflow/blob/main/docs/_static/mintflow_logo_readme.png" width="800" alt="mintflow-logo">
+<img src="https://github.com/Lotfollahi-lab/mintflow/blob/main/docs/_static/mintflow_logo_readme.png" width="400" alt="mintflow-logo">
 
 [![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://github.com/Lotfollahi-lab/mintflow/blob/main/LICENSE)
 [![Stars](https://img.shields.io/github/stars/Lotfollahi-lab/mintflow?logo=GitHub&color=yellow)](https://github.com/Lotfollahi-lab/mintflow/stargazers)
