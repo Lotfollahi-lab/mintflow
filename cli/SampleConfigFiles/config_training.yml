@@ -69,3 +69,7 @@ flag_finaleval_createanndata_alltissuescombined: "True"  # TODO:check
 #   - adata_inflowOutput_unnorm: the anndata "before" applying `sc.pp.normalize_total` where `adata.X` is not row normalised --> inflow predictions `Xint` and `Xspl` sum up to the unnormalised version of `adata.X`.
 #   - adata_inflowOutput_norm: the anndata "after" applying `sc.pp.normalize_total` where `adata.X` is row normalised --> inflow predictions `Xint` and `Xspl` sum up to the normalised version of `adata.X`.
 
+
+method_ODE_solver: "dopri5"
+# The ODE solver, i.e. the `method` argument passed to the function `torchdiffeq.odeint`.
+# TODO: report the effect on running time.

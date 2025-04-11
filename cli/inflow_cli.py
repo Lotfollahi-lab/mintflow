@@ -594,7 +594,8 @@ kwargs_genmodel = {
     'coef_zinb_spl_loglik': 1.0,
     'dict_config_batchtoken': {
         'flag_enable_batchtoken_flowmodule': config_model['flag_enable_batchtoken_flowmodule']
-    }
+    },
+    'method_ODE_solver':config_training['method_ODE_solver']
 }
 
 # create a list of `AdjMatPredLoss`-s ====
@@ -1450,7 +1451,7 @@ if config_training['flag_finaleval_enable_alltissuecombined_eval']:
         if issparse(vects_sl['muxspl']):
             vects_sl['muxspl'] = vects_sl['muxspl'].toarray()  # TODO:implement visualizations directly for sparse Xspl.
 
-        list_predXspl.append(vects_sl['muxspl'])
+        list_predXspl.append(vects_sl['muxspl_before_sc_pp_normalize_total'])
 
         del vects_sl
         gc.collect()

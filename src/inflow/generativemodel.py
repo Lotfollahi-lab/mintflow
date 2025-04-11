@@ -39,7 +39,8 @@ class InFlowGenerativeModel(nn.Module):
             flag_use_spl_u: bool, module_spl_mu_u: nn.Module | None, module_spl_cov_u: mlp.SimpleMLPandExp | None,
             coef_zinb_int_loglik: float,
             coef_zinb_spl_loglik: float,
-            dict_config_batchtoken: dict
+            dict_config_batchtoken: dict,
+            method_ODE_solver: str
     ):
         '''
 
@@ -75,8 +76,7 @@ class InFlowGenerativeModel(nn.Module):
             - flag_enable_batchtoken_flowmodule: whether the flow part of decoder is conditioned on batch token.
             - TODO: maybe add more?
         :param TODO:complete
-
-
+        :param method_ODE_solver: The ODE solver, i.e. the `method` argument passed to the function `torchdiffeq.odeint`.
         '''
         super(InFlowGenerativeModel, self).__init__()
         #grab args ===
@@ -95,6 +95,7 @@ class InFlowGenerativeModel(nn.Module):
         self.coef_zinb_int_loglik = coef_zinb_int_loglik
         self.coef_zinb_spl_loglik = coef_zinb_spl_loglik
         self.dict_config_batchtoken = dict_config_batchtoken
+        self.method_ODE_solver = method_ODE_solver
 
         assert self.coef_zinb_int_loglik == 1.0, "coef_zinb_int_loglik has to be 1.0, since that's handled by annealing now."
         assert self.coef_zinb_spl_loglik == 1.0, "coef_zinb_spl_loglik has to be 1.0, since that's handled by annealing now."
@@ -124,7 +125,7 @@ class InFlowGenerativeModel(nn.Module):
             kwargs_odeint={
                 'atol':1e-4,
                 'rtol':1e-4,
-                'method':"dopri5"
+                'method':self.method_ODE_solver
             }
         )
         # torch_wrapper is not needed:
@@ -501,6 +502,216 @@ class InFlowGenerativeModel(nn.Module):
             xbar_spl=xbar_spl,
             x_int_softmax=x_int_softmax,
             x_spl_softmax=x_spl_softmax
+        )
+        return dict_toret
+
+    @torch.no_grad()
+    def sample_withZINB(
+        self,
+        edge_index,
+        t_num_steps: int,
+        device,
+        batch_size_feedforward,
+        kwargs_dl_neighbourloader,
+        ten_CT: torch.Tensor,
+        ten_BatchEmb_in: torch.Tensor,
+        sizefactor_int: np.ndarray | None,
+        sizefactor_spl: np.ndarray | None
+    ):
+        """
+        Unlike `sample` that returns only the ZINB means (after softmax), this function generates/returns
+        a sample from ZINB dist.
+        :param edge_index:
+        :param t_num_steps:
+        :param device:
+        :param batch_size_feedforward:
+        :param kwargs_dl_neighbourloader:
+        :param ten_CT:s
+        :param ten_BatchEmb_in:
+        :param np_size_factor:
+        :param sizefactor_int
+        :param sizefactor_spl
+        :return:
+        """
+        ten_u_int = (ten_CT + 0) if (self.flag_use_int_u) else None
+        ten_u_spl = (ten_CT + 0) if (self.flag_use_spl_u) else None
+
+        if pyg.utils.contains_self_loops(edge_index):
+            raise Exception(
+                "The provided graph contains seelf loops. Please ensure it doesn't have them and try again."
+            )
+
+        if not torch.all(
+            torch.eq(
+                torch.tensor(edge_index),
+                pyg.utils.to_undirected(edge_index)
+            )
+        ):
+            raise Exception(
+                "The provided graph may contain seelf loops? If so, please ensure it doesn't have them and try again."
+            )
+
+        if self.flag_use_int_u:
+            assert (ten_u_int is not None)
+            assert (isinstance(ten_u_int, torch.Tensor))
+        else:
+            assert (ten_u_int is None)
+
+        if self.flag_use_spl_u:
+            assert (ten_u_spl is not None)
+            assert (isinstance(ten_u_spl, torch.Tensor))
+        else:
+            assert (ten_u_spl is None)
+
+        if not self.flag_use_spl_u:
+            s_out = probutils.ExtenededNormal(
+                loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
+                scale=self.dict_pname_to_scaleandunweighted['sout'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
+            ).sample().to(device)  # [num_cell, dim_s]
+        else:
+            spl_cov_u = self.module_spl_cov_u(ten_u_spl)
+
+            if isinstance(spl_cov_u, float):  # the case where the covariance is set to, e.g. 0.0 --> ExtendedNormal
+                s_out = probutils.ExtenededNormal(
+                    loc=self.module_spl_mu_u(ten_u_spl),
+                    scale=np.sqrt(spl_cov_u),
+                    flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
+                ).sample().to(device)  # [num_cell, dim_s]
+            else:  # covariance is of the same shape as mu --> Normal
+                assert (isinstance(spl_cov_u, torch.Tensor))
+                s_out = probutils.Normal(
+                    loc=self.module_spl_mu_u(ten_u_spl),
+                    scale=spl_cov_u.sqrt()
+                ).sample().to(device)  # [num_cell, dim_s]
+
+        s_in = probutils.ExtenededNormal(
+            loc=self.module_theta_aggr.evaluate_layered(
+                x=s_out,
+                edge_index=edge_index,
+                kwargs_dl=kwargs_dl_neighbourloader
+            ),
+            scale=self.dict_pname_to_scaleandunweighted['sin'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['sin'][1]
+        ).sample().to(device)  # [num_cell, dim_s]
+
+        if not self.flag_use_int_u:
+            z = probutils.ExtenededNormal(
+                loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
+                scale=self.dict_pname_to_scaleandunweighted['z'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
+            ).sample().to(device)  # [num_cell, dim_z]
+        else:
+            int_cov_u = self.module_int_cov_u(ten_u_int)
+
+            if isinstance(int_cov_u, float):  # the case where int_cov_u is set to, e.g., 0.0 --> ExtendedNormal
+                z = probutils.ExtenededNormal(
+                    loc=self.module_int_mu_u(ten_u_int),
+                    scale=np.sqrt(int_cov_u),
+                    flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
+                ).sample().to(device)  # [num_cell, dim_z]
+            else:  # int_cov_u is like the iVAE paper --> Normal
+                z = probutils.Normal(
+                    loc=self.module_int_mu_u(ten_u_int),
+                    scale=int_cov_u.sqrt()
+                ).sample().to(device)  # [num_cell, dim_z]
+
+        # TODO: is the below part needed?
+        '''
+        OLD: no conddist on the output of neural ODE
+        output_neuralODE = probutils.ExtenededNormal(
+            loc=utils.func_feed_x_to_neuralODEmodule(
+                module_input=self.module_flow,
+                x=torch.cat([z, s_in], 1),
+                batch_size=batch_size_feedforward,
+                t_span=torch.linspace(0, 1, t_num_steps).to(device)
+            ),
+            scale=torch.sqrt(torch.tensor(self.dict_sigma2s['sigma2_neuralODE'])),
+            flag_unweighted=True
+        ).sample().to(device)  # [num_cell, dim_z+dim_s]
+        '''
+
+        output_neuralODE = self.module_flow(
+            t_in=torch.linspace(0, 1, t_num_steps).to(device),
+            x_in=torch.cat(
+                [z, s_in],
+                1
+            ),
+            ten_BatchEmb_in=ten_BatchEmb_in
+        )
+
+        xbar_int = probutils.ExtenededNormal(
+            loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
+            scale=self.dict_pname_to_scaleandunweighted['xbar_int'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_int'][1]
+        ).sample().to(device)  # [num_cells, dim_z]
+
+        xbar_spl = probutils.ExtenededNormal(
+            loc=output_neuralODE[:, self.dict_varname_to_dim['z']::],
+            scale=self.dict_pname_to_scaleandunweighted['xbar_spl'][0],
+            flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_spl'][1]
+        ).sample().to(device)  # [num_cells, dim_s]
+
+        # get the sotfmax mean values for Xint and Xspl ===
+        x_int_softmax = utils.func_feed_x_to_module(
+            module_input=self.module_w_dec_int,
+            x=torch.cat(
+                [ten_BatchEmb_in, xbar_int],
+                1
+            ),
+            batch_size=batch_size_feedforward
+        )
+        x_spl_softmax = utils.func_feed_x_to_module(
+            module_input=self.module_w_dec_spl,
+            x=torch.cat(
+                [ten_BatchEmb_in, xbar_spl],
+                1
+            ),
+            batch_size=batch_size_feedforward
+        )
+
+        # generate from ZINB
+        if sizefactor_int is not None:
+            assert isinstance(sizefactor_int, np.ndarray)
+            assert len(sizefactor_int.shape) == 1
+            assert sizefactor_int.shape[0] == x_int_softmax.shape[0]
+
+        if sizefactor_spl is not None:
+            assert isinstance(sizefactor_spl, np.ndarray)
+            assert len(sizefactor_spl.shape) == 1
+            assert sizefactor_spl.shape[0] == x_int_softmax.shape[0]
+
+        if sizefactor_int is not None:
+            x_int = ZeroInflatedNegativeBinomial(
+                **{**{'mu': x_int_softmax * torch.tensor(sizefactor_int).unsqueeze(-1).to(x_int_softmax.device),
+                      'theta': torch.exp(self.theta_negbin_int)},
+                   **self.kwargs_negbin_int}
+            ).sample()
+        else:
+            x_int = None
+
+        if sizefactor_spl is not None:
+            x_spl = ZeroInflatedNegativeBinomial(
+                **{**{'mu': x_spl_softmax * torch.tensor(sizefactor_spl).unsqueeze(-1).to(x_int_softmax.device),
+                      'theta': torch.exp(self.theta_negbin_spl)},
+                   **self.kwargs_negbin_spl}
+            ).sample()
+        else:
+            x_spl = None
+
+
+        dict_toret = dict(
+            ten_u_int=ten_u_int,
+            ten_u_spl=ten_u_spl,
+            s_out=s_out,
+            s_in=s_in,
+            z=z,
+            xbar_int=xbar_int,
+            xbar_spl=xbar_spl,
+            x_int_softmax=x_int_softmax,
+            x_spl_softmax=x_spl_softmax,
+            x_int=x_int,
+            x_spl=x_spl
         )
         return dict_toret
 
