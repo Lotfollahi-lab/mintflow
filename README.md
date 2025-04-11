@@ -1,13 +1,14 @@
-# MintFlow
+<img src="https://github.com/Lotfollahi-lab/mintflow/blob/main/docs/_static/mintflow_logo_readme.png" width="800" alt="mintflow-logo">
 
-[![Tests][badge-tests]][link-tests]
-[![Documentation][badge-docs]][link-docs]
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://github.com/Lotfollahi-lab/mintflow/blob/main/LICENSE)
+[![Stars](https://img.shields.io/github/stars/Lotfollahi-lab/mintflow?logo=GitHub&color=yellow)](https://github.com/Lotfollahi-lab/mintflow/stargazers)
+[![PyPI](https://img.shields.io/pypi/v/mintflow.svg)](https://pypi.org/project/mintflow)
+[![PyPIDownloads](https://static.pepy.tech/badge/mintflow)](https://pepy.tech/project/mintflow)
+[![Docs](https://readthedocs.org/projects/mintflow/badge/?version=latest)](https://mintflow.readthedocs.io/en/stable/?badge=stable)
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![PyPI](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-[badge-tests]: https://img.shields.io/github/actions/workflow/status/sebastianbirk/mintflow/test.yaml?branch=main
-[link-tests]: https://github.com/sebastianbirk/mintflow/actions/workflows/test.yml
-[badge-docs]: https://img.shields.io/readthedocs/mintflow
-
-Microenvironment-induced and INtrinsic Transcriptomic FLOWs
+MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to decompose spatial transcriptomics data into microenvironment-induced and intrinsic gene expression components. It interoperates with the scverse ecosystem [scverse](https://scverse.org/) to enable seamless analysis workflows of spatial transcriptomics data to identify spatial biomarkers. 
 
 ## Installing the Python Environment
  **SANGER INTERNAL**: The environment is already available on farm.
