@@ -3,9 +3,9 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [project]
-name = "inigen"
+name = "mintflow"
 version = "0.0.1"
-description = "Intrinsic and neighborhood-induced gene expression generation"
+description = "Microenvironment-induced and INtrinsic Transcriptomic FLOWs"
 readme = "README.md"
 requires-python = ">=3.10,<3.12"
 license = {file = "LICENSE"}
@@ -17,9 +17,9 @@ maintainers = [
     {name = "Amir Hossein Hosseini Akbarnejad", email = "aa36@sanger.ac.uk"},
     {name = "Sebastian Birk", email = "sebastian.birk@outlook.com"},
 ]
-urls.Documentation = "https://inigen.readthedocs.io/"
-urls.Source = "https://github.com/Lotfollahi-lab/inigen"
-urls.Home-page = "https://github.com/Lotfollahi-lab/inigen"
+urls.Documentation = "https://mintflow.readthedocs.io/"
+urls.Source = "https://github.com/Lotfollahi-lab/mintflow"
+urls.Home-page = "https://github.com/Lotfollahi-lab/mintflow"
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Science/Research",
@@ -71,7 +71,7 @@ optional-dependencies.docs = [
     "pandas",
 ]
 optional-dependencies.docsbuild = [
-    "inigen[docs]"
+    "mintflow[docs]"
 ]  # docs build dependencies
 optional-dependencies.tests = [
     "pytest",
@@ -80,10 +80,10 @@ optional-dependencies.tests = [
 optional-dependencies.tutorials = [
     "jupyterlab",
 ]
-all = ["inigen[dev,docs,tests,tutorials]"]
+all = ["mintflow[dev,docs,tests,tutorials]"]
 
 [tool.coverage.run]
-source = ["inigen"]
+source = ["mintflow"]
 omit = [
     "**/test_*.py",
 ]
