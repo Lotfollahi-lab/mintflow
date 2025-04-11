@@ -1,9 +1,9 @@
 # API
 
-Import Inigen as:
+Import MintFlow as:
 
 ```
-import inigen
+import mintflow
 ```
 
 ```{toctree}

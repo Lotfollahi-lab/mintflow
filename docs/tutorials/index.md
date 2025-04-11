@@ -1,6 +1,6 @@
 # Tutorials
 
-Get started with Inigen by following our tutorials.
+Get started with MintFlow by following our tutorials.
 
 ```{toctree}
 :maxdepth: 2

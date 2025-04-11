@@ -1,4 +1,4 @@
-name: inigen
+name: mintflow
 channels:
   - conda-forge
 dependencies:

@@ -4,8 +4,8 @@ The testing tissues, so one can inspect them.
 ```python
 import os, sys
 import torch
-import inflow
-import inflow.utils_multislice
+import mintflow
+import mintflow.utils_multislice
 
 
 tissue = torch.load(
@@ -17,7 +17,7 @@ tissue = torch.load(
     map_location='cpu'
 )
 
-# now `tissue` is an instance of `inflow.utils_multislice.Slice`.
+# now `tissue` is an instance of `mintflow.utils_multislice.Slice`.
 # You can access different fields like `tissue.adata` and `tissue.adata_before_scppnormalize_total`
 ```
 
