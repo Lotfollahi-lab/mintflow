@@ -20,8 +20,8 @@ conda activate /nfs/team361/aa36/PythonEnvs_2/envinflowdec27/
 
 Alternatively, you can create the python environment yourself:
 ```commandline
-git clone https://github.com/Lotfollahi-lab/inflow.git  # clone the repo
-cd ./inflow/
+git clone https://github.com/Lotfollahi-lab/mintflow.git  # clone the repo
+cd ./mintflow/
 conda env create -f environment.yml --prefix SOME_EMPTY_PATH
 ```
 
@@ -30,24 +30,24 @@ It's highly recommended to setup wandb before proceeding.
 
 To do so:
 - Go to https://wandb.ai/ and create an account.
-- Create a project called "inFlow".
+- Create a project called "MintFlow".
 
 ## Quick Start
-You can use inflow as a local package, because it's not pip installable at the moment.
+You can use mintflow as a local package, because it's not pip installable at the moment.
 
 To do so:
 ```commandline
-git clone https://github.com/Lotfollahi-lab/inflow.git  # clone the repo
-cd ./inflow/
+git clone https://github.com/Lotfollahi-lab/mintflow.git  # clone the repo
+cd ./mintflow/
 ```
-The easiest way to run inflow is through the command line interface (CLI).
+The easiest way to run MintFlow is through the command line interface (CLI).
 This involves two steps
 1. Creating four config files (you duplicate/modify template config files).
-2. Running inflow with a single command line.
+2. Running mintflow with a single command line.
 
 ### Rule of thumbs §1 for modifying the config files
 In the template config files, there are `TODO`-s of different types that you may need to modify
-- Category 1: `TODO:ESSENTIAL:TUNE`: the basic/essential parts to run inflow.
+- Category 1: `TODO:ESSENTIAL:TUNE`: the basic/essential parts to run mintflow.
 - Category 2: `TODO:TUNE`: less essneitial and/or technical details.
 - Category 3: `TODO:check`: parameters of even less importance compared to category 1 and category 2.
 
@@ -58,7 +58,7 @@ If you are, for example, a biologist with no interest/experience in computationa
 Please follow these steps
 - Training data config file:
     - Make a copy of `./cli/SampleConfigFiles/config_data_train.yml` and rename it to `YOUR_CONFIG_DATA_TRAIN.yml`
-    - Read the block of comments tarting with *"# Inflow expects a list of .h5ad files stored on disk, ..."*.
+    - Read the block of comments tarting with *"# MintFlow expects a list of .h5ad files stored on disk, ..."*.
     - Modify some parts marked by `TODO:...` and according to *"Rule of thumbs §1"* explained above.
 
 
@@ -76,13 +76,13 @@ Please follow these steps
     - Make a copy of `./cli/SampleConfigFiles/config_training.yml` and rename it to `YOUR_CONFIG_TRAINING.yml`.
     - Modify some parts marked by `TODO:...` and according to *"Rule of thumbs §1"* explained above.
 
-### Step 2 of Using the CLI: Running inflow
+### Step 2 of Using the CLI: Running MintFlow
 
 ```commandline
-cd ./inflow/  # if you haven't already done it above.
+cd ./mintflow/  # if you haven't already done it above.
 cd ./cli/
 
-python inflow_cli.py \
+python mintflow_cli.py \
 --file_config_data_train YOUR_CONFIG_DATA_TRAIN.yml \
 --file_config_data_test YOUR_CONFIG_DATA_TEST.yml \
 --file_config_model YOUR_CONFIG_MODEL.yml \
@@ -90,15 +90,15 @@ python inflow_cli.py \
 --path_output "./Your/Output/Path/ToDump/Results/" \
 --flag_verbose "True" \
 ```
-The recommended way of accessing inflow predictions is by `adata_inflowOutput_norm.h5ad` and `adata_inflowOutput_unnorm.h5ad` created in the provided `--path_output`and `adata.obsm` and `adata.uns` in these files.
-In the former file `..._norm.h5ad` the readcount matrix `adata.X` as well as inflow predictions Xint and Xspl are row normalised, while in the latter file `_unnorm.h5ad` they are not.
+The recommended way of accessing MintFlow predictions is by `adata_mintflowOutput_norm.h5ad` and `adata_mintflowOutput_unnorm.h5ad` created in the provided `--path_output`and `adata.obsm` and `adata.uns` in these files.
+In the former file `..._norm.h5ad` the readcount matrix `adata.X` as well as MintFlow predictions Xint and Xspl are row normalised, while in the latter file `_unnorm.h5ad` they are not.
 
-Inflow dumps a README file in the provided `--path_output`, as well as each subfolder therein.
+MintFlow dumps a README file in the provided `--path_output`, as well as each subfolder therein.
 
 ## Common Issues
-- Use absolute paths (and not relative paths like `../../some/path/`) in the config files, as well as when running `python inflow_cli.py ...`.
+- Use absolute paths (and not relative paths like `../../some/path/`) in the config files, as well as when running `python mintflow_cli.py ...`.
 - TODO: intro to the script for tune window width.
-- It's common to face out of memory issue in the very last step where the big anndata objects `adata_inflowOutput_norm.h5ad` and `adata_inflowOutput_unnorm.h5ad` are created and dumped.
+- It's common to face out of memory issue in the very last step where the big anndata objects `adata_mintflowOutput_norm.h5ad` and `adata_mintflowOutput_unnorm.h5ad` are created and dumped.
 If that step fails, the results are still accesible in the output path the subfolder `CheckpointAndPredictions/`.
 One can laod the `.pt` files by
 ```python
