@@ -8,7 +8,7 @@
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to decompose spatial transcriptomics data into microenvironment-induced and intrinsic gene expression components. It interoperates with the scverse ecosystem [scverse](https://scverse.org/) to enable seamless analysis workflows of spatial transcriptomics data to identify spatial biomarkers. 
+MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to decompose spatial transcriptomics data into microenvironment-induced and intrinsic gene expression components. It interoperates with the [scverse](https://scverse.org/) ecosystem to enable seamless analysis workflows of spatial transcriptomics data to identify spatial biomarkers. 
 
 ## Installing the Python Environment
  **SANGER INTERNAL**: The environment is already available on farm.
