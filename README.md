@@ -1,13 +1,13 @@
-# inflow
+# MintFlow
 
 [![Tests][badge-tests]][link-tests]
 [![Documentation][badge-docs]][link-docs]
 
-[badge-tests]: https://img.shields.io/github/actions/workflow/status/sebastianbirk/inflow/test.yaml?branch=main
-[link-tests]: https://github.com/sebastianbirk/inflow/actions/workflows/test.yml
-[badge-docs]: https://img.shields.io/readthedocs/inflow
+[badge-tests]: https://img.shields.io/github/actions/workflow/status/sebastianbirk/mintflow/test.yaml?branch=main
+[link-tests]: https://github.com/sebastianbirk/mintflow/actions/workflows/test.yml
+[badge-docs]: https://img.shields.io/readthedocs/mintflow
 
-Cellular decomposition of intrinsic and neighborhood-induced omic effects
+Microenvironment-induced and INtrinsic Transcriptomic FLOWs
 
 ## Installing the Python Environment
  **SANGER INTERNAL**: The environment is already available on farm.
