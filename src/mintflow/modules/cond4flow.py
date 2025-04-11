@@ -176,10 +176,10 @@ class Cond4FlowVarphi0(nn.Module):
         num_celltypes = self.kwargs_genmodel['dict_varname_to_dim']['cell-types']
 
         assert (
-            batch.y.size()[1] == (batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'])
+            batch.y.size()[1] == (batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'])
         )
-        ten_uz = batch.y[:, 0:batch.INIGENMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_int_u']) else None
-        ten_us = batch.y[:, batch.INIGENMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_spl_u']) else None
+        ten_uz = batch.y[:, 0:batch.MINTFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_int_u']) else None
+        ten_us = batch.y[:, batch.MINTFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.kwargs_genmodel['flag_use_spl_u']) else None
 
 
         in_tf = self.module_em_spl(

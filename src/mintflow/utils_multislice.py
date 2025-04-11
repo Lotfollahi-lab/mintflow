@@ -196,8 +196,8 @@ class Slice:
 
         list_celltype_int = []
         for idx_row in range(self.adata.shape[0]):
-            str_ct = self.adata.obs['inigen_CT'].iloc[idx_row]
-            assert str_ct[0:len('inigenCT_')] == 'inigenCT_'
+            str_ct = self.adata.obs['mintflow_CT'].iloc[idx_row]
+            assert str_ct[0:len('mintflowCT_')] == 'mintflowCT_'
             list_celltype_int.append(
                 int(str_ct.split("_")[1])
             )
@@ -229,8 +229,8 @@ class Slice:
         # add `self.ten_BatchEmb`
         list_batchid_int = []
         for idx_row in range(self.adata.shape[0]):
-            str_batchid = self.adata.obs['inigen_BatchID'].iloc[idx_row]
-            assert str_batchid[0:len('inigen_BatchID_')] == 'inigen_BatchID_'
+            str_batchid = self.adata.obs['mintflow_BatchID'].iloc[idx_row]
+            assert str_batchid[0:len('mintflow_BatchID_')] == 'mintflow_BatchID_'
             list_batchid_int.append(
                 int(str_batchid.split("_")[2])
             )
@@ -350,10 +350,10 @@ class Slice:
             connectivity_key="spatial_connectivities",
             library_id='connectivities_key',  # 'connectivities_key',
             color=[
-                "inigen_CT",
+                "mintflow_CT",
             ],
             title=[
-                "inigen_CT \n ({})".format(self._get_batchid()),
+                "mintflow_CT \n ({})".format(self._get_batchid()),
             ],
             crop_coord=crop_coord,
             **self.kwargs_sq_pl_spatial_scatter
@@ -384,10 +384,10 @@ class Slice:
             connectivity_key="spatial_connectivities",
             library_id='connectivities_key',  # 'connectivities_key',
             color=[
-                "inigen_CT",
+                "mintflow_CT",
             ],
             title=[
-                "inigen_CT \n (sampleID: {}) \n (biological batch ID: {}".format(
+                "mintflow_CT \n (sampleID: {}) \n (biological batch ID: {}".format(
                     list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0],
                     self._get_batchid()
                 ),
@@ -527,9 +527,9 @@ class Slice:
 
 
 
-    def _add_inigenCTcol(self, dict_rename):
-        assert ("inigen_CT" not in self.adata.obs.columns)
-        self.adata.obs['inigen_CT'] = self.adata.obs[self.dict_obskey['cell_type']].map(dict_rename)
+    def _add_mintflowCTcol(self, dict_rename):
+        assert ("mintflow_CT" not in self.adata.obs.columns)
+        self.adata.obs['mintflow_CT'] = self.adata.obs[self.dict_obskey['cell_type']].map(dict_rename)
 
     def _add_spatial_neighbours(self):
         """
@@ -574,9 +574,9 @@ class Slice:
         return bid
 
 
-    def _add_inigenBatchIDcol(self, dict_rename):
-        assert ("inigen_BatchID" not in self.adata.obs.columns)
-        self.adata.obs['inigen_BatchID'] = self.adata.obs[self.dict_obskey['biological_batch_key']].map(dict_rename)
+    def _add_mintflowBatchIDcol(self, dict_rename):
+        assert ("mintflow_BatchID" not in self.adata.obs.columns)
+        self.adata.obs['mintflow_BatchID'] = self.adata.obs[self.dict_obskey['biological_batch_key']].map(dict_rename)
 
     def _check_args(self):
 
@@ -653,8 +653,8 @@ class ListSlice:
         self._check_args()
 
         # make internals
-        self._create_CTmapping_and_inigenCT()
-        self._create_Batchmapping_and_inigenBatchID()
+        self._create_CTmapping_and_mintflowCT()
+        self._create_Batchmapping_and_mintflowBatchID()
         self._create_neighgraphs()
         self._create_CT_NCC_BatchEmb_Vectors()
         self._add_pygds_pygdl()
@@ -677,10 +677,10 @@ class ListSlice:
         for sl in self.list_slice:
             sl._add_spatial_neighbours()
 
-    def _create_CTmapping_and_inigenCT(self):
+    def _create_CTmapping_and_mintflowCT(self):
         """
-        - Creates `self.map_CT_to_inigenCT`
-        - Adds `inigen_CT` (i.e. inigen cell type) column to each anndata in the list.
+        - Creates `self.map_CT_to_mintflowCT`
+        - Adds `mintflow_CT` (i.e. MintFlow cell type) column to each anndata in the list.
         :return:
         """
         # create the mapping
@@ -693,20 +693,20 @@ class ListSlice:
             set_all_CT = list(set(set_all_CT))
             set_all_CT.sort()
 
-            self.map_CT_to_inigenCT = {
-                ct:"inigenCT_{}".format(idx_ct)
+            self.map_CT_to_mintflowCT = {
+                ct:"mintflowCT_{}".format(idx_ct)
                 for idx_ct, ct in enumerate(set_all_CT)
             }
             input_set_global_num_CT = len(set_all_CT)
         else:
             # use the old mapping
-            self.map_CT_to_inigenCT = self.prev_list_slice_to_imitate.map_CT_to_inigenCT
-            input_set_global_num_CT = len(list(self.map_CT_to_inigenCT.keys()))
+            self.map_CT_to_mintflowCT = self.prev_list_slice_to_imitate.map_CT_to_mintflowCT
+            input_set_global_num_CT = len(list(self.map_CT_to_mintflowCT.keys()))
 
-        # add the column "inigen_CT"
+        # add the column "mintflow_CT"
         for sl in self.list_slice:
             sl : Slice
-            sl._add_inigenCTcol(self.map_CT_to_inigenCT)
+            sl._add_mintflowCTcol(self.map_CT_to_mintflowCT)
 
         # set the global number of CTs
         for sl in self.list_slice:
@@ -714,10 +714,10 @@ class ListSlice:
             sl._set_global_num_CT(input_set_global_num_CT)
 
 
-    def _create_Batchmapping_and_inigenBatchID(self):
+    def _create_Batchmapping_and_mintflowBatchID(self):
         """
-        - Creates `self.matp_Batchname_to_inigenBatchID`
-        - Adds `inigen_BatchID` (i.e. inigen batch ID) column to each anndata in the list.
+        - Creates `self.matp_Batchname_to_mintflowBatchID`
+        - Adds `mintflow_BatchID` (i.e. mintflow batch ID) column to each anndata in the list.
         :return:
         """
         if self.prev_list_slice_to_imitate is None:
@@ -731,20 +731,20 @@ class ListSlice:
                 if u not in set_all_BatchID:
                     set_all_BatchID.append(u)
 
-            self.map_Batchname_to_inigenBatchID = {
-                bid: "inigen_BatchID_{}".format(idx_bid)
+            self.map_Batchname_to_mintflowBatchID = {
+                bid: "mintflow_BatchID_{}".format(idx_bid)
                 for idx_bid, bid in enumerate(set_all_BatchID)
             }
 
             input_set_global_num_Batch = len(set_all_BatchID)
         else:
-            self.map_Batchname_to_inigenBatchID = self.prev_list_slice_to_imitate.map_Batchname_to_inigenBatchID
-            input_set_global_num_Batch = len(list(self.map_Batchname_to_inigenBatchID.keys()))
+            self.map_Batchname_to_mintflowBatchID = self.prev_list_slice_to_imitate.map_Batchname_to_mintflowBatchID
+            input_set_global_num_Batch = len(list(self.map_Batchname_to_mintflowBatchID.keys()))
 
-        # add the column "inigen_BatchID"
+        # add the column "mintflow_BatchID"
         for sl in self.list_slice:
             sl: Slice
-            sl._add_inigenBatchIDcol(self.map_Batchname_to_inigenBatchID)
+            sl._add_mintflowBatchIDcol(self.map_Batchname_to_mintflowBatchID)
 
         # set the global number of BatchIDs
         for sl in self.list_slice:

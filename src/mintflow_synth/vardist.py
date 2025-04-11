@@ -2,18 +2,18 @@
 import torch
 import torch.nn as nn
 from torch_geometric.loader import NeighborLoader
-from .generativemodel import InigenGenerativeModel
+from .generativemodel import MintFlowGenerativeModel
 from .modules.impanddisentgl import  ImputerAndDisentangler
 from .modules.cond4flow import Cond4FlowVarphi0
 from . import probutils
 
-class InigenVarDist(nn.Module):
+class MintFlowVarDist(nn.Module):
     '''
-    Variational distribution for inigen.
+    Variational distribution for MintFlow.
     '''
     def __init__(
             self,
-            module_genmodel:InigenGenerativeModel,
+            module_genmodel:MintFlowGenerativeModel,
             kwargs_impanddisentgl:dict,
             module_varphi_enc_int:nn.Module,
             module_varphi_enc_spl:nn.Module,
@@ -48,7 +48,7 @@ class InigenVarDist(nn.Module):
                 - sout: with keys scale, flag_unweighted
 
         '''
-        super(InigenVarDist, self).__init__()
+        super(MintFlowVarDist, self).__init__()
         # grab args ===
         self.module_genmodel = module_genmodel
         self.kwargs_impanddisentgl = kwargs_impanddisentgl

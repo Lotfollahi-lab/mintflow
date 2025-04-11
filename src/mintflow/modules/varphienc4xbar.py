@@ -56,11 +56,11 @@ class EncX2Xbar(nn.Module):
 
         if self.flag_enable_batchEmb:
             assert (
-                batch.y.size()[1] == (batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb'])
+                batch.y.size()[1] == (batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb'])
             )
             rng_batchEmb = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb']
             ]
             ten_batchEmb = batch.y[
                 :,

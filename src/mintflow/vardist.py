@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch_geometric.loader import NeighborLoader
-from .generativemodel import InigenGenerativeModel
+from .generativemodel import MintFlowGenerativeModel
 from .modules.impanddisentgl import ImputerAndDisentangler
 from .modules.disentonly import Disentangler
 from .modules.cond4flow import Cond4FlowVarphi0
@@ -29,13 +29,13 @@ import wandb
 from . import anneal_decoder_xintxspl
 
 
-class InigenVarDist(nn.Module):
+class MintFlowVarDist(nn.Module):
     '''
-    Variational distribution for inigen.
+    Variational distribution for MintFlow.
     '''
     def __init__(
             self,
-            module_genmodel:InigenGenerativeModel,
+            module_genmodel:MintFlowGenerativeModel,
             type_impanddisentgl,
             kwargs_impanddisentgl:dict,
             module_varphi_enc_int:nn.Module,
@@ -114,7 +114,7 @@ class InigenVarDist(nn.Module):
         :param str_modexbarsplNCCloss_regorcls:str
 
         '''
-        super(InigenVarDist, self).__init__()
+        super(MintFlowVarDist, self).__init__()
         # grab args ===
         self.module_genmodel = module_genmodel
         self.type_impanddisentgl = type_impanddisentgl
@@ -339,15 +339,15 @@ class InigenVarDist(nn.Module):
 
         #set ten_u_int and ten_u_spl ===
         assert (
-            batch.y.size()[1] == (batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']  + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb'])
+            batch.y.size()[1] == (batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']  + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb'])
         )
         ten_u_int = batch.y[
             :,
-            0:batch.INIGENMETAINF['dim_u_int']
+            0:batch.MINTFLOWMETAINF['dim_u_int']
         ].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_int_u) else None
         ten_u_spl = batch.y[
             :,
-            batch.INIGENMETAINF['dim_u_int']:batch.INIGENMETAINF['dim_u_int']+batch.INIGENMETAINF['dim_u_spl']
+            batch.MINTFLOWMETAINF['dim_u_int']:batch.MINTFLOWMETAINF['dim_u_int']+batch.MINTFLOWMETAINF['dim_u_spl']
         ].to(ten_xy_absolute.device) if(self.module_genmodel.flag_use_spl_u) else None
 
 
@@ -389,7 +389,7 @@ class InigenVarDist(nn.Module):
 
         else:
             raise NotImplementedError(
-                "The disentangler has to be an instance of inigen.modules.gnn_disentangler import GNNDisentangler"
+                "The disentangler has to be an instance of mintflow.modules.gnn_disentangler import GNNDisentangler"
             )
             # xint
             logq_xint = probutils.ExtenededNormal(
@@ -704,7 +704,7 @@ class InigenVarDist(nn.Module):
 
         pbar = tqdm(
             total=max([len(dl) for dl in list_dl]),
-            desc='Inigen training epoch'
+            desc='MintFlow training epoch'
         )
         pbar_idx_biggestDL = np.argmax([len(dl) for dl in list_dl])
         while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
@@ -735,7 +735,7 @@ class InigenVarDist(nn.Module):
                     step=itrcount_wandb
                 )
 
-            batch.INIGENMETAINF = {
+            batch.MINTFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
                 "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
                 "dim_CT":self.module_genmodel.dict_varname_to_dim['CT'],
@@ -847,8 +847,8 @@ class InigenVarDist(nn.Module):
             # add the flow-matching loss ===
             if coef_flowmatchingloss > 0.0:
                 rng_batchemb = [
-                    batch.INIGENMETAINF['dim_u_int']+batch.INIGENMETAINF['dim_u_spl']+batch.INIGENMETAINF['dim_CT']+batch.INIGENMETAINF['dim_NCC'],
-                    batch.INIGENMETAINF['dim_u_int']+batch.INIGENMETAINF['dim_u_spl']+batch.INIGENMETAINF['dim_CT']+batch.INIGENMETAINF['dim_NCC']+batch.INIGENMETAINF['dim_BatchEmb']
+                    batch.MINTFLOWMETAINF['dim_u_int']+batch.MINTFLOWMETAINF['dim_u_spl']+batch.MINTFLOWMETAINF['dim_CT']+batch.MINTFLOWMETAINF['dim_NCC'],
+                    batch.MINTFLOWMETAINF['dim_u_int']+batch.MINTFLOWMETAINF['dim_u_spl']+batch.MINTFLOWMETAINF['dim_CT']+batch.MINTFLOWMETAINF['dim_NCC']+batch.MINTFLOWMETAINF['dim_BatchEmb']
                 ]
 
                 fm_loss = self.module_conditionalflowmatcher.get_fmloss(
@@ -860,7 +860,7 @@ class InigenVarDist(nn.Module):
                     ],
                     1
                     ),
-                    x0_frominigen=torch.cat(
+                    x0_frommintflow=torch.cat(
                     [
                         dict_q_sample['z'][:batch.batch_size],
                         dict_q_sample['s_in'][:batch.batch_size]
@@ -884,8 +884,8 @@ class InigenVarDist(nn.Module):
             # add P1 loss ===
             if self.coef_P1loss > 0.0:
                 rng_CT = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
                 ]
                 P1loss = self.crit_P1loss(
                     self.module_classifier_P1loss(
@@ -908,8 +908,8 @@ class InigenVarDist(nn.Module):
             # add P3 loss ===
             if self.coef_P3loss > 0.0:
                 rng_NCC = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC']
                 ]
                 ten_NCC = batch.y[
                     :,
@@ -937,8 +937,8 @@ class InigenVarDist(nn.Module):
             # add xbarint-->CT loss ===
             if self.coef_xbarintCT_loss > 0.0:
                 rng_CT = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
                 ]
                 xbarint2CT_loss = self.crit_loss_xbarint2CT(
                     self.module_classifier_xbarintCT(
@@ -961,8 +961,8 @@ class InigenVarDist(nn.Module):
             # add xbarspl-->NCC loss ===
             if self.coef_xbarsplNCC_loss > 0.0:
                 rng_NCC = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC']
                 ]
                 ten_NCC = batch.y[
                     :batch.batch_size,
@@ -1123,13 +1123,13 @@ class InigenVarDist(nn.Module):
             # add xbarint-->notNCC loss ===
             if self.coef_xbarint2notNCC_loss > 0.0:
                 rng_CT = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
                 ]
 
                 rng_NCC = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC']
                 ]
 
                 ten_NCC = batch.y[
@@ -1167,13 +1167,13 @@ class InigenVarDist(nn.Module):
             # add Z-->notNCC loss ===
             if self.coef_z2notNCC_loss > 0.0:
                 rng_CT = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
                 ]
 
                 rng_NCC = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC']
                 ]
 
                 ten_NCC = batch.y[
@@ -1218,7 +1218,7 @@ class InigenVarDist(nn.Module):
                     iter_dl_2ndpygbatch = iter(list_dl[0])
                     batch_2ndpygbatch = next(iter_dl_2ndpygbatch)
 
-                batch_2ndpygbatch.INIGENMETAINF = batch.INIGENMETAINF
+                batch_2ndpygbatch.MINTFLOWMETAINF = batch.MINTFLOWMETAINF
 
                 dict_q_sample_2ndpygbatch = self.rsample(
                     batch=batch_2ndpygbatch,
@@ -1236,8 +1236,8 @@ class InigenVarDist(nn.Module):
                     )
 
                 rng_batchemb = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb']
                 ]
 
                 if flag_verbose:
@@ -1283,8 +1283,8 @@ class InigenVarDist(nn.Module):
                     )
 
                 rng_batchemb = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb']
                 ]
 
                 dict_xbarspl2notbatchID_loss = self.crit_loss_xbarspl2notbatchID(
@@ -1378,8 +1378,8 @@ class InigenVarDist(nn.Module):
             if (coef_loss_closeness_zz > 0.0) or (coef_loss_closeness_xbarintxbarint > 0.0) or (coef_loss_closeness_xintxint > 0.0):
                 # coef_loss_zzcloseness = coef_loss_closeness_zz_xbarintxbarint_xintxint + 0.0
                 rng_CT = [
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                    batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                    batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
                 ]
 
 
@@ -1514,7 +1514,7 @@ class InigenVarDist(nn.Module):
                         list_iter_dl_afterGRL[postGRL_index_dl] = iter(list_dl[postGRL_index_dl])
                         batch_afterGRLs = next(list_iter_dl_afterGRL[postGRL_index_dl])
 
-                    batch_afterGRLs.INIGENMETAINF = batch.INIGENMETAINF
+                    batch_afterGRLs.MINTFLOWMETAINF = batch.MINTFLOWMETAINF
 
                     # get a 2nd pygdl and q_samples for the below two losses
                     if (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0):
@@ -1524,7 +1524,7 @@ class InigenVarDist(nn.Module):
                             iter_dl_2ndpygbatch = iter(list_dl[0])
                             batch_2ndpygbatch_postGRL = next(iter_dl_2ndpygbatch)
 
-                        batch_2ndpygbatch_postGRL.INIGENMETAINF = batch.INIGENMETAINF
+                        batch_2ndpygbatch_postGRL.MINTFLOWMETAINF = batch.MINTFLOWMETAINF
                     else:
                         batch_2ndpygbatch_postGRL = None
 
@@ -1679,13 +1679,13 @@ class InigenVarDist(nn.Module):
         # Z 2 NotNCC ======================
         if self.coef_z2notNCC_loss > 0.0:
             rng_CT = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
             ]
 
             rng_NCC = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC']
             ]
 
             ten_NCC = batch.y[
@@ -1714,13 +1714,13 @@ class InigenVarDist(nn.Module):
         # xbarint 2 NotNCC ================
         if self.coef_xbarint2notNCC_loss > 0.0:
             rng_CT = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
             ]
 
             rng_NCC = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC']
             ]
             ten_NCC = batch.y[
                 :batch.batch_size,
@@ -1747,8 +1747,8 @@ class InigenVarDist(nn.Module):
         # add xbarint-->notBatchID loss ===
         if self.coef_xbarint2notbatchID_loss > 0.0:
             rng_batchemb = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb']
             ]
 
             dict_xbarint2notbatchID_loss = self.crit_loss_xbarint2notbatchID(
@@ -1771,8 +1771,8 @@ class InigenVarDist(nn.Module):
         # add xbarspl-->notBatchID loss ===
         if self.coef_xbarspl2notbatchID_loss > 0.0:
             rng_batchemb = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb']
             ]
 
             dict_xbarspl2notbatchID_loss = self.crit_loss_xbarspl2notbatchID(
@@ -2038,7 +2038,7 @@ class InigenVarDist(nn.Module):
         cnt_tqdm = 1
         for batch in tqdm(dl, desc=tqdm_desc, total=len(dl)):
 
-            batch.INIGENMETAINF = {
+            batch.MINTFLOWMETAINF = {
                 "dim_u_int": self.module_genmodel.dict_varname_to_dim['u_int'],
                 "dim_u_spl": self.module_genmodel.dict_varname_to_dim['u_spl'],
                 "dim_CT": self.module_genmodel.dict_varname_to_dim['CT'],

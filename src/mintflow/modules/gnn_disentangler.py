@@ -415,8 +415,8 @@ class GNNDisentangler(nn.Module):
         # add the batch-token
         if self.flag_enable_batchtoken:
             rng_batchemb = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb']
             ]
             ten_input_gnn = torch.cat(
                 [ten_input_gnn, batch.y[:, rng_batchemb[0]:rng_batchemb[1]].to(device).detach()],
@@ -523,8 +523,8 @@ class GNNDisentangler(nn.Module):
 
         if self.dict_CTNNC_usage['CT'] == key_inspoint:
             rng_CT = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
             ]
             output.append(
                 batch.y[
@@ -535,8 +535,8 @@ class GNNDisentangler(nn.Module):
 
         if self.dict_CTNNC_usage['NCC'] == key_inspoint:
             rng_NCC = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC']
             ]
             output.append(
                 batch.y[

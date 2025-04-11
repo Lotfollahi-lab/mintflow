@@ -61,24 +61,24 @@ def check(train_list_slice:utils_multislice.ListSlice, test_list_slice:utils_mul
 
 
     # check if the mapping dicts in two list slice-s are the same.
-    if train_list_slice.map_CT_to_inigenCT != test_list_slice.map_CT_to_inigenCT:
-        print("train_list_slice.map_CT_to_inigenCT:")
-        pprint(train_list_slice.map_CT_to_inigenCT)
+    if train_list_slice.map_CT_to_mintflowCT != test_list_slice.map_CT_to_mintflowCT:
+        print("train_list_slice.map_CT_to_mintflowCT:")
+        pprint(train_list_slice.map_CT_to_mintflowCT)
 
-        print("test_list_slice.map_CT_to_inigenCT:")
-        pprint(test_list_slice.map_CT_to_inigenCT)
+        print("test_list_slice.map_CT_to_mintflowCT:")
+        pprint(test_list_slice.map_CT_to_mintflowCT)
 
         raise Exception(
-            "Training list tissue and testing list tissue do not have the same `map_CT_to_inigenCT`. See above for the content of each."
+            "Training list tissue and testing list tissue do not have the same `map_CT_to_mintflowCT`. See above for the content of each."
         )
 
-    if train_list_slice.map_Batchname_to_inigenBatchID != test_list_slice.map_Batchname_to_inigenBatchID:
-        print("train_list_slice.map_Batchname_to_inigenBatchID:")
-        pprint(train_list_slice.map_Batchname_to_inigenBatchID)
+    if train_list_slice.map_Batchname_to_mintflowBatchID != test_list_slice.map_Batchname_to_mintflowBatchID:
+        print("train_list_slice.map_Batchname_to_mintflowBatchID:")
+        pprint(train_list_slice.map_Batchname_to_mintflowBatchID)
 
-        print("test_list_slice.map_Batchname_to_inigenBatchID:")
-        pprint(test_list_slice.map_Batchname_to_inigenBatchID)
+        print("test_list_slice.map_Batchname_to_mintflowBatchID:")
+        pprint(test_list_slice.map_Batchname_to_mintflowBatchID)
 
         raise Exception(
-            "Training list tissue and testing list tissue do not have the same `map_Batchname_to_inigenBatchID`. See above for the content of each."
+            "Training list tissue and testing list tissue do not have the same `map_Batchname_to_mintflowBatchID`. See above for the content of each."
         )

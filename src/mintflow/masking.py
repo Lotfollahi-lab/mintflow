@@ -1,5 +1,5 @@
 '''
-Utitlity for masking parts of a tissue to be imputed by inigen.
+Utitlity for masking parts of a tissue to be imputed by MintFlow.
 '''
 
 import os, sys
@@ -168,7 +168,7 @@ def func_dictmasks_to_cellmasklabels(
 
     # add the masking labels to adata
     for newc in dict_newc_to_cellbinarylabel.keys():
-        adata.obs['inigen_maskinglabel_{}'.format(newc)] = \
+        adata.obs['mintflow_maskinglabel_{}'.format(newc)] = \
             [str(u) for u in (dict_newc_to_cellbinarylabel[newc]+0.0).astype(int)]
 
     if flag_verbose:
@@ -179,7 +179,7 @@ def func_dictmasks_to_cellmasklabels(
                 img=False,
                 connectivity_key="spatial_connectivities",
                 library_id='connectivities_key',  # 'connectivities_key',
-                color='inigen_maskinglabel_{}'.format(c),
+                color='mintflow_maskinglabel_{}'.format(c),
                 crop_coord=None,
                 **kwargs_scatter_wholetissue
             )

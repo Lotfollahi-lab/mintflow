@@ -86,7 +86,7 @@ class GrModuleWithLayeredEval(nn.Module):
         Feeds a sparse matrix x to a GNN by the layered approach.
             The assumption is that after the first hop, the embeddings h are dense but of lower dimension than
             number of genes. So after the first hope, h is not sparse.
-            #TODO: this doesn't happen for inigen. Because x_int and x_spl are of the same shape, and not sparse.
+            #TODO: this doesn't happen for MintFlow. Because x_int and x_spl are of the same shape, and not sparse.
         :param x:
         :param edge_index:
         :param kwargs_dl: Additional kwargs of the neighbourloader, like

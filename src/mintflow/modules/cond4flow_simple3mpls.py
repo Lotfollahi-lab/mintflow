@@ -116,8 +116,8 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
 
         if self.dict_varname_to_takeCT_takeNCC[varname][0]:
             rng_CT = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT']
             ]
             output.append(
                 batch.y[
@@ -128,8 +128,8 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
 
         if self.dict_varname_to_takeCT_takeNCC[varname][1]:
             rng_NCC = [
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'],
-                batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC']
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'],
+                batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC']
             ]
             output.append(
                 batch.y[
@@ -185,7 +185,7 @@ class Cond4FlowVarphi0SimpleMLPs(nn.Module):
         num_celltypes = self.kwargs_genmodel['dict_varname_to_dim']['cell-types']
 
         assert (
-            batch.y.size()[1] == (batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb'])
+            batch.y.size()[1] == (batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb'])
         )
 
 

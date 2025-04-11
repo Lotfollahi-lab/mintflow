@@ -14,8 +14,8 @@ import torchdiffeq
 
 
 class ModeSampleX0(Enum):
-    RANDOM = 1  # X0 is not determined by inigen --> **Only** to be used in debug mode and for ablation study.
-    FROMINIGEN = 2  # X0  (i.e. [Z0, S0] with the notation of inigen) comes from inigen itself.
+    RANDOM = 1  # X0 is not determined by MintFlow --> **Only** to be used in debug mode and for ablation study.
+    FROMMINTFLOW = 2  # X0  (i.e. [Z0, S0] with the notation of MintFlow) comes from MintFlow itself.
 
 class ModeMinibatchPerm(Enum):
     RANDOM = 1  # no matching
@@ -71,11 +71,11 @@ class ConditionalFlowMatcher:
 
 
     @torch.no_grad()
-    def _sample_x0(self, x1, x0_frominigen):
+    def _sample_x0(self, x1, x0_frommintflow):
         if self.mode_samplex0 == ModeSampleX0.RANDOM:
             return torch.randn_like(x1)
-        elif self.mode_samplex0 == ModeSampleX0.FROMINIGEN:
-            return x0_frominigen
+        elif self.mode_samplex0 == ModeSampleX0.FROMMINTFLOW:
+            return x0_frommintflow
         else:
             raise NotImplementedError("ddd")
 
@@ -127,13 +127,13 @@ class ConditionalFlowMatcher:
         self,
         module_v:neuralODE.MLP,
         x1:torch.Tensor,
-        x0_frominigen:torch.Tensor,
+        x0_frommintflow:torch.Tensor,
         ten_batchEmb:torch.Tensor
     ):
         '''
         :param module_v: the V(.) module.
         :param x1: a mini-batch of samples from p_1(.).
-        :param x0_frominigen: inigen decides x0, but **only** for ablation study x0 could be generated compltely randomly.
+        :param x0_frommintflow: MintFlow decides x0, but **only** for ablation study x0 could be generated compltely randomly.
         :param ten_batchEmb: the batch embeddings (as stored in the pyg batch).
         :return:
         '''
@@ -143,7 +143,7 @@ class ConditionalFlowMatcher:
         with torch.no_grad():  # TODO: should it be here? The sample notebooks don't put no_grad().
             x0 = self._sample_x0(
                 x1=x1,
-                x0_frominigen=x0_frominigen
+                x0_frommintflow=x0_frommintflow
             ) # [N, D].
             x0, x1 = self._perm_batches(x0, x1)  # [N, D], [N, D]
             t = self._gen_t(batch_size=x1.size()[0]).unsqueeze(-1).to(x1.device)  # [N, 1]

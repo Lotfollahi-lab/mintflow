@@ -18,7 +18,7 @@ class DummyModule(nn.Module):
     def forward(self, x):
         return x
 
-class InigenGenerativeModel(nn.Module):
+class MintFlowGenerativeModel(nn.Module):
     def __init__(
             self,
             num_cells,
@@ -43,7 +43,7 @@ class InigenGenerativeModel(nn.Module):
             - sigma2_sum
         :param TODO:complete
         '''
-        super(InigenGenerativeModel, self).__init__()
+        super(MintFlowGenerativeModel, self).__init__()
         #grab args ===
         self.num_cells = num_cells
         self.dict_varname_to_dim = dict_varname_to_dim

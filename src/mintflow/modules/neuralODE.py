@@ -8,7 +8,7 @@ https://github.com/atong01/conditional-flow-matching/blob/ec4da0846ddaf77e8406ad
 
 class MLPDefault(torch.nn.Module):
     '''
-    The default mlp which shouldn't be used for inigen.
+    The default mlp which shouldn't be used for MintFlow.
         Because in the flow the first half of output depends only on the first half of input, but the second half of output depends on the entire input.
     '''
     def __init__(self, dim_input, dim_output, w=64):

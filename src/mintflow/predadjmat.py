@@ -121,7 +121,7 @@ class AdjMatPredLoss(nn.Module):
     def forward(self, dict_q_sample, pyg_batch):
         '''
 
-        :param dict_q_sample: as returned by `InigenVarDist.rsample`
+        :param dict_q_sample: as returned by `MintFlowVarDist.rsample`
         :param pyg_batch: a mini-batch returned by pyg's negihbourloader.
         :return:
         '''
@@ -199,7 +199,7 @@ class ListAdjMatPredLoss(nn.Module):
 
     def forward(self, dict_q_sample, pyg_batch):
         '''
-        :param dict_q_sample: as returned by `InigenVarDist.rsample`
+        :param dict_q_sample: as returned by `MintFlowVarDist.rsample`
         :param pyg_batch: a mini-batch returned by pyg's negihbourloader.
         :return:
         '''

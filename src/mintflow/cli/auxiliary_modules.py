@@ -1,7 +1,7 @@
 
 
 '''
-Auxiliary modules are moved to this file, so the inigen checkpoint dumped in CLI can be unpickled.
+Auxiliary modules are moved to this file, so the checkpoint dumped in CLI can be unpickled.
 '''
 
 

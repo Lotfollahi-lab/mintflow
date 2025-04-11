@@ -23,7 +23,7 @@ class DummyModule(nn.Module):
     def forward(self, x):
         return x
 
-class InigenGenerativeModel(nn.Module):
+class MintFlowGenerativeModel(nn.Module):
     def __init__(
             self,
             num_cells,
@@ -78,7 +78,7 @@ class InigenGenerativeModel(nn.Module):
 
 
         '''
-        super(InigenGenerativeModel, self).__init__()
+        super(MintFlowGenerativeModel, self).__init__()
         #grab args ===
         self.num_cells = num_cells
         self.dict_varname_to_dim = dict_varname_to_dim
@@ -586,8 +586,8 @@ class InigenGenerativeModel(nn.Module):
 
         # xbar_int, xbar_spl
         rng_batchemb = [
-            batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'],
-            batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'] + batch.INIGENMETAINF['dim_CT'] + batch.INIGENMETAINF['dim_NCC'] + batch.INIGENMETAINF['dim_BatchEmb']
+            batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'],
+            batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'] + batch.MINTFLOWMETAINF['dim_CT'] + batch.MINTFLOWMETAINF['dim_NCC'] + batch.MINTFLOWMETAINF['dim_BatchEmb']
         ]
         '''
         output_neuralODE = self.module_flow(

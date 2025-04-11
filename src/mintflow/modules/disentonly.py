@@ -1,5 +1,5 @@
 '''
-The version of the `ImputerAndDisentangler` where it only has the disengl part, and has two completely separate transformer modules for x_int and x_spl.
+The version of the `ImputerAndDisentangler` where it only has the disengl part.
 '''
 
 import numpy as np
@@ -13,14 +13,13 @@ from linformer_pytorch import Linformer, Padder
 from .impanddisentgl import MaskLabel
 
 
-class SubgraphEmbeddingDisentTwoSep(nn.Module):
+class SubgraphEmbeddingImpAndDisengl(nn.Module):
     def __init__(self, num_genes, dim_embedding, dim_em_iscentralnode, num_celltypes, flag_use_int_u, flag_use_spl_u):
         '''
         :param num_genes: .
         :param dim_embedding: The dim of embedding for each cell, must be a multiple of 4.
-        :param num_celltypes: dimension of the cell type vector (same as the niche vector).
         '''
-        super(SubgraphEmbeddingDisentTwoSep, self).__init__()
+        super(SubgraphEmbeddingImpAndDisengl, self).__init__()
         # grab args
         self.dim_embedding = dim_embedding
         self.dim_em_iscentralnode = dim_em_iscentralnode
@@ -33,18 +32,14 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
         self.encoder_x = nn.Linear(
             num_genes,
             dim_embedding,
-            bias=True  # TODO: should it be False, or tunable?
+            bias=False  # TODO: should it be True, or tunable?
         )  # the initial linear transformation on x (so pe can be added to it).
         self.embedding_iscentralnode = nn.Embedding(
             num_embeddings=2,
             embedding_dim=self.dim_em_iscentralnode
         )  # This emebedding tells whether the cell is among the central nodes returned by the Neighloader.
-        '''
-        self.embedding_blankorobserved = nn.Embedding(
-            num_embeddings=2,
-            embedding_dim=self.dim_em_blankorobserved
-        )
-        '''
+
+
 
     @torch.no_grad()
     def _position_encoding(self, batch, ten_xy_absolute:torch.Tensor):
@@ -110,13 +105,11 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
                 ).to(ten_xy_absolute.device)
             ).detach()  # [N, 10]
 
-
             assert (
-                batch.y.size()[1] == (batch.INIGENMETAINF['dim_u_int'] + batch.INIGENMETAINF['dim_u_spl'])
+                batch.y.size()[1] == (batch.MINTFLOWMETAINF['dim_u_int'] + batch.MINTFLOWMETAINF['dim_u_spl'])
             )
-            ten_u_int = batch.y[:, 0:batch.INIGENMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.flag_use_int_u) else None
-            ten_u_spl = batch.y[:, batch.INIGENMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.flag_use_spl_u) else None
-
+            ten_u_int = batch.y[:, 0:batch.MINTFLOWMETAINF['dim_u_int']].to(ten_xy_absolute.device) if (self.flag_use_int_u) else None
+            ten_u_spl = batch.y[:, batch.MINTFLOWMETAINF['dim_u_int']::].to(ten_xy_absolute.device) if (self.flag_use_spl_u) else None
 
             # define the masking token
             '''
@@ -136,18 +129,23 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
                     [np.random.rand() > prob_maskknowngenes for _ in range(torch.sum(a == True).tolist())]
                 ).to(ten_xy_absolute.device)
             assert (torch.all(a))  # assert all expvects are available.
-            '''
-            em_blankorobserved = self.embedding_blankorobserved(
-                a+0
-            )  # [N, 10]
-            '''
+
             ten_manually_masked = (~ten_masked_c1) & (~a)
 
             #mask xe
             if torch.any(~a):
                 xe[~a, :] = xe[~a, :] * 0
 
-        list_em_final = [xe+pe, em_iscentralnode]
+        '''
+        print("batch.x.shape = {}".format(batch.x.shape))
+        print("batch.y.shape = {}".format(batch.y.shape))
+        print("xe.shape = {}".format(xe.shape))
+        print("pe.shape = {}".format(pe.shape))
+        print("em_iscentralnode.shape = {}".format(em_iscentralnode.shape))
+        print("em_blankorobserved.shape = {}".format(em_blankorobserved.shape))
+        '''
+
+        list_em_final = [xe + pe, em_iscentralnode]
         if self.flag_use_int_u:
             list_em_final.append(ten_u_int)
         if self.flag_use_spl_u:
@@ -162,74 +160,88 @@ class SubgraphEmbeddingDisentTwoSep(nn.Module):
 
 
 
-class DisentanglerTwoSep(nn.Module):
-    def __init__(self, kwargs_genmodel, maxsize_subgraph, kwargs_em_intandspl, kwargs_tformer_int, kwargs_tformer_spl):
+class Disentangler(nn.Module):
+    def __init__(self, kwargs_genmodel, maxsize_subgraph, kwargs_em1, kwargs_tformer1, str_mode_headxint_headxspl_headboth):
         '''
         :param maxsize_subgraph: the max size of the subgraph returned by pyg's NeighLoader.
-        :param kwargs_em_intandspl: A single token embedding is used for both int and spl transformers.
-        :param kwargs_tformer_int: other than `channels` and `input_size` which is determined by `maxsize_subgraph`
-        :param kwargs_tformer_spl: other than `channels` and `input_size` which is determined by `maxsize_subgraph`
-
+        :param kwargs_em1:
+        :param kwargs_tformer1: other than `channels` and `input_size` which is determined by `maxsize_subgraph`
+        :param str_mode_headxint_headxspl_headboth:
+            - headxint: means that only muxint is generated by the head, and `muxspl =  x_cnt - muxint`
+            - headxspl: means that only muxspl is generated by the head, and `muxint =  x_cnt - muxspl`
+            - headboth: means muxint and muxspl are create by two different heads, in which case p(x|x_int+x_spl) must be included in logp(.)
         '''
-        super(DisentanglerTwoSep, self).__init__()
+        super(Disentangler, self).__init__()
 
-        # num_celltypes, flag_use_int_u, flag_use_spl_u
+        self.num_celltypes = kwargs_em1['num_celltypes']
+        self.flag_use_int_u = kwargs_em1['flag_use_int_u']
+        self.flag_use_spl_u = kwargs_em1['flag_use_spl_u']
 
-        self.num_celltypes = kwargs_em_intandspl['num_celltypes']
-        self.flag_use_int_u = kwargs_em_intandspl['flag_use_int_u']
-        self.flag_use_spl_u = kwargs_em_intandspl['flag_use_spl_u']
+        self.str_mode_headxint_headxspl_headboth = str_mode_headxint_headxspl_headboth
 
-        # tfm_int
-        dim_tf_int = kwargs_em_intandspl['dim_embedding'] + kwargs_em_intandspl['dim_em_iscentralnode']
+        dim_tf1 = kwargs_em1['dim_embedding'] + kwargs_em1['dim_em_iscentralnode']
         if self.flag_use_int_u:
-            dim_tf_int += kwargs_genmodel['dict_varname_to_dim']['u_int']
+            dim_tf1 += kwargs_genmodel['dict_varname_to_dim']['u_int']
         if self.flag_use_spl_u:
-            dim_tf_int += kwargs_genmodel['dict_varname_to_dim']['u_spl']
+            dim_tf1 += kwargs_genmodel['dict_varname_to_dim']['u_spl']
 
-        self.module_em_intandspl = SubgraphEmbeddingDisentTwoSep(**kwargs_em_intandspl)
-        self.module_tf_int = Padder(
+
+        self.module_em1 = SubgraphEmbeddingImpAndDisengl(**kwargs_em1)
+        self.module_tf1 = Padder(
             Linformer(**{
-                **{'input_size':maxsize_subgraph, 'channels':dim_tf_int},
-                **kwargs_tformer_int
+                **{'input_size':maxsize_subgraph, 'channels':dim_tf1},
+                **kwargs_tformer1
             })
         )
 
-        # tfm_spl
-        dim_tf_spl = dim_tf_int + 0
-        self.module_tf_spl = Padder(
-            Linformer(**{
-                **{'input_size': maxsize_subgraph, 'channels': dim_tf_spl},
-                **kwargs_tformer_spl
-            })
-        )
-
-        # make the heads ===
-        self.module_linearhead_muxint = nn.Sequential(
-            nn.LeakyReLU(),
-            nn.Linear(dim_tf_int, dim_tf_int),
-            nn.LeakyReLU(),
-            nn.Linear(dim_tf_int, kwargs_em_intandspl['num_genes'])
-        )  # TODO: maybe add more layers to this head?
-        self.module_linearhead_muxspl = nn.Sequential(
-            nn.LeakyReLU(),
-            nn.Linear(dim_tf_spl, dim_tf_spl),
-            nn.LeakyReLU(),
-            nn.Linear(dim_tf_spl, kwargs_em_intandspl['num_genes'])
-        )  # TODO: maybe add more layers to this head?
-
+        if self.str_mode_headxint_headxspl_headboth == 'headxint':
+            self.module_linearhead_muxint = nn.Sequential(
+                nn.LeakyReLU(),
+                nn.Linear(dim_tf1, dim_tf1),
+                nn.LeakyReLU(),
+                nn.Linear(dim_tf1, kwargs_em1['num_genes'])
+            )  # TODO: maybe add more layers to this head?
+            self.module_linearhead_muxspl = None
+        elif self.str_mode_headxint_headxspl_headboth == 'headxspl':
+            self.module_linearhead_muxspl = nn.Sequential(
+                nn.LeakyReLU(),
+                nn.Linear(dim_tf1, dim_tf1),
+                nn.LeakyReLU(),
+                nn.Linear(dim_tf1, kwargs_em1['num_genes'])
+            )  # TODO: maybe add more layers to this head?
+            self.module_linearhead_muxint = None
+        elif self.str_mode_headxint_headxspl_headboth == 'headboth':
+            self.module_linearhead_muxint = nn.Sequential(
+                nn.LeakyReLU(),
+                nn.Linear(dim_tf1, dim_tf1),
+                nn.LeakyReLU(),
+                nn.Linear(dim_tf1, kwargs_em1['num_genes'])
+            )  # TODO: maybe add more layers to this head?
+            self.module_linearhead_muxspl = nn.Sequential(
+                nn.LeakyReLU(),
+                nn.Linear(dim_tf1, dim_tf1),
+                nn.LeakyReLU(),
+                nn.Linear(dim_tf1, kwargs_em1['num_genes'])
+            )  # TODO: maybe add more layers to this head?
+        else:
+            raise Exception(
+                "Uknown value {} for str_mode_headxint_headxspl_headboth.".format(self.str_mode_headxint_headxspl_headboth)
+            )
 
         self.module_linearhead_sigmaxint = nn.Sequential(
             nn.LeakyReLU(),
-            nn.Linear(dim_tf_int, kwargs_em_intandspl['num_genes'])
+            nn.Linear(dim_tf1, kwargs_em1['num_genes'])
         )
         self.module_linearhead_sigmaxspl = nn.Sequential(
             nn.LeakyReLU(),
-            nn.Linear(dim_tf_spl, kwargs_em_intandspl['num_genes'])
+            nn.Linear(dim_tf1, kwargs_em1['num_genes'])
         )
         self._check_args()
 
     def _check_args(self):
-        pass
+        assert (
+            self.str_mode_headxint_headxspl_headboth in ['headxint', 'headxspl', 'headboth']
+        )
 
     def forward(self, batch, prob_maskknowngenes:float, ten_xy_absolute:torch.Tensor):
         '''
@@ -243,15 +255,12 @@ class DisentanglerTwoSep(nn.Module):
             1.0 + batch.x.to_dense()  # TODO: how to make sure that batch.x contains the count data ???
         ).to(ten_xy_absolute.device)
         x_cnt = batch.x.to_dense().to(ten_xy_absolute.device).detach() + 0.0
-
-        # pass to tf_int and tf_spl
-        ten_in_tf_bothintspl, ten_manually_masked = self.module_em_intandspl(
+        ten_in_tf1, ten_manually_masked = self.module_em1(
             batch=batch,
             prob_maskknowngenes=0.0,
             ten_xy_absolute=ten_xy_absolute
         )  # [N, dim_tf1], [N]
-        ten_out_tf_int = self.module_tf_int(ten_in_tf_bothintspl.unsqueeze(0))[0, :, :]  # [N, dim_tf1] in [-inf, inf]
-        ten_out_tf_spl = self.module_tf_spl(ten_in_tf_bothintspl.unsqueeze(0))[0, :, :]  # [N, dim_tf1] in [-inf, inf]
+        ten_out_tf1 = self.module_tf1(ten_in_tf1.unsqueeze(0))[0, :, :]  # [N, dim_tf1] in [-inf, inf]
 
         assert (not torch.any(ten_manually_masked))
         loss_imputex = None
@@ -263,28 +272,45 @@ class DisentanglerTwoSep(nn.Module):
         with torch.no_grad():
             oneon_x_nonzero = (x_cnt > 0.0) + 0  # [N, num_genes]
 
-        muxint = torch.clamp(
-            self.module_linearhead_muxint(ten_out_tf_int) * oneon_x_nonzero,
-            min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
-            max=x_cnt
-        )  # [N, num_genes]
-        muxspl = torch.clamp(
-            self.module_linearhead_muxspl(ten_out_tf_spl) * oneon_x_nonzero,
-            min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
-            max=x_cnt
-        )  # [N, num_genes]
-
-
+        if self.str_mode_headxint_headxspl_headboth == 'headxint':
+            muxint = torch.clamp(
+                self.module_linearhead_muxint(ten_out_tf1) * oneon_x_nonzero,
+                min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
+                max=x_cnt
+            )  # [N, num_genes]
+            muxspl = x_cnt - muxint  # [N, num_genes]
+        elif self.str_mode_headxint_headxspl_headboth == 'headxspl':
+            muxspl = torch.clamp(
+                self.module_linearhead_muxspl(ten_out_tf1) * oneon_x_nonzero,
+                min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
+                max=x_cnt
+            )  # [N, num_genes]
+            muxint = x_cnt - muxspl  # [N, num_genes]
+        elif self.str_mode_headxint_headxspl_headboth == 'headboth':
+            muxint = torch.clamp(
+                self.module_linearhead_muxint(ten_out_tf1) * oneon_x_nonzero,
+                min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
+                max=x_cnt
+            )  # [N, num_genes]
+            muxspl = torch.clamp(
+                self.module_linearhead_muxspl(ten_out_tf1) * oneon_x_nonzero,
+                min=0.00001 * torch.ones_like(x_cnt),  # TODO: maybe tune?
+                max=x_cnt
+            )  # [N, num_genes]
+        else:
+            raise Exception(
+                "Uknown value {} for str_mode_headxint_headxspl_headboth.".format(self.str_mode_headxint_headxspl_headboth)
+            )
 
 
         # compute sigmaxint, sigmaxspl
         sigmaxint = torch.clamp(
-            self.module_linearhead_sigmaxint(ten_out_tf_int),
+            self.module_linearhead_sigmaxint(ten_out_tf1),
             min=0.00001,  # TODO: maybe tune?
             max=torch.inf
         )  # [N, num_genes]
         sigmaxspl = torch.clamp(
-            self.module_linearhead_sigmaxspl(ten_out_tf_spl),
+            self.module_linearhead_sigmaxspl(ten_out_tf1),
             min=0.00001,  # TODO: maybe tune?
             max=torch.inf
         )  # [N, num_genes]
