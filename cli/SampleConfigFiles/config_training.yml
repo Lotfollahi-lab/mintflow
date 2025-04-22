@@ -14,13 +14,13 @@ lr_training: 0.001  # TODO:check. Learning rate for training optimisers. The def
 
 num_training_epochs: 10  # TODO:ESSENTIAL:TUNE, number of training epochs. Recommended: ~50 epochs. A good practice is to run inflow with `num_training_epochs` to get a sense of running time and to see if the code runs. Afterwards one can increase `num_training_epochs` to, e.g., 50.
 
-numiters_updateduals_seprately_perepoch: 2000  # TODO:check
+numiters_updateduals_seprately_perepoch: 2000  # TODO:check, TODO: make important notes about how it affects the running time and the correct set up.
 batchsize_updateduals_seprately_perepoch: 50  # TODO:check
 # Before each training epoch the dual functions are updates separately for `numiters_updateduals_seprately_perepoch` iterations.
 # This is done to keep the dual functions a good, e.g., Wasserstein distance approximators.
 
 numsteps_accumgrad: 2 # TODO:TUNE
-num_updateseparate_afterGRLs: 50  # TODO:TUNE
+num_updateseparate_afterGRLs: 50  # TODO:TUNE, TODO: make important notes about how it affects the running time and the correct set up.
 # Above: two very important parameters.
 #   - `numsteps_accumgrad`: inflow uses accumulated gradients, i.e. during training it performs `numsteps_accumgrad` calls to backward followed by a single call to optimiser step.
 #   - `num_updateseparate_afterGRLs`: the dual functions (e.g. for Wasserstein distance estimation) have to be updated regularly.

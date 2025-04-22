@@ -1637,5 +1637,8 @@ print("Finished running the script.")
 
 
 # TODO: in the above part `correct for ...` add also x_int and x_spl as well.
+# TODO: prioritise saving of the model checkpoint (i.e. move before anything else, including the saving of model predicitons).
+#     Because with model checkpoint, the predictions are recoverable but the reverse isn't possible.
+
 
 
