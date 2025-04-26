@@ -1252,6 +1252,21 @@ path_dump_checkpoint = os.path.join(
 if not os.path.isdir(path_dump_checkpoint):
     os.mkdir(path_dump_checkpoint)
 
+# dump the inflow checkpoint
+module_vardist.module_annealing = "NONE"  # so it can be dumped.
+module_vardist.module_annealing_decoderXintXspl = "NONE"  # so it can be dumped.
+torch.save(
+    {
+        'module_inflow': module_vardist,
+     },
+    os.path.join(
+        path_dump_checkpoint,
+        'inflow_model.pt'
+    ),
+    pickle_protocol=4
+)
+
+
 # dump predictions per-tissue
 with torch.no_grad():
     for idx_sl, sl in enumerate(test_list_slice.list_slice):
@@ -1421,19 +1436,7 @@ with torch.no_grad():
         gc.collect()
         time.sleep(config_training['sleeptime_gccollect_dumpOnePred'])
 
-# dump the inflow checkpoint
-module_vardist.module_annealing = "NONE"  # so it can be dumped.
-module_vardist.module_annealing_decoderXintXspl = "NONE"  # so it can be dumped.
-torch.save(
-    {
-        'module_inflow': module_vardist,
-     },
-    os.path.join(
-        path_dump_checkpoint,
-        'inflow_model.pt'
-    ),
-    pickle_protocol=4
-)
+
 
 
 # dump the combined jointplots ====
