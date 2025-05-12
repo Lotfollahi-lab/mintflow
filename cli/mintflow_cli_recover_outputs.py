@@ -140,42 +140,21 @@ exec('from {}.anneal_decoder_xintxspl import AnnealingDecoderXintXspl'.format(
 
 # parse arguments ========================================
 parser = argparse.ArgumentParser(
-    description='Inflow command-line interface.\n This sciprts takes in some paths to some config yaml files.',
+    description='For usage intrcutions please refer to the documentation under "Recovering CLI Outputs".',
     formatter_class=RawTextHelpFormatter
 )
 
 parser.add_argument(
-    '--file_config_data_train',
+    '--original_CLI_run_path_output',
     type=str,
-    help='The yaml file to configure how inflow is expected to read training data.\n' +\
-    'Please refere to TODO: for an example of such file.'
+    help='The original output path specified when running mintflow CLI.\n' +\
+    'In other words, the `path_output` passed to the CLI when running `python mintflow_cli.py ....`.'
 )
 
 parser.add_argument(
-    '--file_config_data_test',
+    '--flag_use_cuda',
     type=str,
-    help='The yaml file to configure how inflow is expected to read testing data.\n' +\
-    'Please refere to TODO: for an example of such file.'
-)
-
-parser.add_argument(
-    '--file_config_model',
-    type=str,
-    help='The yaml file to configure architecture of inflow modules (e.g. encoders etc.) .\n' +\
-    'Please refere to TODO: for an example such file.'
-)
-
-parser.add_argument(
-    '--file_config_training',
-    type=str,
-    help="The yaml file to configure inflow's training (e.g. learning rate, number of epochs, etc.) .\n" +\
-    'Please refere to TODO: for an example such file.'
-)
-
-parser.add_argument(
-    '--path_output',
-    type=str,
-    help="The output path where inflow will dump the output (some figures, embeddings, etc.)"
+    help="A string in ['True', 'False']"
 )
 
 parser.add_argument(
@@ -197,6 +176,25 @@ def try_mkdir(path_in):
 assert isinstance(args.flag_verbose, str)
 assert args.flag_verbose in ['True', 'False']
 args.flag_verbose = (args.flag_verbose == 'True')
+
+assert isinstance(args.flag_use_cuda, str)
+assert args.flag_use_cuda in ['True', 'False']
+args.flag_use_cuda = (args.flag_use_cuda == 'True')
+
+# find the mapping of the config file names (important when the config files have modified and potentially irrelevant names)
+with open(
+    os.path.join(
+        args.original_CLI_run_path_output,
+        'ConfigFilesCopiedOver',
+        'args.yml'
+    )
+) as f:
+    try:
+        dict_resconfignames_to_actualfnames = yaml.safe_load(f)
+    except yaml.YAMLError as exc:
+        print(exc)
+print(dict_resconfignames_to_actualfnames)
+assert False
 
 
 # parse the config files ===
