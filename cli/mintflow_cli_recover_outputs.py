@@ -630,8 +630,6 @@ if len(config_model['args_list_adjmatloss']) > 0:
         print("\n\n")
 
 
-assert False
-
 
 # compute/report the maximum number of subgraphs
 print("Computing some initial stats (max number of central nodes, etc) for each tissue.")
@@ -674,47 +672,7 @@ for idx_sl, sl in enumerate(list_slice.list_slice):
 maxsize_subgraph = max(list_maxsize_subgraph)
 
 
-# dump the window sizes ========= TODO:HERE
-# Train
-path_window_overlays = os.path.join(
-    args.path_output,
-    'Toinspect_CropsOnTissues'
-)
-if not os.path.isdir(path_window_overlays):
-    os.mkdir(path_window_overlays)
-path_window_overlays = os.path.join(
-    path_window_overlays,
-    'Train'
-)
-if not os.path.isdir(path_window_overlays):
-    os.mkdir(path_window_overlays)
-list_slice.show_pygbatch_windows_4cli(
-    path_output=path_window_overlays,
-    str_train_or_test='train',
-    dict_slideID_to_maxnumcentralnodes=dict_slideID_to_maxnumcentralnodes,
-    dict_slideID_to_worsecasebatchsize=dict_slideID_to_worsecasebatchsize
-)
-
-# Test
-path_window_overlays = os.path.join(
-    args.path_output,
-    'Toinspect_CropsOnTissues'
-)
-if not os.path.isdir(path_window_overlays):
-    os.mkdir(path_window_overlays)
-path_window_overlays = os.path.join(
-    path_window_overlays,
-    'Test'
-)
-if not os.path.isdir(path_window_overlays):
-    os.mkdir(path_window_overlays)
-test_list_slice.show_pygbatch_windows_4cli(
-    path_output=path_window_overlays,
-    str_train_or_test='test',
-    dict_slideID_to_maxnumcentralnodes=None,
-    dict_slideID_to_worsecasebatchsize=None
-)
-
+assert False
 
 exec('disent_dict_CTNNC_usage = {}'.format(config_model['CTNCC_usage_moduledisent']))
 assert (
