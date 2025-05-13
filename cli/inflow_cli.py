@@ -1643,5 +1643,7 @@ print("Finished running the script.")
 # TODO: prioritise saving of the model checkpoint (i.e. move before anything else, including the saving of model predicitons).
 #     Because with model checkpoint, the predictions are recoverable but the reverse isn't possible.
 
+# TODO: assert that the paths in the config files are absolute paths (and not relative paths).
+
 
 

@@ -229,8 +229,6 @@ config_model = parse_config_model.parse(
     )
 )
 
-print("\n\n\n >>>>>>>> succesfully parsed the config files.")
-assert False
 
 # TODO: parse other config files ===
 
@@ -270,7 +268,7 @@ del fname_adata0, adata0, config_temp
 gc.collect()
 
 # set device ===
-if config_training['flag_use_GPU']:
+if args.flag_use_cuda: #config_training['flag_use_GPU']:
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
     else:
@@ -283,6 +281,7 @@ else:
 
 if args.flag_verbose:
     print("\n\nDevice is set to {}.\n\n".format(device))
+
 
 # Create list tissue training =========
 
@@ -304,6 +303,7 @@ def _convert_TrueFalse_to_bool(dict_input):
             dict_input[k] = (dict_input[k] == 'True')
 
     return dict_input
+
 
 list_slice = []
 for dict_current_anndata in config_data_train:
@@ -365,6 +365,8 @@ if args.flag_verbose:
         ))
     print("\n\n")
 
+
+assert False
 
 # create test_list_slice for evaluation ===
 test_list_slice = []
