@@ -672,6 +672,32 @@ for idx_sl, sl in enumerate(list_slice.list_slice):
 maxsize_subgraph = max(list_maxsize_subgraph)
 
 
+# check if the inflow checkpoint is dumped
+path_dump_checkpoint = os.path.join(
+    args.path_output,
+    'CheckpointAndPredictions'
+)
+if (not os.path.isdir(path_dump_checkpoint)) or (not os.path.isfile(os.path.join(path_dump_checkpoint, 'inflow_model.pt'))):
+    raise Exception(
+        "The file 'CheckpointAndPredictions/inflow_model.pt' was not found in the output path: \n {}".format(args.original_CLI_run_path_output)
+    )
+
+module_vardist = torch.load(
+    os.path.join(
+        path_dump_checkpoint,
+        'inflow_model.pt'
+    ),
+    map_location=device
+)['module_inflow']
+# TODO:HERE1
+print("Loaded the mintflow module on device {} from checkpiont {}".format(
+    device,
+    os.path.join(path_dump_checkpoint, 'inflow_model.pt')
+))
+assert False
+
+
+
 exec('disent_dict_CTNNC_usage = {}'.format(config_model['CTNCC_usage_moduledisent']))
 assert (
     config_model['str_mode_headxint_headxspl_headboth_twosep'] in [
@@ -944,218 +970,6 @@ if args.flag_verbose:
 
 assert False
 
-# start a new wandb run to track this script
-if config_training['flag_enable_wandb']:
-    wandb.init(
-        project=config_training['wandb_project_name'],
-        name=config_training['wandb_run_name'],
-        config={
-            'dd':'dd'
-        }
-    )
-itrcount_wandbstep = None
-
-paramlist_optim = module_vardist.parameters()
-flag_freezeencdec = False
-optim_training = torch.optim.Adam(
-    params=paramlist_optim,
-    lr=config_training['lr_training']
-)
-optim_training.flag_freezeencdec = flag_freezeencdec
-
-optim_afterGRLpreds = torch.optim.Adam(
-    params=list(module_vardist.module_predictor_xbarint2notNCC.parameters()) +\
-        list(module_vardist.module_predictor_z2notNCC.parameters()) +\
-        list(module_vardist.module_predictor_xbarint2notbatchID.parameters()) +\
-        list(module_vardist.module_predictor_xbarspl2notbatchID.parameters()),
-    lr=config_training['lr_training']
-)  # the optimizer for the dual functions (i.e. predictor Z2NotNCC, xbarint2NotNCC)
-# TODO:NOTE:BUG module_predictor_xbarint2notbatchID and module_predictor_xbarspl2notbatchID had not been included,
-
-# log the inflow module
-with open(os.path.join(args.path_output, "log_inflow_module.txt"), 'w') as f:
-    f.write(str(module_vardist))
-
-
-if 'dict_measname_to_histmeas' not in globals():
-    dict_measname_to_histmeas = {}
-    dict_measname_to_evalpredxspl = {}
-    total_cnt_epoch = 0
-    list_coef_anneal = []
-
-# dump the config dictionaries again, so any inconsistency (e.g. due to boolean variables being treated as str) becomes obvious.
-tmp_check_unique = [
-    os.path.split(args.file_config_data_train)[1],
-    os.path.split(args.file_config_data_test)[1],
-    os.path.split(args.file_config_model)[1],
-    os.path.split(args.file_config_training)[1]
-]
-for u in tmp_check_unique:
-    if tmp_check_unique.count(u) > 1:
-        raise Exception(
-            "In the provided config files the file name '{}' is repeated {} times, although probably in different directories. \n Please avoid this repeatition and try again".format(
-                u,
-                tmp_check_unique.count(u)
-            )
-        )
-
-try_mkdir(os.path.join(args.path_output, 'ConfigFilesCopiedOver'))
-os.system(
-    "cp {} {}".format(
-        os.path.abspath(args.file_config_data_train),
-        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
-    )
-)
-os.system(
-    "cp {} {}".format(
-        os.path.abspath(args.file_config_data_test),
-        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
-    )
-)
-os.system(
-    "cp {} {}".format(
-        os.path.abspath(args.file_config_model),
-        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
-    )
-)
-os.system(
-    "cp {} {}".format(
-        os.path.abspath(args.file_config_training),
-        os.path.join(args.path_output, 'ConfigFilesCopiedOver')
-    )
-)
-
-with open(os.path.join(args.path_output, 'ConfigFilesCopiedOver', 'args.yml'), 'w') as f:
-    yaml.dump(
-        {
-            'file_config_data_train':os.path.split(args.file_config_data_train)[1],
-            'file_config_data_test':os.path.split(args.file_config_data_test)[1],
-            'file_config_model':os.path.split(args.file_config_model)[1],
-            'file_config_training':os.path.split(args.file_config_training)[1]
-        },
-        f,
-        default_flow_style=False
-    )
-
-
-t_before_training = time.time()
-
-for idx_epoch in range(config_training['num_training_epochs']):
-    print("\n\nEpoch {} from {} ================ ".format(
-        idx_epoch+1,
-        config_training['num_training_epochs']
-    ))
-    # ten_Z, ten_xbarint, ten_CT, ten_NCC, ten_xy_absolute are obtained using all tissues.
-    # update the dual functions separately =============
-    with torch.no_grad():
-        forduals_ten_Z, forduals_ten_CT, forduals_ten_NCC, forduals_ten_BatchEmb, \
-            forduals_ten_xbarint, forduals_ten_xy_absolute, forduals_ten_xbarspl = \
-            [], [], [], [], [], [], []
-
-        print("     Getting different embeddings to update the dual functions separately.")
-        for idx_sl, sl in enumerate(list_slice.list_slice):
-            anal_dict_varname_to_output = module_vardist.eval_on_pygneighloader_dense(
-                dl=sl.pyg_dl_test, # this is correct, because all neighbours are to be included (not a subset of neighbours).
-                ten_xy_absolute=sl.ten_xy_absolute,
-                tqdm_desc="Tissue {}".format(idx_sl)
-            )
-
-            forduals_ten_Z.append(
-                torch.tensor(anal_dict_varname_to_output['mu_z'] + 0.0)
-            )
-
-            forduals_ten_CT.append(
-                sl.ten_CT + 0.0
-            )
-
-            forduals_ten_NCC.append(
-                sl.ten_NCC + 0.0
-            )
-
-            forduals_ten_BatchEmb.append(
-                sl.ten_BatchEmb + 0.0
-            )
-
-            forduals_ten_xbarint.append(
-                torch.tensor(anal_dict_varname_to_output['muxbar_int'] + 0.0)
-            )
-
-            forduals_ten_xy_absolute.append(
-                sl.ten_xy_absolute + 0.0
-            )
-
-            forduals_ten_xbarspl.append(
-                torch.tensor(anal_dict_varname_to_output['muxbar_spl'] + 0.0)
-            )
-
-            del anal_dict_varname_to_output
-
-        forduals_ten_Z = torch.concat(forduals_ten_Z, 0)
-        forduals_ten_CT = torch.concat(forduals_ten_CT, 0)
-        forduals_ten_NCC = torch.concat(forduals_ten_NCC, 0)
-        forduals_ten_BatchEmb = torch.concat(forduals_ten_BatchEmb, 0)
-        forduals_ten_xbarint = torch.concat(forduals_ten_xbarint, 0)
-        forduals_ten_xbarspl = torch.concat(forduals_ten_xbarspl, 0)
-        forduals_ten_xy_absolute = torch.concat(forduals_ten_xy_absolute, 0)
-
-    module_vardist._trainsep_GradRevPreds(
-        optim_gradrevpreds=optim_afterGRLpreds,
-        numiters=config_training['numiters_updateduals_seprately_perepoch'],
-        ten_Z=forduals_ten_Z,
-        ten_CT=forduals_ten_CT,
-        ten_NCC=forduals_ten_NCC,
-        ten_xbarint=forduals_ten_xbarint,
-        ten_BatchEmb=forduals_ten_BatchEmb,
-        ten_xbarspl=forduals_ten_xbarspl,
-        ten_xy_absolute=forduals_ten_xy_absolute,
-        # Note: the arg `ten_xy_absolute` is not internally used, but kept for backward comptbility.
-        device=device,
-        kwargs_dl={
-            'batch_size':config_training['batchsize_updateduals_seprately_perepoch']
-        }
-    )
-
-    # gccollect
-    torch.cuda.empty_cache()
-    gc.collect()
-    torch.cuda.empty_cache()
-    gc.collect()
-
-    # train all modules ===============
-    itrcount_wandbstep, list_coef_anneal_ = module_vardist.training_epoch(
-        flag_lockencdec_duringtraining=False,  # unused arg
-        dl=[sl.pyg_dl_train for sl in list_slice.list_slice],
-        prob_maskknowngenes=0.0,  # unused arg
-        t_num_steps=config_model['neuralODE_t_num_steps'],
-        ten_xy_absolute=[sl.ten_xy_absolute for sl in list_slice.list_slice],
-        optim_training=optim_training,
-        tensorboard_stepsize_save=config_training['wandb_stepsize_log'],
-        itrcount_wandbstep_input=itrcount_wandbstep,
-        list_flag_elboloss_imputationloss=[True, False],  # unused arg
-        coef_loss_closeness_zz=config_model['coef_loss_closeness_zz'],
-        coef_loss_closeness_xbarintxbarint=config_model['coef_loss_closeness_xbarintxbarint'],
-        coef_loss_closeness_xintxint=config_model['coef_loss_closeness_xintxint'],
-        prob_applytfm_affinexy=0.0,  # unused arg
-        coef_flowmatchingloss=config_model['coef_flowmatchingloss'],
-        np_size_factor=[
-            np.array(sl.adata.shape[0] * [config_training['val_scppnorm_total']]) for sl in list_slice.list_slice
-        ],
-        numsteps_accumgrad=config_training['numsteps_accumgrad'],
-        num_updateseparate_afterGRLs=config_training['num_updateseparate_afterGRLs'],
-        flag_verbose=False,
-        flag_enable_wandb=config_training['flag_enable_wandb']
-    )
-    list_coef_anneal = list_coef_anneal + list_coef_anneal_
-    total_cnt_epoch += 1
-
-
-
-
-if args.flag_verbose:
-    print("Training for {} epochs took {} seconds.".format(
-        config_training['num_training_epochs'],
-        time.time() - t_before_training
-    ))
 
 
 # gccollect
@@ -1167,48 +981,43 @@ torch.cuda.empty_cache()
 gc.collect()
 torch.cuda.empty_cache()
 gc.collect()
-time.sleep(config_training['sleeptime_gccollect_aftertraining'])
 
 
-# load LR-DB and the ones found in the shared gene panel of tissues ===
-df_LRpairs = pd.read_csv("./Files2Use_CLI/df_LRpairs_Armingoletal.txt")
-list_known_LRgenes_inDB = [
-    genename
-    for colname in ['LigName', 'RecName'] for group in df_LRpairs[colname].tolist() for genename in str(group).split("__")
-]
-list_known_LRgenes_inDB = set(list_known_LRgenes_inDB)
-list_LR = []
-for gene_name in list_slice.list_slice[0].adata.var.index.tolist():
-    if gene_name in list_known_LRgenes_inDB:
-        list_LR.append(gene_name)
-
-if args.flag_verbose:
-    print("\n\n Among the {} genes in tissues' gene panels, {} genes were found in the ligand-receptor database.\n\n".format(
-        len(list_slice.list_slice[0].adata.var.index.tolist()),
-        len(list_LR)
-    ))
-
-# dump the inflow model as well as the inferred latent factors ===
+# check if the inflow checkpoint is dumped
 path_dump_checkpoint = os.path.join(
     args.path_output,
     'CheckpointAndPredictions'
 )
-if not os.path.isdir(path_dump_checkpoint):
-    os.mkdir(path_dump_checkpoint)
+if (not os.path.isdir(path_dump_checkpoint)) or (not os.path.isfile(os.path.join(path_dump_checkpoint, 'inflow_model.pt'))):
+    raise Exception(
+        "The file 'CheckpointAndPredictions/inflow_model.pt' was not found in the output path: \n {}".format(args.original_CLI_run_path_output)
+    )
 
-# dump the inflow checkpoint
-module_vardist.module_annealing = "NONE"  # so it can be dumped.
-module_vardist.module_annealing_decoderXintXspl = "NONE"  # so it can be dumped.
-torch.save(
-    {
-        'module_inflow': module_vardist,
-     },
+module_vardist = torch.load(
     os.path.join(
         path_dump_checkpoint,
         'inflow_model.pt'
     ),
-    pickle_protocol=4
-)
+    map_location=device
+)['module_inflow']
+# TODO:HERE2
+
+
+assert False
+
+# # dump the inflow checkpoint
+# module_vardist.module_annealing = "NONE"  # so it can be dumped.
+# module_vardist.module_annealing_decoderXintXspl = "NONE"  # so it can be dumped.
+# torch.save(
+#     {
+#         'module_inflow': module_vardist,
+#      },
+#     os.path.join(
+#         path_dump_checkpoint,
+#         'inflow_model.pt'
+#     ),
+#     pickle_protocol=4
+# )
 
 
 # dump predictions per-tissue
