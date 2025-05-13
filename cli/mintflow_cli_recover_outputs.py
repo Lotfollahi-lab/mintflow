@@ -181,7 +181,7 @@ assert isinstance(args.flag_use_cuda, str)
 assert args.flag_use_cuda in ['True', 'False']
 args.flag_use_cuda = (args.flag_use_cuda == 'True')
 
-# find the mapping of the config file names (important when the config files have modified and potentially irrelevant names)
+# find the mapping of the config file names (important when the config files have been modified and are potentially irrelevant names)
 with open(
     os.path.join(
         args.original_CLI_run_path_output,
@@ -194,25 +194,44 @@ with open(
     except yaml.YAMLError as exc:
         print(exc)
 print(dict_resconfignames_to_actualfnames)
-assert False
+
 
 
 # parse the config files ===
 config_data_train = parse_config_data_train.parse(
-    args.file_config_data_train
+    os.path.join(
+        args.original_CLI_run_path_output,
+        'ConfigFilesCopiedOver',
+        dict_resconfignames_to_actualfnames['file_config_data_train']
+    )
 )
 config_data_test = parse_config_data_test.parse(
-    args.file_config_data_test
+    os.path.join(
+        args.original_CLI_run_path_output,
+        'ConfigFilesCopiedOver',
+        dict_resconfignames_to_actualfnames['file_config_data_test']
+    )
 )
 
 config_training = parse_config_training.parse(
-    args.file_config_training
+    os.path.join(
+        args.original_CLI_run_path_output,
+        'ConfigFilesCopiedOver',
+        dict_resconfignames_to_actualfnames['file_config_training']
+    )
 )
-
 
 config_model = parse_config_model.parse(
-    args.file_config_model
+    os.path.join(
+        args.original_CLI_run_path_output,
+        'ConfigFilesCopiedOver',
+        dict_resconfignames_to_actualfnames['file_config_model']
+    )
 )
+
+print("\n\n\n >>>>>>>> succesfully parsed the config files.")
+assert False
+
 # TODO: parse other config files ===
 
 
