@@ -366,8 +366,6 @@ if args.flag_verbose:
     print("\n\n")
 
 
-assert False
-
 # create test_list_slice for evaluation ===
 test_list_slice = []
 for dict_current_anndata in config_data_test:
@@ -434,6 +432,7 @@ if args.flag_verbose:
         ))
     print("\n\n")
 
+assert False
 
 # check if path_output is not emtpy, and raise warnings otherwise ===
 if len(os.listdir(args.path_output)) != 0:
