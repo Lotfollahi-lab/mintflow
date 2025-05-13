@@ -672,8 +672,6 @@ for idx_sl, sl in enumerate(list_slice.list_slice):
 maxsize_subgraph = max(list_maxsize_subgraph)
 
 
-assert False
-
 exec('disent_dict_CTNNC_usage = {}'.format(config_model['CTNCC_usage_moduledisent']))
 assert (
     config_model['str_mode_headxint_headxspl_headboth_twosep'] in [
@@ -944,6 +942,7 @@ module_vardist.to(device)
 if args.flag_verbose:
     print("Inflow vardist module was created on {}.".format(device))
 
+assert False
 
 # start a new wandb run to track this script
 if config_training['flag_enable_wandb']:
