@@ -674,7 +674,7 @@ maxsize_subgraph = max(list_maxsize_subgraph)
 
 # check if the inflow checkpoint is dumped
 path_dump_checkpoint = os.path.join(
-    args.path_output,
+    args.original_CLI_run_path_output,
     'CheckpointAndPredictions'
 )
 if (not os.path.isdir(path_dump_checkpoint)) or (not os.path.isfile(os.path.join(path_dump_checkpoint, 'inflow_model.pt'))):
