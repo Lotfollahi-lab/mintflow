@@ -631,47 +631,6 @@ if len(config_model['args_list_adjmatloss']) > 0:
 
 
 
-# compute/report the maximum number of subgraphs
-print("Computing some initial stats (max number of central nodes, etc) for each tissue.")
-list_maxsize_subgraph = []
-dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize = {}, {}
-for idx_sl, sl in enumerate(list_slice.list_slice):
-    print("Tissue # {}".format(idx_sl+1))
-    sl: Slice
-    pyg_neighloader_train, pyg_neighloader_test = sl.pyg_dl_train, sl.pyg_dl_test
-
-    if pyg_neighloader_train.batch_size is None:
-        batch_size = pyg_neighloader_train.batch_sampler.get_maxnumpoints_insquare()
-        maxsize_subgraph = 10 + np.sum(
-            np.cumprod([batch_size] + pyg_neighloader_train.node_sampler.num_neighbors.values)
-        )
-        maxsize_subgraph = int(maxsize_subgraph)
-
-    else:
-        maxsize_subgraph = 10 + np.sum(
-            np.cumprod([pyg_neighloader_train.batch_size] + pyg_neighloader_train.node_sampler.num_neighbors.values))
-        maxsize_subgraph = int(maxsize_subgraph)
-
-        print("maxsize_subgraph is equal to {}. If it's too big, try reducing width_window.".format(
-            maxsize_subgraph
-        ))
-
-    list_maxsize_subgraph.append(maxsize_subgraph)
-
-    if pyg_neighloader_train.batch_size is None:
-        print("    width_window={} --> [maxnum_centralnodes:{},    worse-case batchsize:{}]".format(
-            sl.kwargs_pygdl_train['width_window'],
-            pyg_neighloader_train.batch_sampler.get_maxnumpoints_insquare(),
-            maxsize_subgraph
-        ))
-
-        dict_slideID_to_maxnumcentralnodes[list(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']])[0]] = pyg_neighloader_train.batch_sampler.get_maxnumpoints_insquare()
-        dict_slideID_to_worsecasebatchsize[list(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']])[0]] = maxsize_subgraph
-
-
-maxsize_subgraph = max(list_maxsize_subgraph)
-
-
 # check if the inflow checkpoint is dumped
 path_dump_checkpoint = os.path.join(
     args.original_CLI_run_path_output,
