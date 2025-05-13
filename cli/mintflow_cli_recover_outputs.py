@@ -432,49 +432,6 @@ if args.flag_verbose:
         ))
     print("\n\n")
 
-assert False
-
-# check if path_output is not emtpy, and raise warnings otherwise ===
-if len(os.listdir(args.path_output)) != 0:
-    warnings.warn(
-        "\n\nThe specified path_output {} is not empty. It's recommeneded to empty path_output so files from different runs are not mixed.\n\n".format(args.path_output)
-    )
-
-
-
-# dump the scatters (i.e. neighbourhood graphs) ======
-# Train
-path_scatters = os.path.join(
-    args.path_output,
-    'Toinspect_NeighbourhoodGraphs'
-)
-if not os.path.isdir(path_scatters):
-    os.mkdir(path_scatters)
-
-path_scatters = os.path.join(
-    path_scatters,
-    'Train'
-)
-if not os.path.isdir(path_scatters):
-    os.mkdir(path_scatters)
-list_slice.show_scatters_4cli(path_output=path_scatters)
-
-# Test
-path_scatters = os.path.join(
-    args.path_output,
-    'Toinspect_NeighbourhoodGraphs'
-)
-if not os.path.isdir(path_scatters):
-    os.mkdir(path_scatters)
-
-path_scatters = os.path.join(
-    path_scatters,
-    'Test'
-)
-if not os.path.isdir(path_scatters):
-    os.mkdir(path_scatters)
-test_list_slice.show_scatters_4cli(path_output=path_scatters)
-
 
 
 if args.flag_verbose:
@@ -489,7 +446,7 @@ if args.flag_verbose:
     pprint(list_slice.map_Batchname_to_inflowBatchID)
     print("\n\n")
 
-
+# Note: due to the implementation in `utils_multislice.py` the assigned cell type and batchIDs do not vary in different runs.
 
 if args.flag_verbose:
     with torch.no_grad():
@@ -501,6 +458,7 @@ if args.flag_verbose:
                     set(sl.ten_BatchEmb.argmax(1).tolist())
                 )
             )
+
 
 # TODO: assert that the 1st tissue is assigned batch ID '0' ===
 
@@ -670,6 +628,10 @@ if len(config_model['args_list_adjmatloss']) > 0:
         print("added new ajdmatpred loss ")
         pprint(kwargs_newadjmatpredloss)
         print("\n\n")
+
+
+assert False
+
 
 # compute/report the maximum number of subgraphs
 print("Computing some initial stats (max number of central nodes, etc) for each tissue.")
