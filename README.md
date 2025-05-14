@@ -8,7 +8,7 @@
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to decompose spatial transcriptomics data into microenvironment-induced and intrinsic gene expression components. It interoperates with the [scverse](https://scverse.org/) ecosystem to enable seamless analysis workflows of spatial transcriptomics data to identify spatial biomarkers. 
+MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to decompose spatial transcriptomics data into microenvironment-induced and intrinsic gene expression components. It interoperates with the [scverse](https://scverse.org/) ecosystem to enable seamless analysis workflows of spatial transcriptomics data to identify spatial biomarkers.
 
 ## Installing the Python Environment
  **SANGER INTERNAL**: The environment is already available on farm.
@@ -91,10 +91,15 @@ python mintflow_cli.py \
 --path_output "./Your/Output/Path/ToDump/Results/" \
 --flag_verbose "True" \
 ```
-The recommended way of accessing MintFlow predictions is by `adata_mintflowOutput_norm.h5ad` and `adata_mintflowOutput_unnorm.h5ad` created in the provided `--path_output`and `adata.obsm` and `adata.uns` in these files.
-In the former file `..._norm.h5ad` the readcount matrix `adata.X` as well as MintFlow predictions Xint and Xspl are row normalised, while in the latter file `_unnorm.h5ad` they are not.
 
-MintFlow dumps a README file in the provided `--path_output`, as well as each subfolder therein.
+The CLI dumps all output files in the provided `--path_output` and those files can be used by analysis scripts.
+You don't need to know the foder structure and file conventions in the output path.
+But the CLI dumps a README file in the provided `--path_output`, as well as each in subfolder therein.
+
+### Step 3 of Using the CLI: If Some Outputs Aren't Dumped Properly, Recover Them
+
+TODO: complete : mintflow_cli_recover_outputs.py
+TODO:complete: mintflow_cli_recover_outputs.py
 
 ## Common Issues
 - Use absolute paths (and not relative paths like `../../some/path/`) in the config files, as well as when running `python mintflow_cli.py ...`.
