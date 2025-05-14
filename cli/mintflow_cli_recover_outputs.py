@@ -636,7 +636,7 @@ for idx_sl, sl in enumerate(test_list_slice.list_slice):
     )
 
 
-print("Finished running the script successfully.")
+print("Finished running the script successfully!")
 
 
 
