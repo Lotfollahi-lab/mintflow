@@ -39,7 +39,12 @@ class AnnealingDecoderXintXspl:
 
         # phase 2
         for t in range(self.num_phase2):
-            yield (self.coef_min + (self.coef_max - self.coef_min) * ((t+0.0)/(self.num_phase2-1.0)) )
+            if self.num_phase2 == 1:  # to handle divbyzero if `self.num_phase2` equals 1.
+                coef_t = 0.5  # ((t + 0.0) / (self.num_phase2 - 1.0))
+            else:
+                coef_t = ((t + 0.0) / (self.num_phase2 - 1.0))
+
+            yield (self.coef_min + (self.coef_max - self.coef_min) * coef_t)
 
         # phase 3
         while True:
