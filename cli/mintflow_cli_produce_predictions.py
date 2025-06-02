@@ -451,6 +451,54 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
                 torch.cuda.empty_cache()
                 gc.collect()
 
+                # dump the predictions per-tissue
+                dict_oldvarname_to_newvarname = {
+
+                }  # map names to
+                with torch.no_grad():
+                    for idx_sl, sl in enumerate(test_list_slice.list_slice):
+                        print("\n\n")
+
+                        anal_dict_varname_to_output_slice = module_vardist.eval_on_pygneighloader_dense(
+                            dl=test_list_slice.list_slice[idx_sl].pyg_dl_test,
+                            ten_xy_absolute=test_list_slice.list_slice[idx_sl].ten_xy_absolute,
+                            tqdm_desc="Evaluating on tissue {}".format(idx_sl + 1)
+                        )
+                        '''
+                        anal_dict_varname_to_output_slice is a dict with the following keys:
+                        ['output_imputer',
+                         'muxint',
+                         'muxspl',
+                         'muxbar_int',
+                         'muxbar_spl',
+                         'mu_sin',
+                         'mu_sout',
+                         'mu_z',
+                         'x_int',
+                         'x_spl']
+                        '''
+
+                        # remove redundant fields ===
+                        anal_dict_varname_to_output_slice.pop('output_imputer', None)
+                        anal_dict_varname_to_output_slice.pop('x_int', None)
+                        anal_dict_varname_to_output_slice.pop('x_spl', None)
+
+                        # get pred_Xspl and pred_Xint before row normalisation on adata.X
+                        rowcoef_correct4scppnormtotal = (np.array(sl.adata_before_scppnormalize_total.X.sum(1).tolist()) + 0.0) / (config_training['val_scppnorm_total'] + 0.0)
+                        if len(rowcoef_correct4scppnormtotal.shape) == 1:
+                            rowcoef_correct4scppnormtotal = np.expand_dims(rowcoef_correct4scppnormtotal, -1)  # [N x 1]
+
+                        assert rowcoef_correct4scppnormtotal.shape[0] == sl.adata_before_scppnormalize_total.shape[0]
+                        assert rowcoef_correct4scppnormtotal.shape[1] == 1
+
+                        anal_dict_varname_to_output_slice['muxint_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxint'].multiply(
+                            rowcoef_correct4scppnormtotal
+                        )
+                        anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxspl'].multiply(
+                            rowcoef_correct4scppnormtotal
+                        )
+
+
 
 
 
