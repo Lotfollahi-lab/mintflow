@@ -1120,7 +1120,7 @@ for idx_epoch in range(config_training['num_training_epochs']):
             },
             os.path.join(
                 path_dump_checkpoint,
-                'inflow_checkpoint_epoch_{}.pt'.format(idx_epoch)
+                'mintflow_checkpoint_epoch_{}.pt'.format(idx_epoch)
             ),
             pickle_protocol=4
         )
