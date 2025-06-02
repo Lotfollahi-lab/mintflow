@@ -553,7 +553,7 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
                         # Dump anndata objects if needed
                         if args.flag_dump_anndata_objects:
                             adata_todump = sl.adata
-                            
+
                             for varname in anal_dict_varname_to_output_slice.keys():
                                 adata_todump.obsm[varname] = anal_dict_varname_to_output_slice[varname]
 
