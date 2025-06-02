@@ -84,7 +84,7 @@ def func_get_map_geneidx_to_R2(
 
         if flag_drop_the_targetgene_from_input:
             list_idx_keep = [u for u in set(range(all_X.shape[1])) if u%adata.shape[1] != idx_gene]
-            print("len(list_idx_keep) = {}".format(len(list_idx_keep)))
+            # print("len(list_idx_keep) = {}".format(len(list_idx_keep)))
             all_X = all_X[:, list_idx_keep]
 
         all_Y = adata.X[:, idx_gene].toarray() # np.array([float(adata.X[n, idx_gene]) for n in range(adata.X.shape[0])])
