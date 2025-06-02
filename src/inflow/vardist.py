@@ -2110,7 +2110,7 @@ class InFlowVarDist(nn.Module):
                     dict_varname_to_output[k] = sparse.vstack(
                         [dict_var_to_dict_nglobal_to_value[k][n] for n in range(ten_xy_absolute.size()[0])]
                     )
-        
+
 
         return dict_varname_to_output
 
