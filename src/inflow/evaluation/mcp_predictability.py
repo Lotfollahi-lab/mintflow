@@ -23,7 +23,8 @@ def func_get_map_geneidx_to_R2(
     obskey_spatial_x,
     obskey_spatial_y,
     kwargs_compute_graph,
-    flag_drop_the_targetgene_from_input:bool
+    flag_drop_the_targetgene_from_input:bool,
+    perc_trainsplit:int=50
 ):
     """
     :param fname_adata:
@@ -54,7 +55,7 @@ def func_get_map_geneidx_to_R2(
         "{}_{}".format(np_edge_index[0, n], np_edge_index[1, n]) for n in range(np_edge_index.shape[1])
     ])
     dict_nodeindex_to_listX = {nodeindex: [] for nodeindex in range(adata.shape[0])}
-    for ij in tqdm(set_ij):
+    for ij in tqdm(set_ij, desc="Analysing the neighbourhood graph"):
         i, j = ij.split("_")
         i, j = int(i), int(j)
         dict_nodeindex_to_listX[i].append(adata.X[j, :])
@@ -64,13 +65,14 @@ def func_get_map_geneidx_to_R2(
         for nodeindex in range(adata.shape[0])
     }
 
-    for nodeindex in tqdm(range(adata.shape[0])):
+    for nodeindex in tqdm(range(adata.shape[0]), desc='Precomputing regression input'):
         dict_nodeindex_to_listX[nodeindex] = sparse.vstack(dict_nodeindex_to_listX[nodeindex])
 
     # loop over genes and compute R2 scores
     for idx_gene in tqdm(range(adata.shape[1])):
         t_begin = time.time()
 
+        # create all_X and all_Y
         all_X = sparse.vstack(
             [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
         ).toarray()
@@ -78,18 +80,26 @@ def func_get_map_geneidx_to_R2(
         if flag_drop_the_targetgene_from_input:
             all_X = np.delete(all_X, idx_gene, 1)
 
+        all_Y = np.array([float(adata.X[n, idx_gene]) for n in range(adata.X.shape[0]) for _ in range(dict_nodeindex_to_nodedegree[n])])
+
+        # split X and Y to train/test
+        randperm_N = np.random.permutation(adata.shape[0])
+        N_train = int((perc_trainsplit/100.0) * adata.shape[0])
+        list_idx_train = randperm_N[0:N_train]
+        list_idx_test  = randperm_N[N_train:]
+
         print("all_X.shape = {}".format(all_X.shape))
 
         reg = LinearRegression()
         reg.fit(
-            all_X.toarray(),
-            [adata.X[n, idx_gene] for n in range(adata.X.shape[0]) for _ in range(dict_nodeindex_to_nodedegree[n])]
+            all_X[list_idx_train, :],
+            all_Y[list_idx_train]
         )
         r2_score = reg.score(
-            all_X.toarray(),
-            [adata.X[n, idx_gene] for n in range(adata.X.shape[0]) for _ in range(dict_nodeindex_to_nodedegree[n])]
+            all_X[list_idx_test, :],
+            all_Y[list_idx_test]
         )
         print(r2_score)
 
         print("Took {} seconds.".format(time.time() - t_begin))
-        assert False
+        # assert False
