@@ -58,7 +58,9 @@ def func_get_map_geneidx_to_R2(
     for ij in tqdm(set_ij, desc="Analysing the neighbourhood graph"):
         i, j = ij.split("_")
         i, j = int(i), int(j)
-        dict_nodeindex_to_listX[i].append(adata.X[j, :])
+        dict_nodeindex_to_listX[i].append(
+            adata.X[j, :]
+        )
 
     dict_nodeindex_to_nodedegree = {
         nodeindex: len(dict_nodeindex_to_listX[nodeindex])
@@ -66,7 +68,10 @@ def func_get_map_geneidx_to_R2(
     }
 
     for nodeindex in tqdm(range(adata.shape[0]), desc='Precomputing regression input'):
-        dict_nodeindex_to_listX[nodeindex] = sparse.vstack(dict_nodeindex_to_listX[nodeindex])
+        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(dict_nodeindex_to_listX[nodeindex])
+
+    print(dict_nodeindex_to_listX[nodeindex].shape)
+    assert False
 
     # loop over genes and compute R2 scores
     list_r2score = []
@@ -78,8 +83,8 @@ def func_get_map_geneidx_to_R2(
             [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
         ).toarray()
 
-        if flag_drop_the_targetgene_from_input:
-            all_X = np.delete(all_X, idx_gene, 1)
+        # if flag_drop_the_targetgene_from_input:
+        #     all_X = np.delete(all_X, idx_gene, 1)
 
         all_Y = np.array([float(adata.X[n, idx_gene]) for n in range(adata.X.shape[0]) for _ in range(dict_nodeindex_to_nodedegree[n])])
 
