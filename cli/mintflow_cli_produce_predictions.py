@@ -155,6 +155,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    '--flag_dump_anndata_objects',
+    type=str,
+    help="If set to True, this scripot dumps the anndata objects with MintFlow predictions in its .obsm field. A string in ['True', 'False']\n"+\
+         "If you face out of memory issues, you can set this argument to 'False'."
+)
+
+parser.add_argument(
     '--flag_verbose',
     type=str,
     help="Whether the script is verbose, a string in ['True', 'False']"
@@ -177,6 +184,10 @@ args.flag_verbose = (args.flag_verbose == 'True')
 assert isinstance(args.flag_use_cuda, str)
 assert args.flag_use_cuda in ['True', 'False']
 args.flag_use_cuda = (args.flag_use_cuda == 'True')
+
+assert isinstance(args.flag_dump_anndata_objects, str)
+assert args.flag_dump_anndata_objects in ['True', 'False']
+args.flag_dump_anndata_objects = (args.flag_dump_anndata_objects == 'True')
 
 # find the mapping of the config file names (important when the config files have been modified and are potentially irrelevant names)
 with open(
@@ -453,8 +464,14 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
 
                 # dump the predictions per-tissue
                 dict_oldvarname_to_newvarname = {
-
-                }  # map names to
+                    'muxint':'MintFlow_X_int',
+                    'muxspl':'MintFlow_X_mic',
+                    'muxbar_int':'MintFlow_Xbar_int',
+                    'muxbar_spl':'MintFlow_Xbar_mic',
+                    'mu_sin':'MintFlow_S_in',
+                    'mu_sout':'MintFlow_S_out',
+                    'mu_z':'MintFlow_Z'
+                }  # map names according to the latest glossery of the manuscript.
                 with torch.no_grad():
                     for idx_sl, sl in enumerate(test_list_slice.list_slice):
                         print("\n\n")
@@ -464,6 +481,8 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
                             ten_xy_absolute=test_list_slice.list_slice[idx_sl].ten_xy_absolute,
                             tqdm_desc="Evaluating on tissue {}".format(idx_sl + 1)
                         )
+
+
                         '''
                         anal_dict_varname_to_output_slice is a dict with the following keys:
                         ['output_imputer',
@@ -498,183 +517,63 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
                             rowcoef_correct4scppnormtotal
                         )
 
+                        # replace the keys in dictionary
+                        for k_old, k_new in dict_oldvarname_to_newvarname.items():
+                            anal_dict_varname_to_output_slice[k_new] = anal_dict_varname_to_output_slice.pop(k_old)
+
+                        # dump the predictions
+                        try_mkdir(
+                            os.path.join(
+                                args.original_CLI_run_path_output,
+                                'CheckpointAndPredictions',
+                                "Predictions_And_Evaluation_{}".format(fname_checkpoint[0:-3])
+                            )
+                        )
+
+                        torch.save(
+                            anal_dict_varname_to_output_slice,
+                            os.path.join(
+                                args.original_CLI_run_path_output,
+                                'CheckpointAndPredictions',
+                                "Predictions_And_Evaluation_{}".format(fname_checkpoint[0:-3]),
+                                'perdictions_tissue_section_{}.pt'.format(idx_sl+1)
+                            ),
+                            pickle_protocol=4
+                        )
+
+
+
+                        # Dump anndata objects if needed
+                        if args.flag_dump_anndata_objects:
+                            adata_todump = sl.adata
+                            for varname in anal_dict_varname_to_output_slice.keys():
+                                adata_todump.obsm[varname] = anal_dict_varname_to_output_slice[varname]
+
+                            adata_todump.write_h5ad(
+                                os.path.join(
+                                    args.original_CLI_run_path_output,
+                                    'CheckpointAndPredictions',
+                                    "Predictions_And_Evaluation_{}".format(fname_checkpoint[0:-3]),
+                                    'anndata_tissue_section_{}.pt'.format(idx_sl + 1)
+                                )
+                            )
+
+
+
+                        del anal_dict_varname_to_output_slice
+                        gc.collect()
+
+
+                del module_vardist
+                gc.collect()
 
 
 
 
-# mintflow_checkpoint_epoch_
 
-
-path_dump_checkpoint = os.path.join(
-    args.original_CLI_run_path_output,
-    'CheckpointAndPredictions'
-)
-if (not os.path.isdir(path_dump_checkpoint)) or (not os.path.isfile(os.path.join(path_dump_checkpoint, 'inflow_model.pt'))):
-    raise Exception(
-        "The file 'CheckpointAndPredictions/inflow_model.pt' was not found in the output path: \n {}".format(args.original_CLI_run_path_output)
-    )
-
-module_vardist = torch.load(
-    os.path.join(
-        path_dump_checkpoint,
-        'inflow_model.pt'
-    ),
-    map_location=device
-)['module_inflow']
-
-print("Loaded the mintflow module on device {} from checkpiont {}".format(
-    device,
-    os.path.join(path_dump_checkpoint, 'inflow_model.pt')
-))
 
 torch.cuda.empty_cache()
 gc.collect()
-
-
-# dump predictions per-tissue
-with torch.no_grad():
-    for idx_sl, sl in enumerate(test_list_slice.list_slice):
-        print("\n\n")
-
-        anal_dict_varname_to_output_slice = module_vardist.eval_on_pygneighloader_dense(
-            dl=test_list_slice.list_slice[idx_sl].pyg_dl_test,
-            ten_xy_absolute=test_list_slice.list_slice[idx_sl].ten_xy_absolute,
-            tqdm_desc="Evaluating on tissue {}".format(idx_sl+1)
-        )
-        '''
-        anal_dict_varname_to_output_slice is a dict with the following keys:
-        ['output_imputer',
-         'muxint',
-         'muxspl',
-         'muxbar_int',
-         'muxbar_spl',
-         'mu_sin',
-         'mu_sout',
-         'mu_z',
-         'x_int',
-         'x_spl']
-        '''
-
-        # remove redundant fields ===
-        anal_dict_varname_to_output_slice.pop('output_imputer', None)
-        anal_dict_varname_to_output_slice.pop('x_int', None)
-        anal_dict_varname_to_output_slice.pop('x_spl', None)
-
-
-        # get pred_Xspl and pred_Xint before row normalisation on adata.X
-        rowcoef_correct4scppnormtotal = (np.array(sl.adata_before_scppnormalize_total.X.sum(1).tolist()) + 0.0) / (config_training['val_scppnorm_total'] + 0.0)
-        if len(rowcoef_correct4scppnormtotal.shape) == 1:
-            rowcoef_correct4scppnormtotal = np.expand_dims(rowcoef_correct4scppnormtotal, -1)  # [N x 1]
-
-        assert rowcoef_correct4scppnormtotal.shape[0] == sl.adata_before_scppnormalize_total.shape[0]
-        assert rowcoef_correct4scppnormtotal.shape[1] == 1
-
-        anal_dict_varname_to_output_slice['muxint_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxint'] * rowcoef_correct4scppnormtotal + 0.0
-        anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxspl'] * rowcoef_correct4scppnormtotal + 0.0
-
-        '''
-        Sparsify the following vars
-        - muxint
-        - muxspl
-        - muxint_before_sc_pp_normalize_total
-        - muxspl_before_sc_pp_normalize_total
-        -
-        '''
-        tmp_mask = test_list_slice.list_slice[idx_sl].adata.X + 0
-        if issparse(tmp_mask):
-            tmp_mask = tmp_mask.toarray()
-        tmp_mask = ((tmp_mask > 0) + 0).astype(int)
-
-        for var in [
-            'muxint',
-            'muxspl',
-            'muxint_before_sc_pp_normalize_total',
-            'muxspl_before_sc_pp_normalize_total'
-        ]:
-            anal_dict_varname_to_output_slice[var] = coo_matrix(anal_dict_varname_to_output_slice[var] * tmp_mask)
-
-            # TODO: modify when sparsification is added inside `eval_on_pygneighloader_dense`
-
-            '''
-            The sparse format may have more 0-s than tmp_mask, so the check below was removed.
-            if len(anal_dict_varname_to_output_slice[var].data) == tmp_mask.sum():
-                path_debug_output = os.path.join(
-                    args.path_output,
-                    'DebugInfo'
-                )
-                try_mkdir(path_debug_output)
-
-                # dump the anndata ===
-                test_list_slice.list_slice[idx_sl].adata.write(
-                    os.path.join(
-                        path_debug_output,
-                        'adata.h5ad'
-                    )
-                )
-
-                # dump `tmp_mask` ===
-                with open(os.path.join(path_debug_output, 'tmp_mask.pkl'), 'wb') as f:
-                    pickle.dump(tmp_mask, f)
-
-                # dump anal_dict_varname_to_output_slice[var]
-                with open(os.path.join(path_debug_output, 'var_{}.pkl'.format(var)), 'wb') as f:
-                    pickle.dump(
-                        anal_dict_varname_to_output_slice[var],
-                        f
-                    )
-
-                raise Exception(
-                    "Something went wrong when trying to sparsify {}".format(var)
-                )
-            '''
-
-            gc.collect()
-
-
-        # dump the predictions
-        torch.save(
-            anal_dict_varname_to_output_slice,
-            os.path.join(path_dump_checkpoint, 'predictions_slice_{}.pt'.format(idx_sl + 1)),
-            pickle_protocol=4
-        )
-
-
-        del anal_dict_varname_to_output_slice
-        gc.collect()
-
-
-# dump the tissue samples ===
-path_dump_training_listtissue = os.path.join(
-    args.original_CLI_run_path_output,
-    "TrainingListTissue"
-)
-path_dump_testing_listtissue = os.path.join(
-    args.original_CLI_run_path_output,
-    "TestingListTissue"
-)
-try_mkdir(path_dump_training_listtissue)
-try_mkdir(path_dump_testing_listtissue)
-
-for idx_sl, sl in enumerate(list_slice.list_slice):
-    # with open(os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pkl'.format(idx_sl+1)), 'wb') as f:
-    #     pickle.dump(sl, f)
-
-    torch.save(
-        sl,
-        os.path.join(path_dump_training_listtissue, 'tissue_tr_{}.pt'.format(idx_sl + 1)),
-        pickle_protocol=4
-    )
-
-for idx_sl, sl in enumerate(test_list_slice.list_slice):
-
-    # with open(os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pkl'.format(idx_sl+1)), 'wb') as f:
-    #     pickle.dump(sl, f)
-
-    torch.save(
-        sl,
-        os.path.join(path_dump_testing_listtissue, 'tissue_test_{}.pt'.format(idx_sl + 1)),
-        pickle_protocol=4
-    )
 
 
 print("Finished running the script successfully!")
