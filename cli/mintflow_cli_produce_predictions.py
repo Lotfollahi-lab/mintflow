@@ -520,6 +520,10 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
                             rowcoef_correct4scppnormtotal
                         )
 
+                        # convert from coo to csr, so they can be saved in anndata object.
+                        anal_dict_varname_to_output_slice['muxint_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxint_before_sc_pp_normalize_total'].tocsr()
+                        anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'].tocsr()
+
                         # replace the keys in dictionary
                         for k_old, k_new in dict_oldvarname_to_newvarname.items():
                             anal_dict_varname_to_output_slice[k_new] = anal_dict_varname_to_output_slice.pop(k_old)
@@ -573,14 +577,9 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
 
                 del module_vardist
                 gc.collect()
+                torch.cuda.empty_cache()
+                gc.collect()
 
-
-
-
-
-
-torch.cuda.empty_cache()
-gc.collect()
 
 
 print("Finished running the script successfully!")
