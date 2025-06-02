@@ -2,8 +2,7 @@
 '''
 Implements a
 '''
-
-
+import gc
 import os, sys
 import numpy as np
 import torch
@@ -103,6 +102,12 @@ def func_get_map_geneidx_to_R2(
         )
 
         list_r2score.append(r2_score)
+
+        del all_X
+        gc.collect()
+        gc.collect()
+        gc.collect()
+        gc.collect()
 
         #print(r2_score)
 
