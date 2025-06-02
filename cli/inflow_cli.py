@@ -687,7 +687,7 @@ for idx_sl, sl in enumerate(list_slice.list_slice):
 maxsize_subgraph = max(list_maxsize_subgraph)
 
 
-# dump the window sizes ========= TODO:HERE
+# dump the window sizes =========
 # Train
 path_window_overlays = os.path.join(
     args.path_output,
@@ -1101,6 +1101,34 @@ for idx_epoch in range(config_training['num_training_epochs']):
         idx_epoch+1,
         config_training['num_training_epochs']
     ))
+
+    # dump a checkpoint if needed
+    if (idx_epoch > 0) and (idx_epoch%config_training['epochstep_dump_checkpoint'] == 0):
+        path_dump_checkpoint = os.path.join(
+            args.path_output,
+            'CheckpointAndPredictions'
+        )
+        try_mkdir(path_dump_checkpoint)
+
+        torevert_module_annealing = module_vardist.module_annealing  # to restore after dump.
+        torevert_module_annealing_decoderXintXspl = module_vardist.module_annealing_decoderXintXspl # to restore after dump.
+        module_vardist.module_annealing = "NONE"  # so it can be dumped.
+        module_vardist.module_annealing_decoderXintXspl = "NONE"  # so it can be dumped.
+        torch.save(
+            {
+                'module_inflow': module_vardist,
+            },
+            os.path.join(
+                path_dump_checkpoint,
+                'inflow_checkpoint_epoch_{}.pt'.format(idx_epoch)
+            ),
+            pickle_protocol=4
+        )
+        module_vardist.module_annealing = torevert_module_annealing  # restore after dump.
+        module_vardist.module_annealing_decoderXintXspl = torevert_module_annealing_decoderXintXspl  # restore after dump.
+
+
+
     # ten_Z, ten_xbarint, ten_CT, ten_NCC, ten_xy_absolute are obtained using all tissues.
     # update the dual functions separately =============
     with torch.no_grad():
@@ -1243,6 +1271,7 @@ if args.flag_verbose:
         len(list_slice.list_slice[0].adata.var.index.tolist()),
         len(list_LR)
     ))
+
 
 # dump the inflow model as well as the inferred latent factors ===
 path_dump_checkpoint = os.path.join(
