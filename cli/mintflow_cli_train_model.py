@@ -1095,7 +1095,7 @@ with open(os.path.join(args.path_output, 'ConfigFilesCopiedOver', 'args.yml'), '
 
 
 # dump general info (like mapping of cell types, batch IDs, etc.)
-with open(os.path.join(args.path_output, 'general_info.pkl')) as f:
+with open(os.path.join(args.path_output, 'general_info.pkl'), 'w') as f:
     dict_todump_geninfo = {
         'args_mintflow_cli_train_model.py':args,
         'map_CT_to_mintflowCT':list_slice.map_CT_to_inflowCT,

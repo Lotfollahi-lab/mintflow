@@ -407,7 +407,7 @@ if args.flag_verbose:
     print("\n\n")
 
 # Note: due to the implementation in `utils_multislice.py` the assigned cell type and batchIDs do not vary in different runs.
-# TODO: double-check it 
+# TODO: double-check it via the dumped general info in the output path
 
 if args.flag_verbose:
     with torch.no_grad():
@@ -424,7 +424,39 @@ if args.flag_verbose:
 # TODO: assert that the 1st tissue is assigned batch ID '0' ===
 
 
-# check if the inflow checkpoint is dumped
+# Loop over the dumped checkpoints
+for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_output, 'CheckpointAndPredictions')):
+    if fname_checkpoint.endswith(".pt"):
+        if len(fname_checkpoint) > len('mintflow_checkpoint_epoch_'):
+            if fname_checkpoint[0:len('mintflow_checkpoint_epoch_')] == 'mintflow_checkpoint_epoch_':
+                # load the checkpoint
+                module_vardist = torch.load(
+                    os.path.join(
+                        args.original_CLI_run_path_output,
+                        'CheckpointAndPredictions',
+                        fname_checkpoint
+                    ),
+                    map_location=device
+                )['module_inflow']
+
+                print("Loaded the mintflow module on device {} from checkpiont {}".format(
+                    device,
+                    os.path.join(
+                        args.original_CLI_run_path_output,
+                        'CheckpointAndPredictions',
+                        fname_checkpoint
+                    )
+                ))
+
+                torch.cuda.empty_cache()
+                gc.collect()
+
+
+
+
+# mintflow_checkpoint_epoch_
+
+
 path_dump_checkpoint = os.path.join(
     args.original_CLI_run_path_output,
     'CheckpointAndPredictions'
