@@ -69,6 +69,7 @@ def func_get_map_geneidx_to_R2(
         dict_nodeindex_to_listX[nodeindex] = sparse.vstack(dict_nodeindex_to_listX[nodeindex])
 
     # loop over genes and compute R2 scores
+    list_r2score = []
     for idx_gene in tqdm(range(adata.shape[1])):
         t_begin = time.time()
 
@@ -99,7 +100,13 @@ def func_get_map_geneidx_to_R2(
             all_X[list_idx_test, :],
             all_Y[list_idx_test]
         )
-        print(r2_score)
 
-        print("Took {} seconds.".format(time.time() - t_begin))
+        list_r2score.append(r2_score)
+
+        #print(r2_score)
+
+        # print("Took {} seconds.".format(time.time() - t_begin))
         # assert False
+
+    return list_r2score
+
