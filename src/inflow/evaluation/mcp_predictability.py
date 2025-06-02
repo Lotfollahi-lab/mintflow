@@ -36,7 +36,7 @@ def func_get_map_geneidx_to_R2(
     # read the anndata object and create neigh graph
     adata = sc.read_h5ad(fname_adata)
     adata.obsm['spatial'] = np.stack(
-        [np.array(adata.obs['obskey_spatial_x'].tolist()), np.array(adata.obs['obskey_spatial_y'].tolist())],
+        [np.array(adata.obs[obskey_spatial_x].tolist()), np.array(adata.obs[obskey_spatial_y].tolist())],
         1
     )
     sq.gr.spatial_neighbors(
