@@ -553,12 +553,9 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
                         # Dump anndata objects if needed
                         if args.flag_dump_anndata_objects:
                             adata_todump = sl.adata
+                            
                             for varname in anal_dict_varname_to_output_slice.keys():
-                                if issparse(anal_dict_varname_to_output_slice[varname]):
-                                    adata_todump.layers[varname] = anal_dict_varname_to_output_slice[varname]
-                                    # Because the sparse matrices (Xint, Xspl, etc) cannot be store in adata.obsm, and hence are stored in adata.layers.
-                                else:
-                                    adata_todump.obsm[varname] = anal_dict_varname_to_output_slice[varname]
+                                adata_todump.obsm[varname] = anal_dict_varname_to_output_slice[varname]
 
                             adata_todump.write_h5ad(
                                 os.path.join(
