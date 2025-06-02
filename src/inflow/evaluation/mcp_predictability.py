@@ -19,7 +19,7 @@ import time
 
 
 def func_get_map_geneidx_to_R2(
-    fname_adata,
+    adata,
     obskey_spatial_x,
     obskey_spatial_y,
     kwargs_compute_graph,
@@ -27,7 +27,7 @@ def func_get_map_geneidx_to_R2(
     perc_trainsplit:int=50
 ):
     """
-    :param fname_adata:
+    :param adata:
     :param obskey_spatial_x:
     :param obskey_spatial_y:
     :param kwargs_compute_graph
@@ -35,7 +35,8 @@ def func_get_map_geneidx_to_R2(
     :return:
     """
     # read the anndata object and create neigh graph
-    adata = sc.read_h5ad(fname_adata)
+    # adata = sc.read_h5ad(fname_adata)
+
     adata.obsm['spatial'] = np.stack(
         [np.array(adata.obs[obskey_spatial_x].tolist()), np.array(adata.obs[obskey_spatial_y].tolist())],
         1
