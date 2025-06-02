@@ -447,7 +447,8 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
                         'CheckpointAndPredictions',
                         fname_checkpoint
                     ),
-                    map_location=device
+                    map_location=device,
+                    weights_only=False
                 )['module_inflow']
 
                 print("Loaded the mintflow module on device {} from checkpiont {}".format(
