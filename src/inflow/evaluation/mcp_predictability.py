@@ -68,7 +68,7 @@ def func_get_map_geneidx_to_R2(
     }
 
     for nodeindex in tqdm(range(adata.shape[0]), desc='Precomputing regression input'):
-        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(dict_nodeindex_to_listX[nodeindex])
+        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(dict_nodeindex_to_listX[nodeindex])[:, 0:adata.shape[1]*kwargs_compute_graph['n_neighs']]
 
     print(dict_nodeindex_to_listX[nodeindex].shape)
     assert False
