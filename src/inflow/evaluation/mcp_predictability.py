@@ -68,10 +68,9 @@ def func_get_map_geneidx_to_R2(
     }
 
     for nodeindex in tqdm(range(adata.shape[0]), desc='Precomputing regression input'):
-        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(dict_nodeindex_to_listX[nodeindex])[:, 0:adata.shape[1]*kwargs_compute_graph['n_neighs']]
+        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(dict_nodeindex_to_listX[nodeindex])[:, 0:adata.shape[1]*kwargs_compute_graph['n_neighs']]  # [1 x num_genes*num_NNs]
 
-    print(dict_nodeindex_to_listX[nodeindex].shape)
-    assert False
+
 
     # loop over genes and compute R2 scores
     list_r2score = []
@@ -81,10 +80,12 @@ def func_get_map_geneidx_to_R2(
         # create all_X and all_Y
         all_X = sparse.vstack(
             [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
-        ).toarray()
+        ).toarray()  # [N x num_genes*num_NNs]
 
-        # if flag_drop_the_targetgene_from_input:
-        #     all_X = np.delete(all_X, idx_gene, 1)
+        if flag_drop_the_targetgene_from_input:
+            list_idx_keep = [u for u in set(range(all_X.shape[1])) if u%idx_gene != 0]
+            print("len(list_idx_keep) = {}".format(len(list_idx_keep)))
+            all_X = all_X[:, list_idx_keep]
 
         all_Y = np.array([float(adata.X[n, idx_gene]) for n in range(adata.X.shape[0]) for _ in range(dict_nodeindex_to_nodedegree[n])])
 
