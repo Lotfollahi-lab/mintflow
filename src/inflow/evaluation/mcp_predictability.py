@@ -90,7 +90,7 @@ def func_get_map_geneidx_to_R2(
         list_idx_train = randperm_N[0:N_train]
         list_idx_test  = randperm_N[N_train:]
 
-        print("all_X.shape = {}".format(all_X.shape))
+        # print("all_X.shape = {}".format(all_X.shape))
 
         reg = LinearRegression()
         reg.fit(
