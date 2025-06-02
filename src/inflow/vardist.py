@@ -1,6 +1,7 @@
 import random
 from typing import List
 import numpy as np
+from scipy import sparse
 import torch
 import torch.nn as nn
 from torch_geometric.loader import NeighborLoader
@@ -2056,6 +2057,7 @@ class InFlowVarDist(nn.Module):
                 np_out_imputer = curr_dict_qsample['ten_out_imputer'].detach().cpu().numpy()
             else:
                 np_out_imputer = None
+
             np_muxint = curr_dict_qsample['params_q_impanddisentgl']['muxint'].detach().cpu().numpy()
             np_muxspl = curr_dict_qsample['params_q_impanddisentgl']['muxspl'].detach().cpu().numpy()
             np_muxbar_int = curr_dict_qsample['param_q_xbarint'].detach().cpu().numpy()
@@ -2063,19 +2065,23 @@ class InFlowVarDist(nn.Module):
             np_mu_sin = curr_dict_qsample['param_q_cond4flow']['mu_sin'].detach().cpu().numpy()
             np_mu_sout = curr_dict_qsample['param_q_cond4flow']['mu_sout'].detach().cpu().numpy()
             np_mu_z = curr_dict_qsample['param_q_cond4flow']['mu_z'].detach().cpu().numpy()
+
             for n_local, n_global in enumerate(batch.input_id.tolist()):
                 if np_out_imputer is not None:
                     dict_var_to_dict_nglobal_to_value['output_imputer'][n_global] = np_out_imputer[n_local, :]
-                dict_var_to_dict_nglobal_to_value['muxint'][n_global] = np_muxint[n_local, :]
-                dict_var_to_dict_nglobal_to_value['muxspl'][n_global] = np_muxspl[n_local, :]
+
+                # dense embeddings (as usual)
                 dict_var_to_dict_nglobal_to_value['muxbar_int'][n_global] = np_muxbar_int[n_local, :]
                 dict_var_to_dict_nglobal_to_value['muxbar_spl'][n_global] = np_muxbar_spl[n_local, :]
                 dict_var_to_dict_nglobal_to_value['mu_sin'][n_global] = np_mu_sin[n_local, :]
                 dict_var_to_dict_nglobal_to_value['mu_sout'][n_global] = np_mu_sout[n_local, :]
                 dict_var_to_dict_nglobal_to_value['mu_z'][n_global] = np_mu_z[n_local, :]
+
                 # and generated samples
-                dict_var_to_dict_nglobal_to_value['x_int'][n_global] = curr_dict_qsample['x_int'][n_local, :].detach().cpu().numpy()
-                dict_var_to_dict_nglobal_to_value['x_spl'][n_global] = curr_dict_qsample['x_spl'][n_local,:].detach().cpu().numpy()
+                dict_var_to_dict_nglobal_to_value['muxint'][n_global] = sparse.csr_matrix(np_muxint[n_local, :])
+                dict_var_to_dict_nglobal_to_value['muxspl'][n_global] = sparse.csr_matrix(np_muxspl[n_local, :])
+                dict_var_to_dict_nglobal_to_value['x_int'][n_global] = sparse.csr_matrix(curr_dict_qsample['x_int'][n_local, :].detach().cpu().numpy())
+                dict_var_to_dict_nglobal_to_value['x_spl'][n_global] = sparse.csr_matrix(curr_dict_qsample['x_spl'][n_local,:].detach().cpu().numpy())
 
         self.train()
 
@@ -2093,18 +2099,18 @@ class InFlowVarDist(nn.Module):
                 dict_varname_to_output[k] = None
             else:
 
-                '''
-                print("k={}".format(k))
-                print(" ----- list of node indices with no value.")
-                for n in range(ten_xy_absolute.size()[0]):
-                    if n not in dict_var_to_dict_nglobal_to_value[k].keys():
-                        print(" ------------- {}".format(n))
-                '''
-
-                dict_varname_to_output[k] = np.stack(
-                    [dict_var_to_dict_nglobal_to_value[k][n] for n in range(ten_xy_absolute.size()[0])],
-                    0
-                )
+                if isinstance(
+                    dict_var_to_dict_nglobal_to_value[k][0], np.ndarray
+                ):  # i.e. not a sparse matrix
+                    dict_varname_to_output[k] = np.stack(
+                        [dict_var_to_dict_nglobal_to_value[k][n] for n in range(ten_xy_absolute.size()[0])],
+                        0
+                    )
+                else:  # a sparse matrix
+                    dict_varname_to_output[k] = sparse.vstack(
+                        [dict_var_to_dict_nglobal_to_value[k][n] for n in range(ten_xy_absolute.size()[0])]
+                    )
+        
 
         return dict_varname_to_output
 
