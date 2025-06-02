@@ -1,16 +1,13 @@
 
 """
 After running the CLI via `python mintflow_cli.py ... ` the code may crash due to, e.g., memory issue before some results are dumpued in the specified `path_output`.
-As long as
-- the checkpoint file is available in `path_output/CheckpointAndPredictions`
-- and the old config files are available in `path_output/ConfigFilesCopiedOver` (which should be normally true)
-The current script should be able to recover the outputs as usual.
+The current script goes over the checkpoints in `CheckpointsAndPredictions` in the output path and creates the predictions as well as
 """
 
 #use inflow or inflow_synth
 STR_INFLOW_OR_INFLOW_SYNTH = "inflow"  # in ['inflow', 'inflow_synth']
 assert(
-    STR_INFLOW_OR_INFLOW_SYNTH == 'inflow' #  in ['inflow', 'inflow_synth']
+    STR_INFLOW_OR_INFLOW_SYNTH == 'inflow'  # in ['inflow', 'inflow_synth']
 )
 
 import os, sys
@@ -148,7 +145,7 @@ parser.add_argument(
     '--original_CLI_run_path_output',
     type=str,
     help='The original output path specified when running mintflow CLI.\n' +\
-    'In other words, the `path_output` passed to the CLI when running `python mintflow_cli.py ....`.'
+    'In other words, the `path_output` passed to the CLI when running `python mintflow_cli_train_model.py ....`.'
 )
 
 parser.add_argument(
@@ -229,43 +226,6 @@ config_model = parse_config_model.parse(
     )
 )
 
-
-# TODO: parse other config files ===
-
-
-# check if the provided anndata-s share the same gene panel and they all contain count values ===========
-fname_adata0, adata0 = config_data_train[0]['file'], sc.read_h5ad(config_data_train[0]['file'])
-for config_temp in config_data_train + config_data_test:
-    if args.flag_verbose:
-        print("checking if {} and {} share the same gene panel".format(
-            fname_adata0,
-            config_temp['file']
-        ))
-
-    fname_adata_temp, adata_temp = config_temp['file'], sc.read_h5ad(config_temp['file'])
-    if adata_temp.var_names.tolist() != adata0.var_names.tolist():
-        raise Exception(
-            "Anndata-s {} and {} do not have the same gene panel.".format(
-                fname_adata0,
-                fname_adata_temp
-            )
-        )
-
-    if not sc._utils.check_nonnegative_integers(adata_temp.X):  # grabbed from https://github.com/scverse/scanpy/blob/0cfd0224f8b0a90317b0f1a61562f62eea2c2927/src/scanpy/preprocessing/_highly_variable_genes.py#L74
-        raise Exception(
-            "Inflow requires count data, but the anndata in {} seems to have non-count values in adata.X".format(
-                fname_adata_temp
-            )
-        )
-    else:
-        if args.flag_verbose:
-            print("    also checked that the 2nd anndata has count data in adata.X")
-
-    del fname_adata_temp, adata_temp
-    gc.collect()
-
-del fname_adata0, adata0, config_temp
-gc.collect()
 
 # set device ===
 if args.flag_use_cuda: #config_training['flag_use_GPU']:
@@ -357,7 +317,7 @@ list_slice = ListSlice(
 )
 
 if args.flag_verbose:
-    print("\n\ncreated list_slice for training.")
+    print("\n\nLoaded the training list of tissue.")
     for sl in list_slice.list_slice:
         print("Tissue {} --> {} cells".format(
             set(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']]),
@@ -436,7 +396,7 @@ if args.flag_verbose:
 
 if args.flag_verbose:
     print("\n\n\n")
-    print("The provided cell types are aggregated/mapped to inflow cell types as follow:")
+    print("The provided cell types are aggregated/mapped to inflow cell types as follows:")
     pprint(list_slice.map_CT_to_inflowCT)
     print("\n\n")
 
@@ -447,6 +407,7 @@ if args.flag_verbose:
     print("\n\n")
 
 # Note: due to the implementation in `utils_multislice.py` the assigned cell type and batchIDs do not vary in different runs.
+# TODO: double-check it 
 
 if args.flag_verbose:
     with torch.no_grad():
