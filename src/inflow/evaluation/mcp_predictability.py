@@ -23,7 +23,8 @@ def func_get_map_geneidx_to_R2(
     obskey_spatial_y,
     kwargs_compute_graph,
     flag_drop_the_targetgene_from_input:bool,
-    perc_trainsplit:int=50
+    perc_trainsplit:int=50,
+    path_incremental_dump=None
 ):
     """
     :param adata:
@@ -31,6 +32,7 @@ def func_get_map_geneidx_to_R2(
     :param obskey_spatial_y:
     :param kwargs_compute_graph
     :param flag_drop_the_targetgene_from_input: if set to True, when predicting gene `g` it is dropped from neighbours' expression vectors.
+    :param path_incremental_dump: if it's not None, it incrementally (i.e. gene by gene) dumps the scores into that folder.
     :return:
     """
     # read the anndata object and create neigh graph
@@ -77,6 +79,16 @@ def func_get_map_geneidx_to_R2(
     for idx_gene in tqdm(range(adata.shape[1])):
         t_begin = time.time()
 
+        # deterimine if calculation has to be done.
+        if path_incremental_dump is None:
+           flag_hastodo_calculation = True
+        else:
+            # the incrementatl output path is not None
+            flag_hastodo_calculation = not os.path.isfile(os.path.join(path_incremental_dump, '{}.pkl'.format(idx_gene)))
+
+        if not flag_hastodo_calculation:
+            continue
+
         # create all_X and all_Y
         all_X = sparse.vstack(
             [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
@@ -114,11 +126,6 @@ def func_get_map_geneidx_to_R2(
         gc.collect()
         gc.collect()
         gc.collect()
-
-        #print(r2_score)
-
-        # print("Took {} seconds.".format(time.time() - t_begin))
-        # assert False
 
     return list_r2score
 
