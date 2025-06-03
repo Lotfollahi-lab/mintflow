@@ -127,5 +127,5 @@ def func_get_map_geneidx_to_R2(
         gc.collect()
         gc.collect()
 
-    return list_r2score
+    return list_r2score if (path_incremental_dump is not None) else None
 
