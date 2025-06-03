@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a new feature for inflow
+description: Propose a new feature for MintFlow
 labels: enhancement
 body:
   - type: textarea

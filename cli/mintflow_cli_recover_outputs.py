@@ -7,10 +7,10 @@ As long as
 The current script should be able to recover the outputs as usual.
 """
 
-#use inflow or inflow_synth
-STR_INFLOW_OR_INFLOW_SYNTH = "inflow"  # in ['inflow', 'inflow_synth']
+#use mintflow or mintflow_synth
+STR_MINTFLOW_OR_MINTFLOW_SYNTH = "mintflow"  # in ['mintflow', 'mintflow_synth']
 assert(
-    STR_INFLOW_OR_INFLOW_SYNTH == 'inflow' #  in ['inflow', 'inflow_synth']
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH == 'mintflow' #  in ['mintflow', 'mintflow_synth']
 )
 
 import os, sys
@@ -61,7 +61,7 @@ import gdown
 
 list_pathstoadd = [
     "../",
-    "../src/{}/".format(STR_INFLOW_OR_INFLOW_SYNTH),
+    "../src/{}/".format(STR_MINTFLOW_OR_MINTFLOW_SYNTH),
     "../src/"
 ]
 for path in list_pathstoadd:
@@ -69,73 +69,73 @@ for path in list_pathstoadd:
         sys.path.append(path)
 
 exec(
-    'import {}'.format(STR_INFLOW_OR_INFLOW_SYNTH)
+    'import {}'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH)
 )
 
-exec('import {}.utils'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-BASE_PATH = inflow if(STR_INFLOW_OR_INFLOW_SYNTH=='inflow') else inflow_synth
-exec('import {}.generativemodel'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('import {}.modules.gnn'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('import {}.modules.neuralODE'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('import {}.modules.mlp'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('import {}.modules.disentonly'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('from {}.modules.impanddisentgl import MaskLabel'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('import {}.vardist'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('import {}.masking'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('from {}.modules.impanddisentgl import ImputerAndDisentangler'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('from {}.modules.disentonly import Disentangler'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('from {}.modules.disentonly_twosep import DisentanglerTwoSep'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('from {}.zs_samplers import RandomZSSampler, PerCelltypeZSSampler'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-exec('from {}.predadjmat import ListAdjMatPredLoss, AdjMatPredLoss'.format(STR_INFLOW_OR_INFLOW_SYNTH))
+exec('import {}.utils'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+BASE_PATH = mintflow if(STR_MINTFLOW_OR_MINTFLOW_SYNTH=='mintflow') else mintflow_synth
+exec('import {}.generativemodel'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('import {}.modules.gnn'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('import {}.modules.neuralODE'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('import {}.modules.mlp'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('import {}.modules.disentonly'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('from {}.modules.impanddisentgl import MaskLabel'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('import {}.vardist'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('import {}.masking'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('from {}.modules.impanddisentgl import ImputerAndDisentangler'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('from {}.modules.disentonly import Disentangler'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('from {}.modules.disentonly_twosep import DisentanglerTwoSep'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('from {}.zs_samplers import RandomZSSampler, PerCelltypeZSSampler'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
+exec('from {}.predadjmat import ListAdjMatPredLoss, AdjMatPredLoss'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
 exec('from {}.utils_flowmatching import ModeSampleX0, ModeMinibatchPerm, ModeTimeSched, ModeFMLoss, ConditionalFlowMatcher'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.modules.cond4flow import Cond4FlowVarphi0'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.modules.cond4flow_simple3mpls import Cond4FlowVarphi0SimpleMLPs'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
-exec('from {}.utils_pyg import PygSTDataGridBatchSampler'.format(STR_INFLOW_OR_INFLOW_SYNTH))
+exec('from {}.utils_pyg import PygSTDataGridBatchSampler'.format(STR_MINTFLOW_OR_MINTFLOW_SYNTH))
 
 exec('from {}.evaluation.bioconsv import EvaluatorKmeans, EvaluatorLeiden'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.evaluation.predxspl import EvalXsplpred, EvalLargeReadoutsXsplpred, EvalOnHVGsXsplpred'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.modules.gnn_disentangler import GNNDisentangler'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.kl_annealing import LinearAnnealingSchedule'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.modules.predictorperCT import PredictorPerCT'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.utils_multislice import ListSlice, Slice'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.modules.varphienc4xbar import EncX2Xbar'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.modules.predictorbatchID import PredictorBatchID'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.cli import parse_config_data_train, parse_config_data_test, parse_config_training, parse_config_model, check_listtissue_trtest'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.cli.auxiliary_modules import *'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.cli.analresults import disentanglement_jointplot'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.cli.analresults import disentanglement_violinplot'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 exec('from {}.anneal_decoder_xintxspl import AnnealingDecoderXintXspl'.format(
-    STR_INFLOW_OR_INFLOW_SYNTH
+    STR_MINTFLOW_OR_MINTFLOW_SYNTH
 ))
 
 # parse arguments ========================================
@@ -253,7 +253,7 @@ for config_temp in config_data_train + config_data_test:
 
     if not sc._utils.check_nonnegative_integers(adata_temp.X):  # grabbed from https://github.com/scverse/scanpy/blob/0cfd0224f8b0a90317b0f1a61562f62eea2c2927/src/scanpy/preprocessing/_highly_variable_genes.py#L74
         raise Exception(
-            "Inflow requires count data, but the anndata in {} seems to have non-count values in adata.X".format(
+            "MintFlow requires count data, but the anndata in {} seems to have non-count values in adata.X".format(
                 fname_adata_temp
             )
         )
@@ -436,14 +436,14 @@ if args.flag_verbose:
 
 if args.flag_verbose:
     print("\n\n\n")
-    print("The provided cell types are aggregated/mapped to inflow cell types as follow:")
-    pprint(list_slice.map_CT_to_inflowCT)
+    print("The provided cell types are aggregated/mapped to MintFlow cell types as follow:")
+    pprint(list_slice.map_CT_to_mintflowCT)
     print("\n\n")
 
 if args.flag_verbose:
     print("\n\n\n")
-    print("The provided biological batch IDs are aggregated/mapped to inflow batch IDs as follows")
-    pprint(list_slice.map_Batchname_to_inflowBatchID)
+    print("The provided biological batch IDs are aggregated/mapped to MintFlow batch IDs as follows")
+    pprint(list_slice.map_Batchname_to_mintflowBatchID)
     print("\n\n")
 
 # Note: due to the implementation in `utils_multislice.py` the assigned cell type and batchIDs do not vary in different runs.
@@ -463,27 +463,27 @@ if args.flag_verbose:
 # TODO: assert that the 1st tissue is assigned batch ID '0' ===
 
 
-# check if the inflow checkpoint is dumped
+# check if the MintFlow checkpoint is dumped
 path_dump_checkpoint = os.path.join(
     args.original_CLI_run_path_output,
     'CheckpointAndPredictions'
 )
-if (not os.path.isdir(path_dump_checkpoint)) or (not os.path.isfile(os.path.join(path_dump_checkpoint, 'inflow_model.pt'))):
+if (not os.path.isdir(path_dump_checkpoint)) or (not os.path.isfile(os.path.join(path_dump_checkpoint, 'mintflow_model.pt'))):
     raise Exception(
-        "The file 'CheckpointAndPredictions/inflow_model.pt' was not found in the output path: \n {}".format(args.original_CLI_run_path_output)
+        "The file 'CheckpointAndPredictions/mintflow_model.pt' was not found in the output path: \n {}".format(args.original_CLI_run_path_output)
     )
 
 module_vardist = torch.load(
     os.path.join(
         path_dump_checkpoint,
-        'inflow_model.pt'
+        'mintflow_model.pt'
     ),
     map_location=device
-)['module_inflow']
+)['module_mintflow']
 
 print("Loaded the mintflow module on device {} from checkpiont {}".format(
     device,
-    os.path.join(path_dump_checkpoint, 'inflow_model.pt')
+    os.path.join(path_dump_checkpoint, 'mintflow_model.pt')
 ))
 
 torch.cuda.empty_cache()
