@@ -11,6 +11,7 @@ from scipy import sparse
 import squidpy as sq
 import torch_geometric as pyg
 from torch_geometric.utils.convert import from_scipy_sparse_matrix
+import pickle
 
 from tqdm.autonotebook import tqdm
 from sklearn.linear_model import LinearRegression
@@ -119,7 +120,17 @@ def func_get_map_geneidx_to_R2(
             all_Y[list_idx_test]
         )
 
-        list_r2score.append(r2_score)
+        if path_incremental_dump is None:
+            list_r2score.append(r2_score)
+        else:
+            with open(
+                os.path.join(path_incremental_dump, '{}.pkl'.format(idx_gene)),
+                'wb'
+            ) as f:
+                pickle.dump(
+                    {'r2_score':r2_score, 'idx_gene':idx_gene, 'gene_name':adata.var.index.tolist()[idx_gene]},
+                    f
+                )
 
         del all_X
         gc.collect()
