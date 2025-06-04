@@ -127,7 +127,7 @@ class ListGeneMicScore:
 
         df_toret = pd.DataFrame(
             np.stack([
-                X_before_scppnormalizetotal[mask_readcount].flatten(),
+                X_before_scppnormalizetotal[mask_readcount][0,:],
                 fraction_Xmic[mask_readcount],
                 np_r2score_amongfoundgenes[mask_readcount]
             ],
