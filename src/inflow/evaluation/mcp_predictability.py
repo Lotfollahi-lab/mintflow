@@ -16,6 +16,18 @@ import pickle
 from tqdm.autonotebook import tqdm
 from sklearn.linear_model import LinearRegression
 import time
+from dataclasses import dataclass
+
+@dataclass
+class GeneMicScore:
+    """
+    A gene ensemble ID, it's score, tissue_info_scoreomputed, and optionally the gene-name.
+    """
+    ens_ID:str
+    score:float
+    tissue_info_scoreomputed:str
+    name:str = None
+
 
 
 def func_get_map_geneidx_to_R2(
