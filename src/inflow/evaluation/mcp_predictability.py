@@ -26,7 +26,7 @@ class GeneMicScore:
     ens_ID:str
     score:float
     tissue_info_scoreomputed:str
-    name:str = None
+    gene_name:str = None
 
 
 
