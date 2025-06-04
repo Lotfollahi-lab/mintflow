@@ -121,9 +121,7 @@ class ListGeneMicScore:
         )  # [N x num_selgenes] and dense
 
         # create the dataframe toreturn
-        print(X_before_scppnormalizetotal.toarray()[mask_readcount].shape)
-        print(fraction_Xmic[mask_readcount].shape)
-        print(np_r2score_amongfoundgenes[mask_readcount].shape)
+
 
         df_toret = pd.DataFrame(
             np.stack([
@@ -132,7 +130,7 @@ class ListGeneMicScore:
                 np_r2score_amongfoundgenes[mask_readcount]
             ],
             1),
-            ['raws count', 'fraction assigned to Xmic', 'r2score_gene']
+            columns=['raws count', 'fraction assigned to Xmic', 'r2score_gene']
         )
 
         return df_toret
