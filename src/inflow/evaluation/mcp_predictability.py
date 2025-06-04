@@ -28,6 +28,11 @@ class GeneMicScore:
     tissue_info_scoreomputed:str
     gene_name:str = None
 
+class ListGeneMicScore:
+    def __init__(self, list_genemicscore:list):
+        assert isinstance(list_genemicscore, list)
+        for u in list_genemicscore:
+            assert isinstance(u, GeneMicScore)
 
 
 def func_get_map_geneidx_to_R2(
