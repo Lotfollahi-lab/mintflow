@@ -121,7 +121,7 @@ class ListGeneMicScore:
         )  # [N x num_selgenes] and dense
 
         # create the dataframe toreturn
-        print(X_before_scppnormalizetotal[mask_readcount].shape)
+        print(X_before_scppnormalizetotal[mask_readcount][0,:].shape)
         print(fraction_Xmic[mask_readcount].shape)
         print(np_r2score_amongfoundgenes[mask_readcount].shape)
 
