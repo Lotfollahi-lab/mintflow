@@ -493,7 +493,7 @@ for epoch in list_epochs_dumped:
             if fname_collection.endswith('.pkl'):
                 with open(
                     os.path.join(
-                        "./Evaluation/MCC_Predictability_GeneScores/",
+                        "./Files2Use_CLI/Evaluation/MCC_Predictability_GeneScores/",
                         fname_collection
                     ),
                     'rb'
