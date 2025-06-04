@@ -34,6 +34,9 @@ class ListGeneMicScore:
         for u in list_genemicscore:
             assert isinstance(u, GeneMicScore)
 
+        self.list_genemicscore = list_genemicscore
+
+
 
 def func_get_map_geneidx_to_R2(
     adata,
