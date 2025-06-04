@@ -489,7 +489,7 @@ for epoch in list_epochs_dumped:
 
         # loop over MCP collections
         dict_fnamecoll_to_df_eval = {}
-        for fname_collection in os.listdir("./Evaluation/MCC_Predictability_GeneScores/"):
+        for fname_collection in os.listdir("./Files2Use_CLI/Evaluation/MCC_Predictability_GeneScores/"):
             if fname_collection.endswith('.pkl'):
                 with open(
                     os.path.join(
