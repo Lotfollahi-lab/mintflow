@@ -130,7 +130,7 @@ class ListGeneMicScore:
                 np_r2score_amongfoundgenes[mask_readcount]
             ],
             1),
-            columns=['raws count', 'fraction assigned to Xmic', 'r2score_gene']
+            columns=['raw counts', 'fraction assigned to Xmic', 'r2score of gene']
         )
 
         return df_toret

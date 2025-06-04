@@ -473,7 +473,7 @@ for fname_checkpoint in os.listdir(os.path.join(args.original_CLI_run_path_outpu
                     'mu_sout':'MintFlow_S_out',
                     'mu_z':'MintFlow_Z',
                     'muxint_before_sc_pp_normalize_total':'MintFlow_Xint (before_sc_pp_normalize_total)',
-                    'muxspl_before_sc_pp_normalize_total':'MintFlow_Xspl (before_sc_pp_normalize_total)'
+                    'muxspl_before_sc_pp_normalize_total':'MintFlow_Xmic (before_sc_pp_normalize_total)'
                 }  # map names according to the latest glossery of the manuscript.
                 with torch.no_grad():
                     for idx_sl, sl in enumerate(test_list_slice.list_slice):
