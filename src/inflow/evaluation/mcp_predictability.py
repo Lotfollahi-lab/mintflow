@@ -2,9 +2,11 @@
 '''
 Implements a
 '''
+from typing import List
 import gc
 import os, sys
 import numpy as np
+import pandas as pd
 import torch
 import scanpy as sc
 from scipy import sparse
@@ -29,12 +31,121 @@ class GeneMicScore:
     gene_name:str = None
 
 class ListGeneMicScore:
-    def __init__(self, list_genemicscore:list):
+    def __init__(self, list_genemicscore:List[GeneMicScore]):
         assert isinstance(list_genemicscore, list)
         for u in list_genemicscore:
             assert isinstance(u, GeneMicScore)
 
         self.list_genemicscore = list_genemicscore
+
+    def retrieve_existing_genes(
+        self,
+        list_ens_ID,
+        list_gene_name
+    ):
+        """
+        Tries to find genes in the collectio by first checking the ensemble IDs and then gene names.
+        :param list_ens_ID: feed None if EnsIDs are not available.
+        :param list_gene_name:
+        :return:
+        """
+        if list_ens_ID is None:
+            assert list_gene_name is not None
+            assert isinstance(list_gene_name, list)
+
+        list_idx_toret = []
+        dict_map_idxincollection_to_idxininput = {}
+        dict_map_idxininput_to_idxincollection = {}
+
+        # attemp to search by EnsID
+        if list_ens_ID is not None:
+            for idx_ininput, input_ens_ID in enumerate(list_ens_ID):
+                for idx_incollection, u in enumerate(self.list_genemicscore):
+                    if u.ens_ID == input_ens_ID:
+                        dict_map_idxincollection_to_idxininput[idx_incollection] = idx_ininput
+                        dict_map_idxininput_to_idxincollection[idx_ininput] = idx_incollection
+        else:
+            # attemp to search by gene name
+            for idx_ininput, input_gene_name in enumerate(list_gene_name):
+                for idx_incollection, u in enumerate(self.list_genemicscore):
+                    if u.gene_name == input_gene_name:
+                        dict_map_idxincollection_to_idxininput[idx_incollection] = idx_ininput
+                        dict_map_idxininput_to_idxincollection[idx_ininput] = idx_incollection
+
+        return dict_map_idxincollection_to_idxininput, dict_map_idxininput_to_idxincollection
+
+
+
+    def score_Xmic_Xint(
+        self,
+        list_ens_ID,
+        list_gene_name,
+        Xint_before_scppnormalizetotal,
+        Xmic_before_scppnormalizetotal
+    ):
+        assert sparse.issparse(Xint_before_scppnormalizetotal)
+        assert sparse.issparse(Xmic_before_scppnormalizetotal)
+
+        # query genes in this collection
+        dict_map_idxincollection_to_idxininput, dict_map_idxininput_to_idxincollection = self.retrieve_existing_genes(
+            list_ens_ID=list_ens_ID,
+            list_gene_name=list_gene_name
+        )
+
+
+        # subselect the genes which are found in the collection
+        list_idx_selgene = list(dict_map_idxininput_to_idxincollection.keys())
+        list_idx_selgene.sort()
+
+        if len(list_idx_selgene) == 0:
+            print("No gene was found in the collection.")
+            return
+
+        Xint_before_scppnormalizetotal = Xint_before_scppnormalizetotal[:, list_idx_selgene]
+        Xmic_before_scppnormalizetotal = Xmic_before_scppnormalizetotal[:, list_idx_selgene]
+        X_before_scppnormalizetotal = Xint_before_scppnormalizetotal + Xmic_before_scppnormalizetotal
+        mask_readcount = (X_before_scppnormalizetotal > 0).toarray()  # [N x num_selgenes] and dense
+
+        # compute r2scores
+        np_r2score_amongfoundgenes = np.array([
+            self.list_genemicscore[dict_map_idxininput_to_idxincollection[idx_ininput]].score for idx_ininput in list_idx_selgene
+        ])  # [num_selgenes]
+        np_r2score_amongfoundgenes = np.stack(
+            X_before_scppnormalizetotal.shape[0]*[np_r2score_amongfoundgenes],
+            0
+        )  # [N x num_selgenes] and dense
+
+        # compute fraction of readcount assigned to Xmic
+        fraction_Xmic = np.array(
+            Xmic_before_scppnormalizetotal / (Xint_before_scppnormalizetotal + Xmic_before_scppnormalizetotal)
+        )  # [N x num_selgenes] and dense
+
+        # create the dataframe toreturn
+        df_toret = pd.DataFrame(
+            np.stack([
+                X_before_scppnormalizetotal[mask_readcount],
+                fraction_Xmic[mask_readcount],
+                np_r2score_amongfoundgenes[mask_readcount]
+            ],
+            1),
+            ['raws count', 'fraction assigned to Xmic', 'r2score_gene']
+        )
+
+        return  df_toret
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
