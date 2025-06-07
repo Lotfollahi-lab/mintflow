@@ -466,7 +466,7 @@ print("Checkpoints for the following epochs are dumped in the output path:")
 for u in list_epochs_dumped:
     print("  {}".format(u))
 
-for epoch in list_epochs_dumped:
+for epoch in tqdm(list_epochs_dumped, desc="Computing metrics over different epoch checkpoints"):
     # Loop over the testing tissue sections
     for idx_sl, sl in enumerate(test_list_slice.list_slice):
 
@@ -513,7 +513,7 @@ for epoch in list_epochs_dumped:
                 args.original_CLI_run_path_output,
                 'CheckpointAndPredictions',
                 'Predictions_And_Evaluation_mintflow_checkpoint_epoch_{}'.format(epoch),
-                'evaluationresult_MCC_predictabiliyt_gene_scores_{}.pkl'.format(idx_sl + 1)
+                'evaluationresult_MCC_predictabiliyt_gene_scores_tissuesection_{}.pkl'.format(idx_sl + 1)
             ),
             'wb'
         ) as f:
@@ -521,6 +521,8 @@ for epoch in list_epochs_dumped:
                 dict_fnamecoll_to_df_eval,
                 f
             )
+
+
 
 
 
