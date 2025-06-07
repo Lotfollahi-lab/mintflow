@@ -83,7 +83,7 @@ from .modules.predictorbatchID import PredictorBatchID
 #     STR_INFLOW_OR_INFLOW_SYNTH
 # ))
 
-from .interface import parse_config_data_train, parse_config_data_test, parse_config_training, parse_config_model, check_listtissue_trtest
+from .interface import parse_config_data_train, parse_config_data_evaluation, parse_config_training, parse_config_model, check_listtissue_trtest
 # exec('from {}.cli import parse_config_data_train, parse_config_data_test, parse_config_training, parse_config_model, check_listtissue_trtest'.format(
 #     STR_INFLOW_OR_INFLOW_SYNTH
 # ))
