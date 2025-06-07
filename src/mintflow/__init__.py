@@ -44,14 +44,14 @@
 #
 # from .modules.predictorbatchID import PredictorBatchID
 #
-# from .interface import parse_config_data_train, parse_config_data_evaluation, parse_config_training, parse_config_model, check_listtissue_trtest
-#
-# from .interface.auxiliary_modules import *
-#
-# from .interface.analresults import disentanglement_jointplot
-#
-# from .interface.analresults import disentanglement_violinplot
-#
+from .interface import parse_config_data_train, parse_config_data_evaluation, parse_config_training, parse_config_model, check_listtissue_trtest
+
+from .interface.auxiliary_modules import *
+
+from .interface.analresults import disentanglement_jointplot
+
+from .interface.analresults import disentanglement_violinplot
+
 # from .anneal_decoder_xintxspl import AnnealingDecoderXintXspl
 #
 #
