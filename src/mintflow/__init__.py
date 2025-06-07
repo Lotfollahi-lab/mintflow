@@ -45,7 +45,10 @@
 # from .modules.predictorbatchID import PredictorBatchID
 #
 
-from .interface import get_defaultconfig_data_train, verify_config_data_train, get_defaultconfig_data_evaluation, verify_config_data_evaluation, parse_config_training, parse_config_model, check_listtissue_trtest
+from .interface import \
+    get_defaultconfig_data_train, verify_config_data_train,\
+    get_defaultconfig_data_evaluation, verify_config_data_evaluation,\
+    get_defaultconfig_model, verify_config_model
 
 # from .interface.auxiliary_modules import *
 #
