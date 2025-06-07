@@ -19,7 +19,7 @@ from . predadjmat import ListAdjMatPredLoss
 from . import utils_flowmatching
 from . import kl_annealing
 from .modules import predictorperCT
-import predadjmat
+from .import predadjmat
 from . import wassdist_utils
 from .modules import varphienc4xbar
 from .modules import predictorbatchID
