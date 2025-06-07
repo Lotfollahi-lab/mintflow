@@ -8,11 +8,11 @@ from ..data import default_config_files
 
 
 def _errormsg_config_data(fname_config_data, key_raisederror):
-    toret = "An error occured when trying to access {} from the config file in {}.\n".format(
+    toret = "An error occured when trying to access {} from the config file {}.\n".format(
         key_raisederror,
         fname_config_data
     )
-    toret = toret + "Please refer to TODO: for sample file config_data_train.yml, and double check the config file that you have provided in {}.".format(
+    toret = toret + "Please refer to TODO: for sample file config_data_train.yml, and double check the config file that you have provided {}.".format(
         fname_config_data
     )
     return toret
@@ -49,7 +49,7 @@ def get_defaultconfig_data_train(num_tissue_sections):
 
 
 
-def verify_config_data_train(dict_config_data, fname_config_data="code"):
+def verify_config_data_train(dict_config_data, fname_config_data=""):
 
     # load config_data_train.yml
     # with open(fname_config_data, 'rb') as f:
@@ -112,12 +112,13 @@ def verify_config_data_train(dict_config_data, fname_config_data="code"):
 
     # Fished checking the config file
     # Now parse the config file and return a list of dicts ===
-    list_toret = []
-    for idx_sample, key_sample in enumerate(['anndata{}'.format(s + 1) for s in range(num_samples)]):
-        list_toret.append(
-            dict_config_data['list_tissue'][key_sample]
-        )
-    return list_toret
+    # list_toret = []
+    # for idx_sample, key_sample in enumerate(['anndata{}'.format(s + 1) for s in range(num_samples)]):
+    #     list_toret.append(
+    #         dict_config_data['list_tissue'][key_sample]
+    #     )
+
+    #return list_toret
 
 
 
