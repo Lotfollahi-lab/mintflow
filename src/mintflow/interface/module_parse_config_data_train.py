@@ -25,7 +25,7 @@ def get_defaultconfig_data_train():
     :return:
     """
     return importlib.resources.open_binary(
-        "default_config_files",
+        "mintflow.data.default_config_files",
         "config_data_train.yml"
     )
 
