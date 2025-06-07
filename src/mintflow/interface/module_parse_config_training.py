@@ -77,11 +77,50 @@ def verify_and_postprocess_config_training(dict_config_training, fname_config_tr
     #             "Please refer to TODO: for sample file config_training.yml"
     #         )
 
-    # TODO: check if the keys in the yaml file are correct.
+    # check if the keys in the yaml file are correct.
+    expected_set_keys_config_training = {
+         'annealing_decoder_XintXspl_coef_max',
+         'annealing_decoder_XintXspl_coef_min',
+         'annealing_decoder_XintXspl_fractionepochs_phase1',
+         'annealing_decoder_XintXspl_fractionepochs_phase2',
+         'batchsize_updateduals_seprately_perepoch',
+         'flag_enable_wandb',
+         'flag_finaleval_createanndata_alltissuescombined',
+         'flag_finaleval_enable_alltissue_violinplot',
+         'flag_finaleval_enable_alltissuecombined_eval',
+         'flag_finaleval_enable_pertissue_violinplot',
+         'flag_use_GPU',
+         'lr_training',
+         'method_ODE_solver',
+         'num_training_epochs',
+         'num_updateseparate_afterGRLs',
+         'numiters_updateduals_seprately_perepoch',
+         'numsteps_accumgrad',
+         'sleeptime_gccollect_aftertraining',
+         'sleeptime_gccollect_dumpOnePred',
+         'val_scppnorm_total',
+         'wandb_project_name',
+         'wandb_run_name',
+         'wandb_stepsize_log'
+    }
 
     dict_config_training = _correct_booleans(
         fname_config=fname_config_training,
         dict_config=dict_config_training
     )
+
+    if set(dict_config_training.keys()) != expected_set_keys_config_training:
+        set_1m2 = set(dict_config_training.keys()).difference(expected_set_keys_config_training)
+        set_2m1 = expected_set_keys_config_training.difference(set(dict_config_training.keys()))
+
+        if len(set_1m2) > 0:
+            raise Exception(
+                "In config_training, the following unexpected keys were found in the config file: {}".format(
+                    set_1m2)
+            )
+        elif len(set_2m1) > 0:
+            raise Exception(
+                "In config_model, the following keys and their corresponding values are missing: {}".format(set_2m1)
+            )
 
     return dict_config_training
