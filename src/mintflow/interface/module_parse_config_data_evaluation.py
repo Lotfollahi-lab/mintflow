@@ -1,6 +1,8 @@
 
 import os, sys
 import yaml
+import importlib
+import importlib.resources
 
 
 def _errormsg_config_data(fname_config_data, key_raisederror):
@@ -13,19 +15,43 @@ def _errormsg_config_data(fname_config_data, key_raisederror):
     )
     return toret
 
+def get_defaultconfig_data_evaluation(num_tissue_sections):
+    """
+    Returns the default file for `config_data_evaluation.yml`
+    :param num_tissue_sections: number of tissue sections.
+    :return:
+    """
+    f = importlib.resources.open_binary(
+        "mintflow.data.default_config_files",
+        "config_data_evaluation.yml"
+    )
+    try:
+        config_data_eval = yaml.safe_load(f)
+    except yaml.YAMLError as exc:
+        print("Something went wrong when attempting to read the default `config_data_train.yml.`")
+        print(exc)
 
-def parse_config_data_evaluation(fname_config_data):
+    for idx_new_slice in range(num_tissue_sections-1):
+        config_data_eval['list_tissue']['anndata{}'.format(idx_new_slice+2)] = config_data_eval['list_tissue']['anndata1'].copy()
+        config_data_eval['list_tissue']['anndata{}'.format(idx_new_slice + 2)]['file'] = config_data_eval['list_tissue']['anndata{}'.format(idx_new_slice + 2)]['file'].replace(
+            "adata_1.h5ad",
+            "adata_{}.h5ad".format(idx_new_slice + 2)
+        )
 
-    # load config_data_test.yml
-    with open(fname_config_data, 'rb') as f:
-        try:
-            dict_config_data = yaml.safe_load(f)
-        except yaml.YAMLError as exc:
-            print(exc)
-            raise Exception(
-                "Something went wrong when reading the config file for test data. (backtrace printed above).\n" +
-                "Please refer to TODO: for sample file config_data_test.yml"
-            )
+    return config_data_eval
+
+def parse_config_data_evaluation(dict_config_data, fname_config_data):
+
+    # # load config_data_test.yml
+    # with open(fname_config_data, 'rb') as f:
+    #     try:
+    #         dict_config_data = yaml.safe_load(f)
+    #     except yaml.YAMLError as exc:
+    #         print(exc)
+    #         raise Exception(
+    #             "Something went wrong when reading the config file for test data. (backtrace printed above).\n" +
+    #             "Please refer to TODO: for sample file config_data_test.yml"
+    #         )
 
     # check the structure of config_data.yaml ================================
     if set(dict_config_data.keys()) != {'list_tissue'}:
@@ -77,12 +103,13 @@ def parse_config_data_evaluation(fname_config_data):
 
     # Fished checking the config file
     # Now parse the config file and return a list of dicts ===
-    list_toret = []
-    for idx_sample, key_sample in enumerate(['anndata{}'.format(s + 1) for s in range(num_samples)]):
-        list_toret.append(
-            dict_config_data['list_tissue'][key_sample]
-        )
-    return list_toret
+    # list_toret = []
+    # for idx_sample, key_sample in enumerate(['anndata{}'.format(s + 1) for s in range(num_samples)]):
+    #     list_toret.append(
+    #         dict_config_data['list_tissue'][key_sample]
+    #     )
+
+    # return list_toret
 
 
 
