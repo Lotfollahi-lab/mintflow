@@ -164,3 +164,6 @@ skip = [
     "docs/references.md",
     "docs/notebooks/example.ipynb",
 ]
+
+#[tool.setuptools]
+package-data={"mintflow" = ["*.pkl", "*.yml", "*.txt"] }
