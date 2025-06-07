@@ -19,15 +19,32 @@ def _errormsg_config_data(fname_config_data, key_raisederror):
 
 
 # ..data.default_config_files
-def get_defaultconfig_data_train():
+def get_defaultconfig_data_train(num_tissue_sections):
     """
     Returns the default file for `config_data_train.yml`
+    :param num_tissue_sections: number of tissue sections.
     :return:
     """
-    return importlib.resources.open_binary(
+    f = importlib.resources.open_binary(
         "mintflow.data.default_config_files",
         "config_data_train.yml"
     )
+    try:
+        config_data_train = yaml.safe_load(f)
+    except yaml.YAMLError as exc:
+        print("Something went wrong when attempting to read the default `config_data_train.yml.`")
+        print(exc)
+
+    for idx_new_slice in range(num_tissue_sections-1):
+        config_data_train['list_tissue_section']['anndata{}'.format(idx_new_slice+2)] = config_data_train['list_tissue_section']['anndata1'].copy()
+        config_data_train['list_tissue_section']['anndata{}'.format(idx_new_slice + 2)]['file'] = config_data_train['list_tissue_section']['anndata{}'.format(idx_new_slice + 2)]['file'].replace(
+            "adata_1.h5ad",
+            "adata_{}.h5ad".format(idx_new_slice + 2)
+        )
+
+    return config_data_train
+
+
 
 
 
