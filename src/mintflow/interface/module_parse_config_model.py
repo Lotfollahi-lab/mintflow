@@ -66,6 +66,8 @@ def verify_and_postprocess_config_model(dict_config_model, fname_config_model=""
     #             "Please refer to TODO: for sample file config_training.yml"
     #         )
 
+    # TODO: check if the keys in the yaml file are correct.
+
     dict_config_model = _correct_booleans(
         fname_config=fname_config_model,
         dict_config=dict_config_model
