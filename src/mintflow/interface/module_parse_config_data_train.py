@@ -4,6 +4,7 @@ import yaml
 import importlib
 import importlib.resources
 from .. import data
+from ..data import default_config_files
 
 
 def _errormsg_config_data(fname_config_data, key_raisederror):
@@ -16,14 +17,15 @@ def _errormsg_config_data(fname_config_data, key_raisederror):
     )
     return toret
 
+
 # ..data.default_config_files
 def get_defaultconfig_data_data():
     """
     Returns the default file for `config_data_train.yml`
     :return:
     """
-    importlib.resources.open_binary(
-        "mintflow.data.default_config_files",
+    return importlib.resources.open_binary(
+        "default_config_files",
         "config_data_train.yml"
     )
 
