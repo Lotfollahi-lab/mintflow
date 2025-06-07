@@ -53,7 +53,7 @@ def get_defaultconfig_model():
 
     return config_model
 
-def verify_config_model(dict_config_model, fname_config_model=""):
+def verify_and_postprocess_config_model(dict_config_model, fname_config_model=""):
 
     # # load config_trianing.yml
     # with open(fname_config_model, 'rb') as f:
