@@ -19,7 +19,7 @@ def _errormsg_config_data(fname_config_data, key_raisederror):
 
 
 # ..data.default_config_files
-def get_defaultconfig_data_data():
+def get_defaultconfig_data_train():
     """
     Returns the default file for `config_data_train.yml`
     :return:

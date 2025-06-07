@@ -2,7 +2,7 @@
 
 from . import module_parse_config_data_train, module_parse_config_data_evaluation, module_parse_config_model, module_parse_config_training
 
-from .module_parse_config_data_train import get_defaultconfig_data_data  # , parse_config_data_train
+from .module_parse_config_data_train import get_defaultconfig_data_train  # , parse_config_data_train
 from .module_parse_config_data_evaluation import parse_config_data_evaluation
 from .module_parse_config_model import parse_config_model
 from .module_parse_config_training import parse_config_training
