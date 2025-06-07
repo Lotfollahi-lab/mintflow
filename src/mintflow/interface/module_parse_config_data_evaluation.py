@@ -14,7 +14,7 @@ def _errormsg_config_data(fname_config_data, key_raisederror):
     return toret
 
 
-def parse(fname_config_data):
+def parse_config_data_evaluation(fname_config_data):
 
     # load config_data_test.yml
     with open(fname_config_data, 'rb') as f:
