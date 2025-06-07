@@ -40,7 +40,7 @@ def get_defaultconfig_data_evaluation(num_tissue_sections):
 
     return config_data_eval
 
-def parse_config_data_evaluation(dict_config_data, fname_config_data):
+def verify_config_data_evaluation(dict_config_data, fname_config_data=""):
 
     # # load config_data_test.yml
     # with open(fname_config_data, 'rb') as f:
