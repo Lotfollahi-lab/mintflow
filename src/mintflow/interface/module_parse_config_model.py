@@ -34,7 +34,7 @@ def _correct_booleans(fname_config, dict_config):
     return dict_config
 
 
-def parse(fname_config_model):
+def parse_config_model(fname_config_model):
 
     # load config_trianing.yml
     with open(fname_config_model, 'rb') as f:
