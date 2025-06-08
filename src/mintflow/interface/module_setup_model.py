@@ -139,6 +139,8 @@ def setup_model(
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {'train_list_tissue_section', 'evaluation_list_tissue_section', 'maxsize_subgraph'}
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['train_list_tissue_section'], utils_multislice.ListSlice)
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['evaluation_list_tissue_section'], utils_multislice.ListSlice)
+    maxsize_subgraph = data_mintflow['maxsize_subgraph']
+
     if not flag_isvalid_arg_mintflow_data:
         raise Exception("Something is wrong with the passed argument `mintflow_data`. Make sure that argument `mintflow_data` is the output from the function `mintflow.setup_data`.")
 
@@ -406,22 +408,65 @@ def setup_model(
 
 
     # get flowmatching arguments ===
-    exec('flowmatching_mode_samplex0 = {}'.format(config_model['flowmatching_mode_samplex0']))
-    exec('flowmatching_mode_minibatchper = {}'.format(config_model['flowmatching_mode_minibatchper']))
-    exec('flowmatching_mode_timesched = {}'.format(config_model['flowmatching_mode_timesched']))
-    exec('flowmatching_mode_fmloss = {}'.format(config_model['flowmatching_mode_fmloss']))
 
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'flowmatching_mode_samplex0 = {}'.format(config_model['flowmatching_mode_samplex0']),
+        globals(),
+        tmp_ldict
+    )
+    flowmatching_mode_samplex0 = tmp_ldict['flowmatching_mode_samplex0']
 
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'flowmatching_mode_minibatchper = {}'.format(config_model['flowmatching_mode_minibatchper']),
+        globals(),
+        tmp_ldict
+    )
+    flowmatching_mode_minibatchper = tmp_ldict['flowmatching_mode_minibatchper']
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'flowmatching_mode_timesched = {}'.format(config_model['flowmatching_mode_timesched']),
+        globals(),
+        tmp_ldict
+    )
+    flowmatching_mode_timesched = tmp_ldict['flowmatching_mode_timesched']
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'flowmatching_mode_fmloss = {}'.format(config_model['flowmatching_mode_fmloss']),
+        globals(),
+        tmp_ldict
+    )
+    flowmatching_mode_fmloss = tmp_ldict['flowmatching_mode_fmloss']
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
     exec(
         "module_encX_int = {}".format(
             config_model['arch_module_encoder_X2Xbar']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
+    module_encX_int = tmp_ldict['module_encX_int']
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
     exec(
         "module_encX_spl = {}".format(
             config_model['arch_module_encoder_X2Xbar']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
+    module_encX_spl = tmp_ldict['module_encX_spl']
+
 
     module_varphi_enc_int = EncX2Xbar(
         module_encX=module_encX_int,
@@ -438,18 +483,48 @@ def setup_model(
 
     # module_varphi_enc_spl = module_varphi_enc_int
 
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'dict_varname_to_takeCT_takeNCC = {}'.format(config_model['CTNCC_usage_modulecond4flow']),
+        globals(),
+        tmp_ldict
+    )
+    dict_varname_to_takeCT_takeNCC = tmp_ldict['dict_varname_to_takeCT_takeNCC']
 
-    exec('dict_varname_to_takeCT_takeNCC = {}'.format(config_model['CTNCC_usage_modulecond4flow']))
-    exec('tmp_encZ_list_dim_hidden = {}'.format(
-        config_model['enc3_encZ_list_dim_hidden']
-    ))
-    exec('tmp_encSin_list_dim_hidden = {}'.format(
-        config_model['enc3_encSin_list_dim_hidden']
-    ))
-    exec('tmp_encSout_list_dim_hidden = {}'.format(
-        config_model['enc3_encSout_list_dim_hidden']
-    ))
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'tmp_encZ_list_dim_hidden = {}'.format(
+            config_model['enc3_encZ_list_dim_hidden']
+        ),
+        globals(),
+        tmp_ldict
+    )
+    tmp_encZ_list_dim_hidden = tmp_ldict['tmp_encZ_list_dim_hidden']
 
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'tmp_encSin_list_dim_hidden = {}'.format(
+            config_model['enc3_encSin_list_dim_hidden']
+        ),
+        globals(),
+        tmp_ldict
+    )
+    tmp_encSin_list_dim_hidden = tmp_ldict['tmp_encSin_list_dim_hidden']
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'tmp_encSout_list_dim_hidden = {}'.format(
+            config_model['enc3_encSout_list_dim_hidden']
+        ),
+        globals(),
+        tmp_ldict
+    )
+    tmp_encSout_list_dim_hidden = tmp_ldict['tmp_encSout_list_dim_hidden']
+    
     type_cond4flowvarphi0 = Cond4FlowVarphi0SimpleMLPs
     kwargs_cond4flowvarphi0 = {
         'kwargs_genmodel':kwargs_genmodel,
