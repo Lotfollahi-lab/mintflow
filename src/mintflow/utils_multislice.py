@@ -286,7 +286,7 @@ class Slice:
                     torch.isclose(self.pyg_ds.x.to_dense(), torch.tensor(self.adata.X.toarray()).float())
                 )
             )
-            print("assertion was passed.")
+            print(" Double-checked floating point conversion on adata.X.")
 
         if self.flag_use_custompygsampler:
             print("Using the custom sampler for pygloader.")
@@ -769,7 +769,7 @@ class ListSlice:
                 fname_output=os.path.join(
                     path_output,
                     'tissue_{}.png'.format(idx_sl+1)
-                ),
+                ) if flag_dump_output else None,
                 flag_dump_output=flag_dump_output
             )
 
