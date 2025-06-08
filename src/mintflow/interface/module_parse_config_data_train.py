@@ -49,7 +49,7 @@ def get_defaultconfig_data_train(num_tissue_sections):
 
 
 
-def verify_config_data_train(dict_config_data, fname_config_data=""):
+def verify_and_postprocess_config_data_train(dict_config_data, fname_config_data=""):
 
     # load config_data_train.yml
     # with open(fname_config_data, 'rb') as f:
@@ -112,13 +112,13 @@ def verify_config_data_train(dict_config_data, fname_config_data=""):
 
     # Fished checking the config file
     # Now parse the config file and return a list of dicts ===
-    # list_toret = []
-    # for idx_sample, key_sample in enumerate(['anndata{}'.format(s + 1) for s in range(num_samples)]):
-    #     list_toret.append(
-    #         dict_config_data['list_tissue'][key_sample]
-    #     )
+    list_toret = []
+    for idx_sample, key_sample in enumerate(['anndata{}'.format(s + 1) for s in range(num_samples)]):
+        list_toret.append(
+            dict_config_data['list_tissue'][key_sample]
+        )
 
-    #return list_toret
+    return list_toret
 
 
 
