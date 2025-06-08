@@ -300,6 +300,7 @@ def setup_model(
     dim_input = None  # due to exec limitaiton for locals()
     list_ajdmatpredloss = []
     if len(config_model['args_list_adjmatloss']) > 0:
+        raise NotImplementedError("")
         for arg_adjmatloss in config_model['args_list_adjmatloss'].split("&"):
             print(arg_adjmatloss)
             assert (
@@ -346,13 +347,14 @@ def setup_model(
             print("\n\n")
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'disent_dict_CTNNC_usage = {}'.format(config_model['CTNCC_usage_moduledisent']),
         globals(),
         tmp_ldict
     )
     disent_dict_CTNNC_usage = tmp_ldict['disent_dict_CTNNC_usage']
+    gc.collect()
 
     assert (
         config_model['str_mode_headxint_headxspl_headboth_twosep'] in [
@@ -410,40 +412,44 @@ def setup_model(
     # get flowmatching arguments ===
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'flowmatching_mode_samplex0 = {}'.format(config_model['flowmatching_mode_samplex0']),
         globals(),
         tmp_ldict
     )
     flowmatching_mode_samplex0 = tmp_ldict['flowmatching_mode_samplex0']
+    gc.collect()
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'flowmatching_mode_minibatchper = {}'.format(config_model['flowmatching_mode_minibatchper']),
         globals(),
         tmp_ldict
     )
     flowmatching_mode_minibatchper = tmp_ldict['flowmatching_mode_minibatchper']
+    gc.collect()
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'flowmatching_mode_timesched = {}'.format(config_model['flowmatching_mode_timesched']),
         globals(),
         tmp_ldict
     )
     flowmatching_mode_timesched = tmp_ldict['flowmatching_mode_timesched']
+    gc.collect()
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'flowmatching_mode_fmloss = {}'.format(config_model['flowmatching_mode_fmloss']),
         globals(),
         tmp_ldict
     )
     flowmatching_mode_fmloss = tmp_ldict['flowmatching_mode_fmloss']
+    gc.collect()
 
 
 
@@ -457,9 +463,10 @@ def setup_model(
         tmp_ldict
     )
     module_encX_int = tmp_ldict['module_encX_int']
+    gc.collect()
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         "module_encX_spl = {}".format(
             config_model['arch_module_encoder_X2Xbar']
@@ -468,6 +475,7 @@ def setup_model(
         tmp_ldict
     )
     module_encX_spl = tmp_ldict['module_encX_spl']
+    gc.collect()
 
 
     module_varphi_enc_int = EncX2Xbar(
@@ -486,16 +494,17 @@ def setup_model(
     # module_varphi_enc_spl = module_varphi_enc_int
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'dict_varname_to_takeCT_takeNCC = {}'.format(config_model['CTNCC_usage_modulecond4flow']),
         globals(),
         tmp_ldict
     )
     dict_varname_to_takeCT_takeNCC = tmp_ldict['dict_varname_to_takeCT_takeNCC']
+    gc.collect()
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'tmp_encZ_list_dim_hidden = {}'.format(
             config_model['enc3_encZ_list_dim_hidden']
@@ -504,9 +513,10 @@ def setup_model(
         tmp_ldict
     )
     tmp_encZ_list_dim_hidden = tmp_ldict['tmp_encZ_list_dim_hidden']
+    gc.collect()
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'tmp_encSin_list_dim_hidden = {}'.format(
             config_model['enc3_encSin_list_dim_hidden']
@@ -515,9 +525,10 @@ def setup_model(
         tmp_ldict
     )
     tmp_encSin_list_dim_hidden = tmp_ldict['tmp_encSin_list_dim_hidden']
+    gc.collect()
 
     # due to exec limitaiton for locals()
-    tmp_ldict = {}
+    tmp_ldict = locals().copy()
     exec(
         'tmp_encSout_list_dim_hidden = {}'.format(
             config_model['enc3_encSout_list_dim_hidden']
@@ -526,6 +537,7 @@ def setup_model(
         tmp_ldict
     )
     tmp_encSout_list_dim_hidden = tmp_ldict['tmp_encSout_list_dim_hidden']
+    gc.collect()
 
     type_cond4flowvarphi0 = Cond4FlowVarphi0SimpleMLPs
     kwargs_cond4flowvarphi0 = {
@@ -542,54 +554,107 @@ def setup_model(
         print("\n\nThe way CTs/NCCs are fed to the 3rd encoder:")
         pprint(dict_varname_to_takeCT_takeNCC)
 
+    # due to exec limitaiton for locals()
+    tmp_ldict = locals().copy()
     exec(
         "module_predictor_z2notNCC = {}".format(
             config_model['module_predictor_z2notNCC']
-        )
+        ),
+        globals(),
+        tmp_ldict.copy()
     )
+    module_predictor_z2notNCC = tmp_ldict['module_predictor_z2notNCC']
+    gc.collect()
 
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = locals().copy()
     exec(
         "module_predictor_xbarint2notNCC = {}".format(
             config_model['module_predictor_xbarint2notNCC']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
+    module_predictor_xbarint2notNCC = tmp_ldict['module_predictor_xbarint2notNCC']
+    gc.collect()
 
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = locals().copy()
     exec(
         "module_predictor_xbarint2notBatchID = {}".format(
             config_model['module_predictor_xbarint2notBatchID']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
+    module_predictor_xbarint2notBatchID = tmp_ldict['module_predictor_xbarint2notBatchID']
+    gc.collect()
 
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = locals().copy()
     exec(
         "module_predictor_xbarspl2notBatchID = {}".format(
             config_model['module_predictor_xbarspl2notBatchID']
         )
     )
+    module_predictor_xbarspl2notBatchID = tmp_ldict['module_predictor_xbarspl2notBatchID']
+    gc.collect()
 
 
     # create the vardist ====
+    # due to exec limitaiton for locals()
+    tmp_ldict = locals().copy()
     exec(
         "module_classifier_P1loss = {}".format(
             config_model['module_classifier_P1loss']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
+    module_classifier_P1loss = tmp_ldict['module_classifier_P1loss']
+    gc.collect()
+
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = locals().copy()
     exec(
         "module_predictor_P3loss = {}".format(
             config_model['module_predictor_P3loss']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
+    module_predictor_P3loss = tmp_ldict['module_predictor_P3loss']
+    gc.collect()
 
+
+    # due to exec limitaiton for locals()
+    tmp_ldict = locals().copy()
     exec(
         "module_classifier_xbarintCT = {}".format(
             config_model['module_classifier_xbarintCT']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
+    module_classifier_xbarintCT = tmp_ldict['module_classifier_xbarintCT']
+    gc.collect()
+    
 
+    # due to exec limitaiton for locals()
+    tmp_ldict = locals().copy()
     exec(
         "module_predictor_xbarsplNCC = {}".format(
             config_model['module_predictor_xbarsplNCC']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
+    module_predictor_xbarsplNCC = tmp_ldict['module_predictor_xbarsplNCC']
+    gc.collect()
 
     dict_m_temp = {
         'module_predictor_z2notNCC':module_predictor_z2notNCC,
