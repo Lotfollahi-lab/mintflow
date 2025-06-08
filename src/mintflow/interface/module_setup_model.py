@@ -351,10 +351,10 @@ def setup_model(
         ]
     )
     dict_temp = {
-        'headxint':inflow.modules.gnn_disentangler.ModeArch.HEADXINT,
-        'headxspl':inflow.modules.gnn_disentangler.ModeArch.HEADXSPL,
-        'headboth':inflow.modules.gnn_disentangler.ModeArch.HEADBOTH,
-        'twosep':inflow.modules.gnn_disentangler.ModeArch.TWOSEP,
+        'headxint':modules.gnn_disentangler.ModeArch.HEADXINT,
+        'headxspl':modules.gnn_disentangler.ModeArch.HEADXSPL,
+        'headboth':modules.gnn_disentangler.ModeArch.HEADBOTH,
+        'twosep':modules.gnn_disentangler.ModeArch.TWOSEP,
     }
 
     type_impanddisentgl = GNNDisentangler
