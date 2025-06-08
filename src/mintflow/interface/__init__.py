@@ -9,7 +9,7 @@ from .module_parse_config_model import get_defaultconfig_model, verify_and_postp
 from .module_parse_config_training import get_defaultconfig_training, verify_and_postprocess_config_training
 
 from . import module_setup_data
-from module_setup_data import setup_data
+from .module_setup_data import setup_data
 
 
 
