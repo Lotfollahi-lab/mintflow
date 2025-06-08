@@ -295,6 +295,7 @@ def setup_model(
 
 
     # create a list of `AdjMatPredLoss`-s ====
+    dim_input = None  # due to exec limitaiton for locals()
     list_ajdmatpredloss = []
     if len(config_model['args_list_adjmatloss']) > 0:
         for arg_adjmatloss in config_model['args_list_adjmatloss'].split("&"):
@@ -342,8 +343,7 @@ def setup_model(
             pprint(kwargs_newadjmatpredloss)
             print("\n\n")
 
-
-
+    disent_dict_CTNNC_usage = "dummy" # due to exec limitaiton for locals()
     exec('disent_dict_CTNNC_usage = {}'.format(config_model['CTNCC_usage_moduledisent']))
     assert (
         config_model['str_mode_headxint_headxspl_headboth_twosep'] in [
@@ -356,6 +356,8 @@ def setup_model(
         'headboth':modules.gnn_disentangler.ModeArch.HEADBOTH,
         'twosep':modules.gnn_disentangler.ModeArch.TWOSEP,
     }
+
+    print(disent_dict_CTNNC_usage)
 
     type_impanddisentgl = GNNDisentangler
     kwargs_impanddisentgl = {
