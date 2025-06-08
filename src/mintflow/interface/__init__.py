@@ -11,6 +11,9 @@ from .module_parse_config_training import get_defaultconfig_training, verify_and
 from . import module_setup_data
 from .module_setup_data import setup_data
 
+from . import module_setup_model
+from .module_setup_model import setup_model
+
 
 
 
