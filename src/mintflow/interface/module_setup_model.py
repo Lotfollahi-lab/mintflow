@@ -136,7 +136,7 @@ def setup_model(
     # check the 2nd arg
     flag_isvalid_arg_mintflow_data = True
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow, dict)
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {'train_list_tissue_section', 'evaluation_list_tissue_section'}
+    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {'train_list_tissue_section', 'evaluation_list_tissue_section', 'maxsize_subgraph'}
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['train_list_tissue_section'], utils_multislice.ListSlice)
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['evaluation_list_tissue_section'], utils_multislice.ListSlice)
     if not flag_isvalid_arg_mintflow_data:
@@ -343,8 +343,15 @@ def setup_model(
             pprint(kwargs_newadjmatpredloss)
             print("\n\n")
 
-    disent_dict_CTNNC_usage = "dummy" # due to exec limitaiton for locals()
-    exec('disent_dict_CTNNC_usage = {}'.format(config_model['CTNCC_usage_moduledisent']))
+    # due to exec limitaiton for locals()
+    tmp_ldict = {}
+    exec(
+        'disent_dict_CTNNC_usage = {}'.format(config_model['CTNCC_usage_moduledisent']),
+        globals(),
+        tmp_ldict
+    )
+    disent_dict_CTNNC_usage = tmp_ldict['disent_dict_CTNNC_usage']
+
     assert (
         config_model['str_mode_headxint_headxspl_headboth_twosep'] in [
             'headxint', 'headxspl', 'headboth', 'twosep'

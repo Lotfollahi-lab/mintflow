@@ -428,7 +428,8 @@ def setup_data(
 
     return dict(
         train_list_tissue_section=list_slice,
-        evaluation_list_tissue_section=test_list_slice
+        evaluation_list_tissue_section=test_list_slice,
+        maxsize_subgraph=maxsize_subgraph
     )
 
 
