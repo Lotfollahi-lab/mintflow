@@ -598,7 +598,9 @@ def setup_model(
     exec(
         "module_predictor_xbarspl2notBatchID = {}".format(
             config_model['module_predictor_xbarspl2notBatchID']
-        )
+        ),
+        globals(),
+        tmp_ldict
     )
     module_predictor_xbarspl2notBatchID = tmp_ldict['module_predictor_xbarspl2notBatchID']
     gc.collect()
