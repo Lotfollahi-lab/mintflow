@@ -117,7 +117,7 @@ from ..anneal_decoder_xintxspl import AnnealingDecoderXintXspl
 
 def setup_model(
     dict_all4_config_files,
-    mintflow_data,
+    data_mintflow,
     flag_verbose=True,
     flag_visualise_tissue_sections=True
 ):
@@ -128,17 +128,17 @@ def setup_model(
         - config_data_evaluation
         - config_model
         - config_training
-    :param mintflow_data: an object returned by the function `mintflow.setup_data`
+    :param data_mintflow: an object returned by the function `mintflow.setup_data`
     :param flag_verbose:
     :param flag_visualise_tissue_sections:
     :return:
     """
     # check the 2nd arg
     flag_isvalid_arg_mintflow_data = True
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(mintflow_data, dict)
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(mintflow_data.keys()) == {'train_list_tissue_section', 'evaluation_list_tissue_section'}
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(mintflow_data['train_list_tissue_section'], utils_multislice.ListSlice)
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(mintflow_data['evaluation_list_tissue_section'], utils_multislice.ListSlice)
+    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow, dict)
+    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {'train_list_tissue_section', 'evaluation_list_tissue_section'}
+    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['train_list_tissue_section'], utils_multislice.ListSlice)
+    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['evaluation_list_tissue_section'], utils_multislice.ListSlice)
     if not flag_isvalid_arg_mintflow_data:
         raise Exception("Something is wrong with the passed argument `mintflow_data`. Make sure that argument `mintflow_data` is the output from the function `mintflow.setup_data`.")
 
@@ -187,7 +187,7 @@ def setup_model(
         print("\n\n")
 
     # TODO: take in `list_slice`
-    list_slice = mintflow_data['train_list_tissue_section']
+    list_slice = data_mintflow['train_list_tissue_section']
 
 
     dict_varname_to_dim = {
