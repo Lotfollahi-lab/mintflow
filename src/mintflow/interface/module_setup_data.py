@@ -126,10 +126,10 @@ def setup_data(
     config_data_train, config_data_test, config_model, config_training = \
         dict_all4_config_files['config_data_train'], \
         dict_all4_config_files['config_data_evaluation'], \
-        dict_all4_config_files['config_data_train'], \
-        dict_all4_config_files['config_data_train']
+        dict_all4_config_files['config_model'], \
+        dict_all4_config_files['config_training']
 
-        # check if the provided anndata-s share the same gene panel and they all contain count values ===========
+    # check if the provided anndata-s share the same gene panel and they all contain count values ===========
     fname_adata0, adata0 = config_data_train[0]['file'], sc.read_h5ad(config_data_train[0]['file'])
     for config_temp in config_data_train + config_data_test:
         if args.flag_verbose:
@@ -155,7 +155,7 @@ def setup_data(
             )
         else:
             if args.flag_verbose:
-                print("    also checked that the 2nd anndata has count data in adata.X")
+                print("    >>> also checked that anndata.X contains count data.")
 
         del fname_adata_temp, adata_temp
         gc.collect()
