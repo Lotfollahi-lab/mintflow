@@ -759,6 +759,7 @@ def setup_model(
         )
     )
     module_vardist.to(device)
+    module_vardist.train()
 
 
     if args.flag_verbose:
