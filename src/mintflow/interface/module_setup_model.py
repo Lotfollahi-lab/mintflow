@@ -561,7 +561,7 @@ def setup_model(
             config_model['module_predictor_z2notNCC']
         ),
         globals(),
-        tmp_ldict.copy()
+        tmp_ldict
     )
     module_predictor_z2notNCC = tmp_ldict['module_predictor_z2notNCC']
     gc.collect()
@@ -642,7 +642,7 @@ def setup_model(
     )
     module_classifier_xbarintCT = tmp_ldict['module_classifier_xbarintCT']
     gc.collect()
-    
+
 
     # due to exec limitaiton for locals()
     tmp_ldict = locals().copy()
