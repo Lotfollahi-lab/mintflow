@@ -94,8 +94,8 @@ from ..modules.predictorbatchID import PredictorBatchID
 
 
 from . import \
-    get_defaultconfig_data_train, verify_config_data_train,\
-    get_defaultconfig_data_evaluation, verify_config_data_evaluation,\
+    get_defaultconfig_data_train, verify_and_postprocess_config_data_train,\
+    get_defaultconfig_data_evaluation, verify_and_postprocess_config_data_evaluation,\
     get_defaultconfig_model, verify_and_postprocess_config_model,\
     get_defaultconfig_training, verify_and_postprocess_config_training,\
     check_listtissue_trtest
