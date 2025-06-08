@@ -125,7 +125,7 @@ def setup_data(
 
     config_data_train, config_data_test, config_model, config_training = \
         dict_all4_config_files['config_data_train'], \
-        dict_all4_config_files['config_data_test'], \
+        dict_all4_config_files['config_data_evaluation'], \
         dict_all4_config_files['config_data_train'], \
         dict_all4_config_files['config_data_train']
 
