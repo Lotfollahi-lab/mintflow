@@ -54,7 +54,7 @@ def get_defaultconfig_model():
 
     return config_model
 
-def verify_and_postprocess_config_model(dict_config_model, data_mintflow, fname_config_model=""):
+def verify_and_postprocess_config_model(dict_config_model, num_tissue_sections, fname_config_model=""):
 
     # # load config_trianing.yml
     # with open(fname_config_model, 'rb') as f:
@@ -67,20 +67,7 @@ def verify_and_postprocess_config_model(dict_config_model, data_mintflow, fname_
     #             "Please refer to TODO: for sample file config_training.yml"
     #         )
 
-    # check the 2nd arg
-    flag_isvalid_arg_mintflow_data = True
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow, dict)
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {
-        'train_list_tissue_section', 'evaluation_list_tissue_section', 'maxsize_subgraph'}
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(
-        data_mintflow['train_list_tissue_section'], utils_multislice.ListSlice)
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(
-        data_mintflow['evaluation_list_tissue_section'], utils_multislice.ListSlice)
 
-
-    if not flag_isvalid_arg_mintflow_data:
-        raise Exception(
-            "Something is wrong with the argument `mintflow_data` passed to `verify_and_postprocess_config_model`. Please make sure that argument `mintflow_data` is the output from the function `mintflow.setup_data`.")
 
     # check if the keys in the yaml file are correct.
     expected_set_keys_config_model = {
@@ -187,7 +174,8 @@ def verify_and_postprocess_config_model(dict_config_model, data_mintflow, fname_
             )
 
     # if there's one tissue --> set batch mixing coefficients to zero
-    if len(data_mintflow['train_list_tissue_section'].list_slice) == 1:
+    if num_tissue_sections == 1:
+        print(" There is only one training tissue section --> the batch mixing coefficient config_model['coef_xbarint2notbatchID_loss'] and config_model['coef_xbarspl2notbatchID_loss'] are set to 0.")
         dict_config_model['coef_xbarint2notbatchID_loss'] = 0
         dict_config_model['coef_xbarspl2notbatchID_loss'] = 0
 
