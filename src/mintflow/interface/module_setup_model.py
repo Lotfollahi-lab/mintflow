@@ -764,6 +764,8 @@ def setup_model(
     if args.flag_verbose:
         print("Inflow vardist module was created on {}.".format(device))
 
+    return module_vardist
+
 
 
 
