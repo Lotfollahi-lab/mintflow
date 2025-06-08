@@ -359,7 +359,7 @@ class Slice:
             **self.kwargs_sq_pl_spatial_scatter
         )
 
-    def _show_scatter_4cli(self, fname_output):
+    def _show_scatter_4cli(self, fname_output, flag_dump_output):
         """
         Saves the spatial data figure for the command line interface (CLI).
         :return:
@@ -396,12 +396,16 @@ class Slice:
             **self.kwargs_sq_pl_spatial_scatter,
             save=None
         )
-        plt.savefig(
-            fname_output,
-            bbox_inches='tight',
-            pad_inches=0
-        )
-        plt.close()
+        if flag_dump_output:
+            plt.savefig(
+                fname_output,
+                bbox_inches='tight',
+                pad_inches=0
+            )
+            plt.close()
+        else:
+            plt.show()
+
 
 
     def _show_pygbatch_window(self):
@@ -456,7 +460,7 @@ class Slice:
                 plt.show()
 
 
-    def _show_pygbatch_window_4cli(self, fname_output, str_train_or_test, dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize):
+    def _show_pygbatch_window_4cli(self, fname_output, str_train_or_test, dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize, flag_dump_output):
         """
         Shows a sample window on tissue 4 the command line interface (CLI), so one can inspect if the window size is appropriate for the tissue based on size etc.
         :return: None
@@ -495,13 +499,15 @@ class Slice:
                     )
                 )
 
-
-                plt.savefig(
-                    fname_output,
-                    bbox_inches='tight',
-                    pad_inches=0
-                )
-                plt.close()
+                if flag_dump_output:
+                    plt.savefig(
+                        fname_output,
+                        bbox_inches='tight',
+                        pad_inches=0
+                    )
+                    plt.close()
+                else:
+                    plt.show()
 
     def _get_set_CT(self):
         """
@@ -757,20 +763,21 @@ class ListSlice:
         for sl in self.list_slice:
             sl._show_scatter()
 
-    def show_scatters_4cli(self, path_output):
+    def show_scatters_4cli(self, path_output, flag_dump_output=True):
         for idx_sl, sl in enumerate(self.list_slice):
             sl._show_scatter_4cli(
                 fname_output=os.path.join(
                     path_output,
                     'tissue_{}.png'.format(idx_sl+1)
-                )
+                ),
+                flag_dump_output=flag_dump_output
             )
 
     def show_pygbatch_windows(self):
         for sl in self.list_slice:
             sl._show_pygbatch_window()
 
-    def show_pygbatch_windows_4cli(self, path_output, str_train_or_test, dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize):
+    def show_pygbatch_windows_4cli(self, path_output, str_train_or_test, dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize, flag_dump_output=True):
         for idx_sl, sl in enumerate(self.list_slice):
             sl._show_pygbatch_window_4cli(
                 fname_output=os.path.join(
@@ -779,7 +786,8 @@ class ListSlice:
                 ),
                 str_train_or_test=str_train_or_test,
                 dict_slideID_to_maxnumcentralnodes=dict_slideID_to_maxnumcentralnodes,
-                dict_slideID_to_worsecasebatchsize=dict_slideID_to_worsecasebatchsize
+                dict_slideID_to_worsecasebatchsize=dict_slideID_to_worsecasebatchsize,
+                flag_dump_output=flag_dump_output
             )
 
 
