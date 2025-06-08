@@ -62,7 +62,7 @@ args_list_adjmatloss: ""
 # Variable names can be chosen from: z, s_in, s_out, xbar_int, xbar_spl, x_int, and x_spl.
 
 
-CTNCC_usage_moduledisent: "{'CT':mintflow.modules.gnn_disentangler.ArchInsertionPoint.NONE, 'NCC':mintflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO:TUNE  TODO:internalcheck
+CTNCC_usage_moduledisent: "{'CT':modules.gnn_disentangler.ArchInsertionPoint.NONE, 'NCC':modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO:TUNE  TODO:internalcheck
 # Specifies how CT (i.e. cell type) and NCC (neighbourhood cell type composition) are fed to the disentangler module, i.e. the encoder for x --> [x_int, x_spl]
 # Different assignable values to each of the `CT` and `NCC` keys
 #     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.NONE: `CT` or `NCC` not fed to the disentangler module
