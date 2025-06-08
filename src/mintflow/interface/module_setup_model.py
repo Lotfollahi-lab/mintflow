@@ -524,7 +524,7 @@ def setup_model(
         tmp_ldict
     )
     tmp_encSout_list_dim_hidden = tmp_ldict['tmp_encSout_list_dim_hidden']
-    
+
     type_cond4flowvarphi0 = Cond4FlowVarphi0SimpleMLPs
     kwargs_cond4flowvarphi0 = {
         'kwargs_genmodel':kwargs_genmodel,
