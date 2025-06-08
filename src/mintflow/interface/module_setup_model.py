@@ -449,7 +449,7 @@ def setup_model(
     tmp_ldict = {}
     exec(
         "module_encX_int = {}".format(
-            config_model['arch_module_encoder_X2Xbar']
+            locals()['config_model']['arch_module_encoder_X2Xbar']
         ),
         globals(),
         tmp_ldict
