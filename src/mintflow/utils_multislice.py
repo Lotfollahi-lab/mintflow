@@ -783,7 +783,7 @@ class ListSlice:
                 fname_output=os.path.join(
                     path_output,
                     'tissue_{}.png'.format(idx_sl+1)
-                ),
+                ) if flag_dump_output else None,
                 str_train_or_test=str_train_or_test,
                 dict_slideID_to_maxnumcentralnodes=dict_slideID_to_maxnumcentralnodes,
                 dict_slideID_to_worsecasebatchsize=dict_slideID_to_worsecasebatchsize,

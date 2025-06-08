@@ -364,7 +364,7 @@ def setup_data(
 
 
     # compute/report the maximum number of subgraphs
-    print("Computing some initial stats (max number of central nodes, etc) for each tissue.")
+    print("Customised neighbourloader sampler: computing some initial stats (max number of central nodes, etc) for each tissue.")
     list_maxsize_subgraph = []
     dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize = {}, {}
     for idx_sl, sl in enumerate(list_slice.list_slice):
@@ -425,6 +425,11 @@ def setup_data(
             flag_dump_output=False
         )
 
+
+    return dict(
+        train_list_tissue_section=list_slice,
+        evaluation_list_tissue_section=test_list_slice
+    )
 
 
 
