@@ -445,8 +445,17 @@ def setup_model(
     )
     flowmatching_mode_fmloss = tmp_ldict['flowmatching_mode_fmloss']
 
+    # TODO:delete
+
+
     # due to exec limitaiton for locals()
-    print('dict_varname_to_dim' in locals())
+    # print('dict_varname_to_dim' in locals())  # it prints True
+    print(
+        "module_encX_int = {}".format(
+            locals()['config_model']['arch_module_encoder_X2Xbar']
+        )
+    )
+
     tmp_ldict = {}
     exec(
         "module_encX_int = {}".format(
