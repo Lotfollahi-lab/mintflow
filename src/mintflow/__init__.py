@@ -49,7 +49,8 @@ from .interface import \
     get_defaultconfig_data_train, verify_config_data_train,\
     get_defaultconfig_data_evaluation, verify_config_data_evaluation,\
     get_defaultconfig_model, verify_and_postprocess_config_model,\
-    get_defaultconfig_training, verify_and_postprocess_config_training
+    get_defaultconfig_training, verify_and_postprocess_config_training,\
+    setup_data
 
 
 # from .interface.auxiliary_modules import *
