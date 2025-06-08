@@ -111,11 +111,11 @@ flag_enable_batchtoken_encxbar: 'True'  # if set to "True", batch tokens are fed
 
 arch_module_encoder_X2Xbar: >
   torch.nn.Sequential(
-    torch.nn.Linear(locals()['dict_varname_to_dim']['x'] + locals()['kwargs_genmodel']['dict_varname_to_dim']['BatchEmb'], locals()['dict_varname_to_dim']['x']//10),
-    torch.nn.LayerNorm(locals()['dict_varname_to_dim']['x']//10) if(locals()['config_model']['flag_use_layernorm_dimreduction_enc2']) else modules.mlp.Identity(),
+    torch.nn.Linear(dict_varname_to_dim['x'] + kwargs_genmodel['dict_varname_to_dim']['BatchEmb'], dict_varname_to_dim['x']//10),
+    torch.nn.LayerNorm(dict_varname_to_dim['x']//10) if(locals()['config_model']['flag_use_layernorm_dimreduction_enc2']) else modules.mlp.Identity(),
     torch.nn.ReLU(),
-    torch.nn.Linear(locals()['dict_varname_to_dim']['x']//10, locals()['dict_varname_to_dim']['xbar']),
-    torch.nn.LayerNorm(locals()['dict_varname_to_dim']['xbar']) if(locals()['config_model']['flag_use_layernorm_dimreduction_enc2']) else modules.mlp.Identity(),
+    torch.nn.Linear(dict_varname_to_dim['x']//10, dict_varname_to_dim['xbar']),
+    torch.nn.LayerNorm(dict_varname_to_dim['xbar']) if(locals()['config_model']['flag_use_layernorm_dimreduction_enc2']) else modules.mlp.Identity(),
     torch.nn.ReLU()
   )
 # The above variable `arch_module_encoder_X2Xbar` defines the architecture of the encoders X --> Xbar (either X_int --> Xbar_int or X_spl --> Xbar_spl)
