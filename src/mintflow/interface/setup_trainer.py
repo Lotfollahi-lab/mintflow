@@ -255,7 +255,7 @@ class Trainer:
         flag_freezeencdec = False
         optim_training = torch.optim.Adam(
             params=paramlist_optim,
-            lr=config_training['lr_training']
+            lr=self.config_training['lr_training']
         )
         optim_training.flag_freezeencdec = flag_freezeencdec
 
@@ -264,7 +264,7 @@ class Trainer:
                    list(self.model.module_predictor_z2notNCC.parameters()) + \
                    list(self.model.module_predictor_xbarint2notbatchID.parameters()) + \
                    list(self.model.module_predictor_xbarspl2notbatchID.parameters()),
-            lr=config_training['lr_training']
+            lr=self.config_training['lr_training']
         )  # the optimizer for the dual functions (i.e. predictor Z2NotNCC, xbarint2NotNCC)
         # TODO:NOTE:BUG module_predictor_xbarint2notbatchID and module_predictor_xbarspl2notbatchID had not been included,
         self.optim_training = optim_training
