@@ -455,6 +455,10 @@ def setup_model(
             locals()['config_model']['arch_module_encoder_X2Xbar']
         )
     )
+    print("\n\n")
+    exec(
+        "print('dict_varname_to_dim' in locals())"
+    )
 
     tmp_ldict = {}
     exec(
