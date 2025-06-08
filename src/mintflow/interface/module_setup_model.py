@@ -446,6 +446,7 @@ def setup_model(
     flowmatching_mode_fmloss = tmp_ldict['flowmatching_mode_fmloss']
 
     # due to exec limitaiton for locals()
+    print('dict_varname_to_dim' in locals())
     tmp_ldict = {}
     exec(
         "module_encX_int = {}".format(
