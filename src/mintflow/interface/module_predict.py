@@ -1,6 +1,8 @@
 
 from typing import List
 import numpy as np
+import torch
+
 from ..evaluation import base_evaluation
 from .. import vardist
 from ..interface import base_interface
@@ -17,12 +19,15 @@ dict_oldvarname_to_newvarname = {
     'muxspl_before_sc_pp_normalize_total':'MintFlow_Xmic (before_sc_pp_normalize_total)'
 }  # map names according to the latest glossery of the manuscript.
 
+@torch.no_grad()
 def predict(
     dict_all4_configs:dict,
     data_mintflow:dict,
     model:vardist.InFlowVarDist,
     evalulate_on_sections: List[int] | List[str] | str
 ):
+    model.eval()
+
     # check arg `data_mintflow`
     base_interface.check_arg_data_mintflow(data_mintflow)
 
@@ -40,7 +45,7 @@ def predict(
                 dl=sl.pyg_dl_test,
                 # this is correct, because all neighbours are to be included (not a subset of neighbours).
                 ten_xy_absolute=sl.ten_xy_absolute,
-                tqdm_desc="Tissue {}".format(idx_sl+1)
+                tqdm_desc="Tissue section: {}".format(idx_sl)
             )
 
             # remove redundant fields ===
@@ -73,6 +78,8 @@ def predict(
                 anal_dict_varname_to_output_slice[k_new] = anal_dict_varname_to_output_slice.pop(k_old)
 
             dict_sliceid_to_dict_predictions['TissueSection {} (zero-based)'.format(idx_sl)] = anal_dict_varname_to_output_slice
+
+    model.train()
 
     return dict_sliceid_to_dict_predictions
 
