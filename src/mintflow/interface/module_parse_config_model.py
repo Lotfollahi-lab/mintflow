@@ -175,7 +175,7 @@ def verify_and_postprocess_config_model(dict_config_model, num_tissue_sections, 
 
     # if there's one tissue --> set batch mixing coefficients to zero
     if num_tissue_sections == 1:
-        print(" There is only one training tissue section --> the batch mixing coefficients `config_model['coef_xbarint2notbatchID_loss']` and `config_model['coef_xbarspl2notbatchID_loss']` are set to 0.")
+        print(" There is only one training tissue section --> the batch mixing coefficients `config_model['coef_xbarint2notbatchID_loss']` and `config_model['coef_xbarspl2notbatchID_loss']` were automatically set to 0.")
         dict_config_model['coef_xbarint2notbatchID_loss'] = 0.0
         dict_config_model['coef_xbarspl2notbatchID_loss'] = 0.0
 
