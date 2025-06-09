@@ -110,7 +110,7 @@ from ..anneal_decoder_xintxspl import AnnealingDecoderXintXspl
 
 
 class Trainer:
-    def __init__(self, dict_all4_config_files, model, data_mintflow):
+    def __init__(self, dict_all4_configs, model, data_mintflow):
         if not isinstance(model, vardist.InFlowVarDist):
             raise Exception(
                 "The passed `model` to `Trainer` is not of proper type. Make sure it's created and returned by `mintflow.setup_data`"
@@ -118,10 +118,10 @@ class Trainer:
 
         # grab args
         self.config_data_train, self.config_data_test, self.config_model, self.config_training = \
-            dict_all4_config_files['config_data_train'], \
-            dict_all4_config_files['config_data_evaluation'], \
-            dict_all4_config_files['config_model'], \
-            dict_all4_config_files['config_training']
+            dict_all4_configs['config_data_train'], \
+            dict_all4_configs['config_data_evaluation'], \
+            dict_all4_configs['config_model'], \
+            dict_all4_configs['config_training']
 
         self.model = model
         self.data_mintflow = data_mintflow

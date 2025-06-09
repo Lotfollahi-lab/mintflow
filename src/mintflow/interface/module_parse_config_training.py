@@ -24,8 +24,8 @@ def _correct_booleans(fname_config, dict_config):
     for k in set_keys_boolean:
         if not isinstance(dict_config[k], str):
             raise Exception(
-                "In the provided training config file, key {} starts seems to be a boolean flag, but the value is not a string ['True', 'False'].\n"+
-                "We require you True/False values be provided as a string (i.e. True or False with quoation or double-quotaitons on both sides) in the yaml files."
+                "In the provided training config file, the key {} seems to be a boolean flag, but the value is not a string ['True', 'False'].\n"+
+                "We require that True/False values be provided as a string (i.e. True or False with quoation or double-quotaitons on both sides) in the yaml files."
             )
         assert dict_config[k] in ["True", "False"]
         dict_config[k] = dict_config[k] == "True"

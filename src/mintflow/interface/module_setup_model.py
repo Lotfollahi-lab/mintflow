@@ -116,14 +116,14 @@ from ..anneal_decoder_xintxspl import AnnealingDecoderXintXspl
 
 
 def setup_model(
-    dict_all4_config_files,
+    dict_all4_configs,
     data_mintflow,
     flag_verbose=True,
     flag_visualise_tissue_sections=True
 ):
     """
 
-    :param dict_all4_config_files: a dictionary with the following keys and their corresponding values
+    :param dict_all4_configs: a dictionary with the following keys and their corresponding values
         - config_data_train
         - config_data_evaluation
         - config_model
@@ -150,10 +150,10 @@ def setup_model(
     args.flag_visualise_tissue_sections = flag_visualise_tissue_sections
 
     config_data_train, config_data_test, config_model, config_training = \
-        dict_all4_config_files['config_data_train'], \
-            dict_all4_config_files['config_data_evaluation'], \
-            dict_all4_config_files['config_model'], \
-            dict_all4_config_files['config_training']
+        dict_all4_configs['config_data_train'], \
+        dict_all4_configs['config_data_evaluation'], \
+        dict_all4_configs['config_model'], \
+        dict_all4_configs['config_training']
 
     # set device (duplicate) === TODO:maybe delete
     if config_training['flag_use_GPU']:

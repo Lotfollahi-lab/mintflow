@@ -114,7 +114,7 @@ from ..anneal_decoder_xintxspl import AnnealingDecoderXintXspl
 
 
 def setup_data(
-    dict_all4_config_files,
+    dict_all4_configs,
     flag_verbose=True,
     flag_visualise_tissue_sections=True
 ):
@@ -124,10 +124,10 @@ def setup_data(
     args.flag_visualise_tissue_sections = flag_visualise_tissue_sections
 
     config_data_train, config_data_test, config_model, config_training = \
-        dict_all4_config_files['config_data_train'], \
-        dict_all4_config_files['config_data_evaluation'], \
-        dict_all4_config_files['config_model'], \
-        dict_all4_config_files['config_training']
+        dict_all4_configs['config_data_train'], \
+        dict_all4_configs['config_data_evaluation'], \
+        dict_all4_configs['config_model'], \
+        dict_all4_configs['config_training']
 
     # check if the provided anndata-s share the same gene panel and they all contain count values ===========
     fname_adata0, adata0 = config_data_train[0]['file'], sc.read_h5ad(config_data_train[0]['file'])
