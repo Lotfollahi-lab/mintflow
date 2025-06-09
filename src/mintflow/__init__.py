@@ -54,7 +54,7 @@ from .interface import \
 
 
 from .evaluation import \
-    evaluate_by_DB_signalling_genes
+    evaluate_by_known_signalling_genes
 
 # from .interface.auxiliary_modules import *
 #

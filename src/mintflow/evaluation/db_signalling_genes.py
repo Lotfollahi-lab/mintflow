@@ -100,7 +100,7 @@ def _create_eval_df(
 
 
 
-def evaluate_by_DB_signalling_genes(
+def evaluate_by_known_signalling_genes(
     dict_all4_configs:dict,
     data_mintflow:dict,
     model:vardist.InFlowVarDist,
