@@ -5,14 +5,16 @@ import importlib
 import importlib.resources
 
 from .. import vardist
+from . import base
 
 def evaluate_by_DB_signalling_genes(
-    model:vardist.InFlowVarDist,
+    dict_all4_configs:dict,
     data_mintflow:dict,
+    model:vardist.InFlowVarDist,
     evalulate_on_sections: List[int] | List[str] | str
 ):
     """
-
+    :param dict_all4_configs:
     :param model: the mintflow model.
     :param data_mintflow: MintFlow data, as returned by `mintflow.setup_data`
     :param evalulate_on_sections: Specifies whcih evaluation tissue sections to choose and evaluate on.
@@ -28,7 +30,11 @@ def evaluate_by_DB_signalling_genes(
     """
 
     # get list of evaluation tissue sections to pick
-    if isinstance(evalulate_on_sections)
+    list_sliceidx_evalulate_on_sections = base.parse_arg_evalulate_on_sections(
+        dict_all4_configs=dict_all4_configs,
+        data_mintflow=data_mintflow,
+        evalulate_on_sections=evalulate_on_sections
+    )
 
     # get the known signalling genes in the database
     f = importlib.resources.open_binary(
@@ -44,8 +50,9 @@ def evaluate_by_DB_signalling_genes(
     ]
     list_known_LRgenes_inDB = set(list_known_LRgenes_inDB)
 
-    for idx_sl, sl in enumerate(list_slice.list_slice):
-        anal_dict_varname_to_output = module_vardist.eval_on_pygneighloader_dense(
+    # evaluate tissue sections one by one (the ones picked by `list_sliceidx_evalulate_on_sections`)
+    for idx_sl, sl in enumerate(data_mintflow['evaluation_list_tissue_section'].list_slice):
+        anal_dict_varname_to_output = model.eval_on_pygneighloader_dense(
             dl=sl.pyg_dl_test,
             # this is correct, because all neighbours are to be included (not a subset of neighbours).
             ten_xy_absolute=sl.ten_xy_absolute,

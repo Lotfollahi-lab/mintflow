@@ -17,6 +17,8 @@ from .module_setup_model import setup_model
 from . import setup_trainer
 from .setup_trainer import  Trainer
 
+from . import module_predict
+from .module_predict import predict
 
 
 

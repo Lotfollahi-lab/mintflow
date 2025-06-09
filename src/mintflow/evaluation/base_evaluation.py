@@ -2,11 +2,13 @@
 from typing import List
 
 def parse_arg_evalulate_on_sections(
+    dict_all4_configs:dict,
     data_mintflow:dict,
     evalulate_on_sections: List[int] | List[str] | str
 ) -> List[int]:
     """
     Processes the argument `evalulate_on_sections` and converts it to a list of tissue indices to consider.
+    :param dict_all4_configs
     :param data_mintflow:
     :param evalulate_on_sections:
     :return: list_slice_id: a list of integers
@@ -35,8 +37,19 @@ def parse_arg_evalulate_on_sections(
     if isinstance(evalulate_on_sections, list) and isinstance(evalulate_on_sections[0], int):  # case 1
         return evalulate_on_sections
     elif isinstance(evalulate_on_sections, list) and isinstance(evalulate_on_sections[0], str):  # case 2
-        pass
-        # TODO:HERE complete the implementation
+        list_sliceidx_toret = []
+        for idx_sl, sl in enumerate(data_mintflow['evaluation_list_tissue_section'].list_slice):
+            if list(
+                set(
+                    sl.adata.obs[
+                        dict_all4_configs['config_data_evaluation'][idx_sl]['obskey_sliceid_to_checkUnique']
+                    ]
+                )
+            )[0] in evalulate_on_sections:
+                list_sliceidx_toret.append(idx_sl)
+
+        return list_sliceidx_toret
+
     elif isinstance(evalulate_on_sections, str):  # case 3
         if evalulate_on_sections != 'all':
             raise Exception(
