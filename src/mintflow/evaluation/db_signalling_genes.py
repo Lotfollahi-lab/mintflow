@@ -6,7 +6,8 @@ import importlib.resources
 
 from .. import vardist
 from . import base_evaluation
-from .. import predict
+
+from ..interface import module_predict
 
 def evaluate_by_DB_signalling_genes(
     dict_all4_configs:dict,
@@ -53,7 +54,7 @@ def evaluate_by_DB_signalling_genes(
 
     # evaluate tissue sections one by one (the ones picked by `list_sliceidx_evalulate_on_sections`)
     for idx_sl, sl in enumerate(data_mintflow['evaluation_list_tissue_section'].list_slice):
-        anal_dict_varname_to_output = predict(
+        anal_dict_varname_to_output = module_predict.predict(
             dict_all4_configs=dict_all4_configs,
             data_mintflow=data_mintflow,
             model=model,
