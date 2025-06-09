@@ -54,12 +54,14 @@ def evaluate_by_DB_signalling_genes(
 
     # evaluate tissue sections one by one (the ones picked by `list_sliceidx_evalulate_on_sections`)
     for idx_sl, sl in enumerate(data_mintflow['evaluation_list_tissue_section'].list_slice):
-        anal_dict_varname_to_output = module_predict.predict(
-            dict_all4_configs=dict_all4_configs,
-            data_mintflow=data_mintflow,
-            model=model,
-            evalulate_on_sections=[idx_sl]
-        ).items()[0][1]
+        anal_dict_varname_to_output = list(
+            module_predict.predict(
+                dict_all4_configs=dict_all4_configs,
+                data_mintflow=data_mintflow,
+                model=model,
+                evalulate_on_sections=[idx_sl]
+            ).items()
+        )[0][1]
 
         print(anal_dict_varname_to_output.keys())
         assert False
