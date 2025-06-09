@@ -175,9 +175,9 @@ def evaluate_by_DB_signalling_genes(
 
     if optional_list_colvaltype_toadd is not None:
         for colvaldtype in optional_list_colvaltype_toadd:
-            for col, val, dtype in colvaldtype:
-                df_toret[col] = val
-                df_toret[col] = df_toret[col].astype(dtype)
+            col, val, dtype = colvaldtype
+            df_toret[col] = val
+            df_toret[col] = df_toret[col].astype(dtype)
 
 
     return df_toret
