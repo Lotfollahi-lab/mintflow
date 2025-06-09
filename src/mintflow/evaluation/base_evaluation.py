@@ -1,6 +1,16 @@
 
 from typing import List
 
+
+from enum import Enum
+class EvalDFColname(Enum):
+    readcount = "read_count"
+    count_Xmic = "count_assigned_to_Xmic"
+    fraction_Xmic = "fraction_assigned_to_Xmic"
+    among_signalling_genes = "is_among_signalling_genes"
+
+
+
 def parse_arg_evalulate_on_sections(
     dict_all4_configs:dict,
     data_mintflow:dict,

@@ -1,13 +1,79 @@
 
 from typing import List
+
+import pandas
 import pandas as pd
 import importlib
 import importlib.resources
+import anndata
+import numpy as np
 
 from .. import vardist
 from . import base_evaluation
 
 from ..interface import module_predict
+
+
+def _create_eval_df(
+    anal_dict_varname_to_output,
+    list_known_LRgenes_inDB,
+    adata_before_scppnormalizetotal:anndata.AnnData
+):
+
+    num_found_in_LRDB = set(adata_before_scppnormalizetotal.var.index.tolist()).intersection(set(list_known_LRgenes_inDB))
+    print("In the gene panel {} genes were found in the list of known signalling genes.")
+    if num_found_in_LRDB == 0:
+        return
+
+    X_inLRDB = adata_before_scppnormalizetotal[
+        :,
+        adata_before_scppnormalizetotal.var.index.isin(set(list_known_LRgenes_inDB))
+    ]
+    X_notinLRDB = adata_before_scppnormalizetotal[
+        :,
+        ~adata_before_scppnormalizetotal.var.index.isin(set(list_known_LRgenes_inDB))
+    ]
+
+    df_toret = []
+    for idx_colsel, colsel in enumerate([
+        adata_before_scppnormalizetotal.var.index.isin(set(list_known_LRgenes_inDB)),
+        ~adata_before_scppnormalizetotal.var.index.isin(set(list_known_LRgenes_inDB))
+    ]):
+        pass
+        X = adata_before_scppnormalizetotal[:, colsel].X.copy().toarray()
+        np_mask_readcount_gt_zero = X > 0.0
+        X_mic_beforescppnormalizetotal = anal_dict_varname_to_output['MintFlow_Xmic (before_sc_pp_normalize_total)'][:, colsel].toarray()
+
+        np_read_count = X[np_mask_readcount_gt_zero] + 0.0
+        np_count_Xmic = X_mic_beforescppnormalizetotal[np_mask_readcount_gt_zero] + 0.0
+        np_fraction_Xmic = np_count_Xmic / np_read_count
+
+        flag_is_among_signalling_genes = [True, False][idx_colsel]
+        df_toret.append(
+            pandas.DataFrame(
+                np.stack(
+                    [np_read_count, np_count_Xmic, np_fraction_Xmic,
+                     np.array(np_read_count.shape[0] * [flag_is_among_signalling_genes])],
+                    -1
+                ),  # [N x 3]
+                columns=[
+                    base_evaluation.EvalDFColname.readcount,
+                    base_evaluation.EvalDFColname.count_Xmic,
+                    base_evaluation.EvalDFColname.fraction_Xmic,
+                    base_evaluation.EvalDFColname.among_signalling_genes
+                ]
+            )
+        )
+
+    df_toret = pd.concat(df_toret)
+
+    return df_toret
+
+
+
+
+
+
 
 def evaluate_by_DB_signalling_genes(
     dict_all4_configs:dict,
@@ -28,7 +94,7 @@ def evaluate_by_DB_signalling_genes(
     ['my_sample_1', 'my_sample_15'], then the evaluation is done on evaluation anndata objects whose `adata.obs['info_id']`
     is either 'my_sample_1' or'my_sample_15'.
     - Or "all": in this case evaluation is done on all evaluation tissue sections.
-    :return:
+    :return: A dictionary that contains the evaluation result for each tissue section and stored as a pandats DataFrame.
     """
 
     # get list of evaluation tissue sections to pick
@@ -53,25 +119,26 @@ def evaluate_by_DB_signalling_genes(
     list_known_LRgenes_inDB = set(list_known_LRgenes_inDB)
 
     # evaluate tissue sections one by one (the ones picked by `list_sliceidx_evalulate_on_sections`)
+    dict_sliceid_to_evaldf = {}
     for idx_sl, sl in enumerate(data_mintflow['evaluation_list_tissue_section'].list_slice):
-        anal_dict_varname_to_output = list(
-            module_predict.predict(
-                dict_all4_configs=dict_all4_configs,
-                data_mintflow=data_mintflow,
-                model=model,
-                evalulate_on_sections=[idx_sl]
-            ).items()
-        )[0][1]
+        if idx_sl in list_sliceidx_evalulate_on_sections:
+            anal_dict_varname_to_output = list(
+                module_predict.predict(
+                    dict_all4_configs=dict_all4_configs,
+                    data_mintflow=data_mintflow,
+                    model=model,
+                    evalulate_on_sections=[idx_sl]
+                ).items()
+            )[0][1]
 
-        print(anal_dict_varname_to_output.keys())
-        assert False
+            dict_sliceid_to_evaldf['TissueSection {} (zero-based)'.format(idx_sl)] = _create_eval_df(
+                anal_dict_varname_to_output=anal_dict_varname_to_output,
+                list_known_LRgenes_inDB=list_known_LRgenes_inDB,
+                adata_before_scppnormalizetotal=sl.adata_before_scppnormalize_total
+            )
 
-        # anal_dict_varname_to_output = model.eval_on_pygneighloader_dense(
-        #     dl=sl.pyg_dl_test,
-        #     # this is correct, because all neighbours are to be included (not a subset of neighbours).
-        #     ten_xy_absolute=sl.ten_xy_absolute,
-        #     tqdm_desc="Tissue {}".format(idx_sl)
-        # )
+
+    return dict_sliceid_to_evaldf
 
 
 
