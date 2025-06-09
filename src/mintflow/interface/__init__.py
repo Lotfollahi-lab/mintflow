@@ -24,4 +24,3 @@ from .module_predict import predict
 
 
 
-

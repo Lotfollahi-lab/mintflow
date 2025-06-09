@@ -53,6 +53,8 @@ from .interface import \
     setup_data, setup_model, Trainer, predict
 
 
+from .evaluation import \
+    evaluate_by_DB_signalling_genes
 
 # from .interface.auxiliary_modules import *
 #

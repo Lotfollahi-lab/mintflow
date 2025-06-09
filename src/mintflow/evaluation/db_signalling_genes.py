@@ -5,7 +5,8 @@ import importlib
 import importlib.resources
 
 from .. import vardist
-from . import base
+from . import base_evaluation
+from .. import predict
 
 def evaluate_by_DB_signalling_genes(
     dict_all4_configs:dict,
@@ -30,7 +31,7 @@ def evaluate_by_DB_signalling_genes(
     """
 
     # get list of evaluation tissue sections to pick
-    list_sliceidx_evalulate_on_sections = base.parse_arg_evalulate_on_sections(
+    list_sliceidx_evalulate_on_sections = base_evaluation.parse_arg_evalulate_on_sections(
         dict_all4_configs=dict_all4_configs,
         data_mintflow=data_mintflow,
         evalulate_on_sections=evalulate_on_sections
@@ -52,12 +53,22 @@ def evaluate_by_DB_signalling_genes(
 
     # evaluate tissue sections one by one (the ones picked by `list_sliceidx_evalulate_on_sections`)
     for idx_sl, sl in enumerate(data_mintflow['evaluation_list_tissue_section'].list_slice):
-        anal_dict_varname_to_output = model.eval_on_pygneighloader_dense(
-            dl=sl.pyg_dl_test,
-            # this is correct, because all neighbours are to be included (not a subset of neighbours).
-            ten_xy_absolute=sl.ten_xy_absolute,
-            tqdm_desc="Tissue {}".format(idx_sl)
-        )
+        anal_dict_varname_to_output = predict(
+            dict_all4_configs=dict_all4_configs,
+            data_mintflow=data_mintflow,
+            model=model,
+            evalulate_on_sections=[idx_sl]
+        ).items()[0][1]
+
+        print(anal_dict_varname_to_output.keys())
+        assert False
+
+        # anal_dict_varname_to_output = model.eval_on_pygneighloader_dense(
+        #     dl=sl.pyg_dl_test,
+        #     # this is correct, because all neighbours are to be included (not a subset of neighbours).
+        #     ten_xy_absolute=sl.ten_xy_absolute,
+        #     tqdm_desc="Tissue {}".format(idx_sl)
+        # )
 
 
 
