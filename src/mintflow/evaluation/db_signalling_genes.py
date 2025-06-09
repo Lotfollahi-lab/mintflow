@@ -89,9 +89,10 @@ def _create_eval_df(
         base_evaluation.EvalDFColname.readcount.value,
         base_evaluation.EvalDFColname.count_Xmic.value,
         base_evaluation.EvalDFColname.fraction_Xmic.value,
-        base_evaluation.EvalDFColname.among_signalling_genes.value
     ]:
         df_toret[c] = df_toret[c].astype(float)
+
+    df_toret[base_evaluation.EvalDFColname.among_signalling_genes.value] = df_toret[base_evaluation.EvalDFColname.among_signalling_genes.value].astype('category')
 
     return df_toret
 
@@ -104,7 +105,7 @@ def evaluate_by_DB_signalling_genes(
     data_mintflow:dict,
     model:vardist.InFlowVarDist,
     evalulate_on_sections: List[int] | List[str] | str,
-    optional_kv_added:dict = None
+    optional_list_colvaltype_toadd:List[list] = None
 ):
     """
     :param dict_all4_configs:
@@ -119,8 +120,8 @@ def evaluate_by_DB_signalling_genes(
     ['my_sample_1', 'my_sample_15'], then the evaluation is done on evaluation anndata objects whose `adata.obs['info_id']`
     is either 'my_sample_1' or'my_sample_15'.
     - Or "all": in this case evaluation is done on all evaluation tissue sections.
-    :param optional_kv_added: can be used to add additional info to the returned dataframe.
-    For example one can pass {'training_epoch', 8} to specify that this evaluation is done in the 8th training epoch.
+    :param optional_list_colvaltype_toadd: can be used to add additional info to the returned dataframe.
+    For example one can pass [['training_epoch', 8, 'category']] to specify that this evaluation is done in the 8th training epoch, and the dtype of the added column is 'category'.
 
     :return: A pandas dataframe that contains the evaluation result for each tissue section.
     """
@@ -172,9 +173,10 @@ def evaluate_by_DB_signalling_genes(
         [dict_sliceid_to_evaldf[k] for k in dict_sliceid_to_evaldf.keys()]
     )
 
-    if optional_kv_added is not None:
-        for k, v in optional_kv_added.items():
-            df_toret[k] = v
+    if optional_list_colvaltype_toadd is not None:
+        for col, val, dtype in optional_list_colvaltype_toadd:
+            df_toret[col] = val
+            df_toret[col] = df_toret[col].astype(dtype)
 
 
     return df_toret
