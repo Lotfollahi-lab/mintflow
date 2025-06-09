@@ -21,9 +21,6 @@ def _create_eval_df(
     list_known_LRgenes_inDB,
     adata_before_scppnormalizetotal:anndata.AnnData
 ):
-    # find the UID of tissue section
-
-
 
     # split genes
     num_found_in_LRDB = len(set(adata_before_scppnormalizetotal.var.index.tolist()).intersection(set(list_known_LRgenes_inDB)))
@@ -92,7 +89,8 @@ def evaluate_by_DB_signalling_genes(
     dict_all4_configs:dict,
     data_mintflow:dict,
     model:vardist.InFlowVarDist,
-    evalulate_on_sections: List[int] | List[str] | str
+    evalulate_on_sections: List[int] | List[str] | str,
+    optional_kv_added:dict = None
 ):
     """
     :param dict_all4_configs:
@@ -107,6 +105,9 @@ def evaluate_by_DB_signalling_genes(
     ['my_sample_1', 'my_sample_15'], then the evaluation is done on evaluation anndata objects whose `adata.obs['info_id']`
     is either 'my_sample_1' or'my_sample_15'.
     - Or "all": in this case evaluation is done on all evaluation tissue sections.
+    :param optional_kv_added: can be used to add additional info to the returned dataframe.
+    For example one can pass {'training_epoch', 8} to specify that this evaluation is done in the 8th training epoch.
+
     :return: A pandas dataframe that contains the evaluation result for each tissue section.
     """
 
@@ -153,7 +154,16 @@ def evaluate_by_DB_signalling_genes(
             )
 
 
-    return dict_sliceid_to_evaldf
+    df_toret = pandas.concat(
+        [dict_sliceid_to_evaldf[k] for k in dict_sliceid_to_evaldf.keys()]
+    )
+
+    if optional_kv_added is not None:
+        for k, v in optional_kv_added.items():
+            df_toret[k] = v
+
+
+    return df_toret
 
 
 
