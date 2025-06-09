@@ -7,17 +7,6 @@ from ..evaluation import base_evaluation
 from .. import vardist
 from ..interface import base_interface
 
-dict_oldvarname_to_newvarname = {
-    'muxint':'MintFlow_X_int',
-    'muxspl':'MintFlow_X_mic',
-    'muxbar_int':'MintFlow_Xbar_int',
-    'muxbar_spl':'MintFlow_Xbar_mic',
-    'mu_sin':'MintFlow_S_in',
-    'mu_sout':'MintFlow_S_out',
-    'mu_z':'MintFlow_Z',
-    'muxint_before_sc_pp_normalize_total':'MintFlow_Xint (before_sc_pp_normalize_total)',
-    'muxspl_before_sc_pp_normalize_total':'MintFlow_Xmic (before_sc_pp_normalize_total)'
-}  # map names according to the latest glossery of the manuscript.
 
 @torch.no_grad()
 def predict(
@@ -45,7 +34,7 @@ def predict(
                 dl=sl.pyg_dl_test,
                 # this is correct, because all neighbours are to be included (not a subset of neighbours).
                 ten_xy_absolute=sl.ten_xy_absolute,
-                tqdm_desc="Tissue section: {}".format(idx_sl)
+                tqdm_desc="Evaluating on tissue section: {}".format(idx_sl)
             )
 
             # remove redundant fields ===
@@ -74,7 +63,7 @@ def predict(
             anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'] = anal_dict_varname_to_output_slice['muxspl_before_sc_pp_normalize_total'].tocsr()
 
             # replace the keys in dictionary
-            for k_old, k_new in dict_oldvarname_to_newvarname.items():
+            for k_old, k_new in base_interface.dict_oldvarname_to_newvarname.items():
                 anal_dict_varname_to_output_slice[k_new] = anal_dict_varname_to_output_slice.pop(k_old)
 
             dict_sliceid_to_dict_predictions['TissueSection {} (zero-based)'.format(idx_sl)] = anal_dict_varname_to_output_slice
