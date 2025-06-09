@@ -72,7 +72,7 @@ def _create_eval_df(
                     -1
                 ),  # [N x 3]
                 columns=[
-                    base_evaluation.EvalDFColname.tissue_section_unique_ID,
+                    base_evaluation.EvalDFColname.tissue_section_unique_ID.value,
                     base_evaluation.EvalDFColname.readcount.value,
                     base_evaluation.EvalDFColname.count_Xmic.value,
                     base_evaluation.EvalDFColname.fraction_Xmic.value,
@@ -82,6 +82,16 @@ def _create_eval_df(
         )
 
     df_toret = pd.concat(df_toret)
+
+    # modify dtype of columns
+    df_toret[base_evaluation.EvalDFColname.tissue_section_unique_ID.value] = df_toret[base_evaluation.EvalDFColname.tissue_section_unique_ID.value].astype('category')
+    for c in [
+        base_evaluation.EvalDFColname.readcount.value,
+        base_evaluation.EvalDFColname.count_Xmic.value,
+        base_evaluation.EvalDFColname.fraction_Xmic.value,
+        base_evaluation.EvalDFColname.among_signalling_genes.value
+    ]:
+        df_toret[c] = pd.to_numeric(df_toret[c])
 
     return df_toret
 
