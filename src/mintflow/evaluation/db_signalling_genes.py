@@ -21,7 +21,7 @@ def _create_eval_df(
 ):
 
     num_found_in_LRDB = set(adata_before_scppnormalizetotal.var.index.tolist()).intersection(set(list_known_LRgenes_inDB))
-    print("In the gene panel {} genes were found in the list of known signalling genes.")
+    print("In the gene panel {} genes were found in the list of known signalling genes.".format(num_found_in_LRDB))
     if num_found_in_LRDB == 0:
         return
 
@@ -57,10 +57,10 @@ def _create_eval_df(
                     -1
                 ),  # [N x 3]
                 columns=[
-                    base_evaluation.EvalDFColname.readcount,
-                    base_evaluation.EvalDFColname.count_Xmic,
-                    base_evaluation.EvalDFColname.fraction_Xmic,
-                    base_evaluation.EvalDFColname.among_signalling_genes
+                    base_evaluation.EvalDFColname.readcount.value,
+                    base_evaluation.EvalDFColname.count_Xmic.value,
+                    base_evaluation.EvalDFColname.fraction_Xmic.value,
+                    base_evaluation.EvalDFColname.among_signalling_genes.value
                 ]
             )
         )
@@ -68,8 +68,6 @@ def _create_eval_df(
     df_toret = pd.concat(df_toret)
 
     return df_toret
-
-
 
 
 
