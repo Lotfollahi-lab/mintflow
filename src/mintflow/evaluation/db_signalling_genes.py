@@ -21,6 +21,14 @@ def _create_eval_df(
     list_known_LRgenes_inDB,
     adata_before_scppnormalizetotal:anndata.AnnData
 ):
+    # find UID of the tissue section
+    UID_tissue_section = list(
+        set(
+            adata_before_scppnormalizetotal.obs[
+                dict_all4_configs['config_data_evaluation'][idx_sl]['obskey_sliceid_to_checkUnique']
+            ]
+        )
+    )[0]
 
     # split genes
     num_found_in_LRDB = len(set(adata_before_scppnormalizetotal.var.index.tolist()).intersection(set(list_known_LRgenes_inDB)))
@@ -56,11 +64,7 @@ def _create_eval_df(
             pandas.DataFrame(
                 np.stack([
                         np.array(
-                            list(
-                                adata_before_scppnormalizetotal.obs[
-                                    dict_all4_configs['config_data_evaluation'][idx_sl]['obskey_sliceid_to_checkUnique']
-                                ]
-                            )
+                            np_read_count.shape[0]*[UID_tissue_section]
                         ),
                         np_read_count, np_count_Xmic, np_fraction_Xmic,
                         np.array(np_read_count.shape[0] * [flag_is_among_signalling_genes])
