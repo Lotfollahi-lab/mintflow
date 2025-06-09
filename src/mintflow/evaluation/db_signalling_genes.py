@@ -91,7 +91,7 @@ def _create_eval_df(
         base_evaluation.EvalDFColname.fraction_Xmic.value,
         base_evaluation.EvalDFColname.among_signalling_genes.value
     ]:
-        df_toret[c] = pd.to_numeric(df_toret[c])
+        df_toret[c] = df_toret[c].astype(float)
 
     return df_toret
 
