@@ -15,12 +15,18 @@ from ..interface import module_predict
 
 
 def _create_eval_df(
+    idx_sl,
+    dict_all4_configs,
     anal_dict_varname_to_output,
     list_known_LRgenes_inDB,
     adata_before_scppnormalizetotal:anndata.AnnData
 ):
+    # find the UID of tissue section
 
-    num_found_in_LRDB = set(adata_before_scppnormalizetotal.var.index.tolist()).intersection(set(list_known_LRgenes_inDB))
+
+
+    # split genes
+    num_found_in_LRDB = len(set(adata_before_scppnormalizetotal.var.index.tolist()).intersection(set(list_known_LRgenes_inDB)))
     print("In the gene panel {} genes were found in the list of known signalling genes.".format(num_found_in_LRDB))
     if num_found_in_LRDB == 0:
         return
@@ -51,12 +57,21 @@ def _create_eval_df(
         flag_is_among_signalling_genes = [True, False][idx_colsel]
         df_toret.append(
             pandas.DataFrame(
-                np.stack(
-                    [np_read_count, np_count_Xmic, np_fraction_Xmic,
-                     np.array(np_read_count.shape[0] * [flag_is_among_signalling_genes])],
+                np.stack([
+                        np.array(
+                            list(
+                                adata_before_scppnormalizetotal.obs[
+                                    dict_all4_configs['config_data_evaluation'][idx_sl]['obskey_sliceid_to_checkUnique']
+                                ]
+                            )
+                        ),
+                        np_read_count, np_count_Xmic, np_fraction_Xmic,
+                        np.array(np_read_count.shape[0] * [flag_is_among_signalling_genes])
+                    ],
                     -1
                 ),  # [N x 3]
                 columns=[
+                    base_evaluation.EvalDFColname.tissue_section_unique_ID,
                     base_evaluation.EvalDFColname.readcount.value,
                     base_evaluation.EvalDFColname.count_Xmic.value,
                     base_evaluation.EvalDFColname.fraction_Xmic.value,
@@ -92,7 +107,7 @@ def evaluate_by_DB_signalling_genes(
     ['my_sample_1', 'my_sample_15'], then the evaluation is done on evaluation anndata objects whose `adata.obs['info_id']`
     is either 'my_sample_1' or'my_sample_15'.
     - Or "all": in this case evaluation is done on all evaluation tissue sections.
-    :return: A dictionary that contains the evaluation result for each tissue section and stored as a pandats DataFrame.
+    :return: A pandas dataframe that contains the evaluation result for each tissue section.
     """
 
     # get list of evaluation tissue sections to pick
@@ -130,6 +145,8 @@ def evaluate_by_DB_signalling_genes(
             )[0][1]
 
             dict_sliceid_to_evaldf['TissueSection {} (zero-based)'.format(idx_sl)] = _create_eval_df(
+                idx_sl=idx_sl,
+                dict_all4_configs=dict_all4_configs,
                 anal_dict_varname_to_output=anal_dict_varname_to_output,
                 list_known_LRgenes_inDB=list_known_LRgenes_inDB,
                 adata_before_scppnormalizetotal=sl.adata_before_scppnormalize_total

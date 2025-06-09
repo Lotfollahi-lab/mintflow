@@ -8,6 +8,7 @@ class EvalDFColname(Enum):
     count_Xmic = "count_assigned_to_Xmic"
     fraction_Xmic = "fraction_assigned_to_Xmic"
     among_signalling_genes = "is_among_signalling_genes"
+    tissue_section_unique_ID = "uniqueID_tissuse_section"
 
 
 
