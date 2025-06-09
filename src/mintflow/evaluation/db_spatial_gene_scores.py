@@ -8,11 +8,21 @@ import importlib.resources
 import anndata
 import numpy as np
 
+
 from .. import vardist
 from . import base_evaluation
 
 from ..interface import module_predict
 
+
+def test_listdir():
+    # f = importlib.resources.open_binary(
+    #     "mintflow.data.for_evaluation.db_signalling_genes",
+    #     "df_LRpairs_Armingoletal.txt"
+    # )
+    return importlib.resources.files(
+        "mintflow.data.for_evaluation.db_signalling_genes"
+    )
 
 def _create_eval_df(
     idx_sl,
@@ -100,7 +110,7 @@ def _create_eval_df(
 
 
 
-def evaluate_by_known_signalling_genes(
+def evaluate_by_spatial_scores_for_genes(
     dict_all4_configs:dict,
     data_mintflow:dict,
     model:vardist.InFlowVarDist,
@@ -137,8 +147,7 @@ def evaluate_by_known_signalling_genes(
     f = importlib.resources.open_binary(
         "mintflow.data.for_evaluation.db_signalling_genes",
         "df_LRpairs_Armingoletal.txt"
-    )  # TODO:shouldn't "mintflow." be removed form the 1st arg?
-
+    )
     df_LRpairs = pd.read_csv(f)
     f.close()
 
