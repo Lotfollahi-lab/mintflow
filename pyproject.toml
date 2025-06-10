@@ -7,7 +7,7 @@ name = "mintflow"
 version = "0.0.1"
 description = "Microenvironment-induced and INtrinsic Transcriptomic FLOWs"
 readme = "README.md"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.13"
 license = {file = "LICENSE"}
 authors = [
     {name = "Amir Hossein Hosseini Akbarnejad"},
@@ -164,3 +164,6 @@ skip = [
     "docs/references.md",
     "docs/notebooks/example.ipynb",
 ]
+
+#[tool.setuptools]
+package-data={"mintflow" = ["*.pkl", "*.yml", "*.txt"] }

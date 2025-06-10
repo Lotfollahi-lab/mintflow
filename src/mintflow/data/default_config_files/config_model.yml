@@ -1,0 +1,307 @@
+
+
+num_graph_hops: 1  # number of neighbourhood hops over which the S_out-s of each cell's neighbours are aggregated to form the cell's S_in.
+
+dict_pname_to_scaleandunweighted: "z#1.0#True&sout#1.0#True&sin#0.1#True&xbar_int#0.1#True&xbar_spl#0.1#True&x#0.1#True"
+# a set of strings separated by &, where each string specifies 1. the scale of the conditional likelihood of each paramter and 2. Whether it's likelihood will be unweighted.
+# If the scale paramtetr comes form a module, that scale will override the scale number provided above.
+# For example 'z#1.0#True' means the scale of p(z|u_z) is set to 1.0, and the last part set as True implies that p(z|u_z)'s likelihood is unweighted.
+# For more info about the term 'unweighted' and why it might help, you can refer to the DDPM paper (Denoising Diffusion Probabilistic Models).
+
+str_mode_headxint_headxspl_headboth_twosep: headxspl  # recommeneded: headxspl
+# A string in [headxint, headxspl, headboth, twosep]
+# Specifies whether the disentangler module (i.e. encoder x --> [x_int, x_spl])
+# - headxint: predicts x_int and sets x_spl as "x_spl = x - x_int"
+# - headxspl: predicts x_spl and sets x_int as "x_int = x - x_spl"
+# - headboth: a GNN followed by two heads, one for x_int and one for x_spl
+# - twosep: totally different modules to predict x_int and x_spl.
+
+dim_sz: 100  # dimension of the Z vectors, as well as the S_in and S_out vectors.
+
+
+str_listdimhidden_dec2: ''  # list of hidden dimensions (i.e. more layers) for the 2nd decoder, i.e. the decoder from xbar_int --> x_int and xbar_spl --> x_spl
+flag_zinbdec_endswith_softmax: 'True'  # whether the 2nd decoder (the decoder from xbar_int --> x_int and xbar_spl --> x_spl) ends with a softmax layer
+flag_zinbdec_endswith_softplus: 'False'  # whether the 2nd decoder (the decoder from xbar_int --> x_int and xbar_spl --> x_spl) ends with a softplus layer
+flag_use_layernorm_dec2: 'True'  # whether the 2nd decoder (the decoder from xbar_int --> x_int and xbar_spl --> x_spl) contains layer norm layers.
+zi_probsetto0_int: 0.0001  # the probability of elements being set to zero in the zero-inflated binomila distribution for x_int.
+zi_probsetto0_spl: 0.0001
+# TODO:TUNE the probability of elements being set to zero in the zero-inflated binomila distribution for x_spl
+# One may want to set `zi_probsetto0_spl` to a larger number (e.g. 0.3) to encourage the spatial part of expression to be more sparse.
+
+initval_thetanegbin_int: '3.0'  # the initial value for the dispersion paremters of the ZINB distibution of x_int, either a floating point number in a string or the string "rand" for random initialisation.
+flag_train_negbintheta_int: 'True'  # if set to True, the dispersion paremters of the ZINB distibution of x_int is a trainable paremter.
+negbintheta_int_clamp_minmax: '1.0_10.0'  # The minmax clamp values on the dispersion paremters of the ZINB distibution of x_int, to avoid too large or too small dispersion parameters.
+
+
+initval_thetanegbin_spl: '3.0'  # the initial value for the dispersion paremters of the ZINB distibution of x_spl, either a floating point number in a string or the string "rand" for random initialisation.
+flag_train_negbintheta_spl: 'True'  # if set to True, the dispersion paremters of the ZINB distibution of x_spl is a trainable paremter.
+negbintheta_spl_clamp_minmax: '1.0_10.0'  # The minmax clamp values on the dispersion paremters of the ZINB distibution of x_int, to avoid too large or too small dispersion parameters.
+
+flag_use_int_u: 'True'  # whether Z is conditioned on the additional label (i.e. u_z).
+flag_use_spl_u: 'True'  # whether S_out is conditioned on the additional label (i.e. u_s).
+
+flag_detach_mu_u_int: 'False'  # Whether the mean parameter of Z's likelihood is detached. TODO:internalcheck? why are they set to True and False on initiall Melanoma runs???
+flag_detach_mu_u_spl: 'True'  # Whether the mean parameter of S_out's likelihood is detached. TODO:internalcheck? why are they set to True and False on initiall Melanoma runs???
+
+upperbound_cov_u: 1.0  # upper-bound on the covariance of the likelihood terms of Z and S_out
+lowerbound_cov_u: 0.01 # lower-bound on the covariance of the likelihood terms of Z and S_out
+
+
+flag_enable_batchtoken_flowmodule: 'False'  # whether the batch token is provided to the 1st decoder neural ODE (i.e. decoder [z,s] to [xbar_int, xbar_spl]). Recommended setting: 'False"
+
+args_list_adjmatloss: ""
+# Note: the support for the functionality is limited (the dual functions are not updated atm) --> it's recommended to leave it as "".
+# Using this argument one may define losses for the predictability/unpredictability of whether two cells are connected in the neighbourhood graph based on their, e.g., S_in vectors.
+# This argument is some strings seprated by &, where each string has the following format: inputdim#varname1#varname#predorunpred#coefloss#flag_defineloss_onlyon_pygneighinternal
+# For example: "exec:dict_varname_to_dim['s']+dict_varname_to_dim['s']#xbar_int#xbar_int#unpredictable#10.0#False&exec:dict_varname_to_dim['s']+dict_varname_to_dim['s']#z#z#unpredictable#10.0#False"
+#     - In the above example, the 1st part before '&' defines a loss term where
+#           - inputdim is dict_varname_to_dim['s']+dict_varname_to_dim['s']
+#           - Two cells being connected is unpredictable based on xbar_int of the 1st cell and xbar_int of the 2nd cell
+#           - The loss term is encouraged with coefficient 10.0.
+#           - False right before '&' indicates that the loss won't be applied only on internal nodes in pyg's neighbourloader batch.
+# Variable names can be chosen from: z, s_in, s_out, xbar_int, xbar_spl, x_int, and x_spl.
+
+
+CTNCC_usage_moduledisent: "{'CT':modules.gnn_disentangler.ArchInsertionPoint.BACKBONE, 'NCC':modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO:TUNE  TODO:internalcheck , specially the 1st one.
+# Specifies how CT (i.e. cell type) and NCC (neighbourhood cell type composition) are fed to the disentangler module, i.e. the encoder for x --> [x_int, x_spl]
+# Different assignable values to each of the `CT` and `NCC` keys
+#     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.NONE: `CT` or `NCC` not fed to the disentangler module
+#     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.BACKBONE: `CT` or `NCC` is fed to GNN backbone.
+#     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.HEADINT: `CT` or `NCC` is fed to the intrinsic output head.
+#     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL: `CT` or `NCC` is fed to the spatial output head.
+
+
+dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_spl#0.0#True&varphi_enc_int#0.0#True&varphi_enc_spl#0.0#True&z#1.0#True&sin#1.0#True&sout#0.0#True"
+# a set of strings separated by &, where each string specifies 1. the scale of the conditional likelihood of each variable in variational distribution and 2. Whether it's likelihood will be unweighted.
+# If the scale paramtetr comes form a module, that scale will override the scale number provided above.
+# For example 'sin#1.0#True' means the scale of the conditional varitial term for sin is set to 1.0, and the last part set as True implies that the likelihood is unweighted.
+# For more info about the term 'unweighted' and why it might help, you can refer to the DDPM paper (Denoising Diffusion Probabilistic Models).
+# If scale is set to 0.0 and flag_unweighted is set to True --> the conditional likelihood term for that variable is discarded to imitate a deterministic encoder.
+
+
+clipval_cov_noncentralnodes: 0.1  # TODO:ESSENTIAL:TUNE, a very important paramter to tune.
+# The prediction uncertainty on non-central nodes in NeighbourLoader's mini-batches are lower-bounded, and the above variable `clipval_cov_noncentralnodes` determines that lower bound.
+# Please refer to the manuscript for more info about why doing so might be necessary.
+
+std_minval_finalclip: 0.01
+std_maxval_finalclip: 0.01  # TODO:internalcheck, shouldn't it be increased to, e.g., 1.0 ???
+# The final clip limits put on the predicted covariance values for x_int and x_spl
+
+flag_use_layernorm_disentangler_enc1: 'True'
+flag_use_dropout_disentangler_enc1: 'True'
+flag_enable_batchtoken_disentangler: 'True'
+# The above three arguments specify if the 1st encoder (i.e. encoder x --> [x_int, x_spl])
+#   - has layernorm layers
+#   - has dropout layers
+#   - take in batch token as input.
+
+
+
+coef_flowmatchingloss: 10.0  # TODO:TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
+flowmatching_mode_samplex0: 'ModeSampleX0.FROMINFLOW'
+flowmatching_mode_minibatchper: 'ModeMinibatchPerm.RANDOM'
+flowmatching_mode_timesched: 'ModeTimeSched.UNIFORM'
+flowmatching_sigma: 0.0
+flowmatching_mode_fmloss: 'ModeFMLoss.NOISEDIR'
+neuralODE_t_num_steps: 10  # number of steps for the ODE solver of the NeuralODE decoder [z,s] --> [xbar_int, xbar_spl]
+# Above: related to flow matching
+
+flag_use_layernorm_dimreduction_enc2: 'True'  # if set to "True", the encoders X --> Xbar (both X_int --> Xbar_int or X_spl --> Xbar_spl) will use LayerNorm layers, but it depends on the `arch_module_encoder_X2Xbar` parameter set below.
+flag_enable_batchtoken_encxbar: 'True'  # if set to "True", batch tokens are fed to the encoders X --> Xbar (either X_int --> Xbar_int or X_spl --> Xbar_spl)
+
+arch_module_encoder_X2Xbar: >
+  torch.nn.Sequential(
+    torch.nn.Linear(dict_varname_to_dim['x'] + kwargs_genmodel['dict_varname_to_dim']['BatchEmb'], dict_varname_to_dim['x']//10),
+    torch.nn.LayerNorm(dict_varname_to_dim['x']//10) if(locals()['config_model']['flag_use_layernorm_dimreduction_enc2']) else modules.mlp.Identity(),
+    torch.nn.ReLU(),
+    torch.nn.Linear(dict_varname_to_dim['x']//10, dict_varname_to_dim['xbar']),
+    torch.nn.LayerNorm(dict_varname_to_dim['xbar']) if(locals()['config_model']['flag_use_layernorm_dimreduction_enc2']) else modules.mlp.Identity(),
+    torch.nn.ReLU()
+  )
+# The above variable `arch_module_encoder_X2Xbar` defines the architecture of the encoders X --> Xbar (either X_int --> Xbar_int or X_spl --> Xbar_spl)
+# You can modify those encoders by mofidying the above lines.
+
+
+
+flag_use_layernorm_cond4flow_enc3: 'True'  # if set to 'True', the 3rd encoder (i.e. the encoder [xbar_int, xbar_spl] --> [s, z]) uses LayerNorm layers.
+flag_use_dropout_cond4flow_enc3: 'True'  # if set to 'True', the 3rd encoder (i.e. the encoder [xbar_int, xbar_spl] --> [s, z]) uses Dropout layers.
+enc3_encZ_list_dim_hidden: '[50]'  # List of hidden dimensions in the Z encoder of the 3rd encoder. You can modify the number of layers and number of neurons in each layer.
+enc3_encSin_list_dim_hidden: '[50]'  # List of hidden dimensions in the Sin encoder of the 3rd encoder. You can modify the number of layers and number of neurons in each layer.
+enc3_encSout_list_dim_hidden: '[50]'  # List of hidden dimensions in the Sout encoder of the 3rd encoder. You can modify the number of layers and number of neurons in each layer.
+
+CTNCC_usage_modulecond4flow: "{'z':[True, False], 'sout':[True, False], 'sin':[False, True]}"
+# The 3rd encoder has three separate parts for z, sout, and sin.
+# The above parameter `CTNCC_usage_modulecond4flow` specifies if CTs (cell types) and NCCs (neighbourhood cell type decompositions) are fed to each of those three encoder modules.
+# For example 'z':[True, False] means in the 3rd encdoer, the encoder for z takes in CTs (cell types) but it doesn't take in NCCs (neighbourhood cell type decompositions), hence [True, False]
+
+str_modez2notNCCloss_regorclsorwassdist: 'wassdist'  # a string either 'cls' and 'wassdist'. It's highly recommended to leave as 'wassdist'.
+
+module_predictor_z2notNCC: >  # the module that tries to predict NCCs (neighbourhood cell type decompositions) from the Z vectors. The gradient is used to mix the Z vectors based on NCC and in each cell type.
+  PredictorPerCT(
+    list_modules=[
+        torch.nn.Sequential(
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, list_slice.list_slice[0]._global_num_CT, bias=False),
+            torch.nn.Tanh() if(config_model['str_modez2notNCCloss_regorclsorwassdist'] in ['cls', 'wassdist']) else BASE_PATH.modules.mlp.Identity()
+        ) for _ in range(list_slice.list_slice[0]._global_num_CT)
+    ]
+  )
+
+
+module_predictor_xbarint2notNCC: >  # the module that tries to predict NCCs (neighbourhood cell type decompositions) from the xbar_int vectors. The gradient is used to mix the xbar_int vectors based on NCC and in each cell type.
+  PredictorPerCT(
+    list_modules=[
+        torch.nn.Sequential(
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, list_slice.list_slice[0]._global_num_CT, bias=False),
+            torch.nn.Tanh() if(config_model['str_modez2notNCCloss_regorclsorwassdist'] in ['cls', 'wassdist']) else BASE_PATH.modules.mlp.Identity()
+        ) for _ in range(list_slice.list_slice[0]._global_num_CT)
+    ]
+  )
+
+module_predictor_xbarint2notBatchID: >  # The module that tries to predict batch IDs from xbarint vectors. The gradient is used to mix the xbar_int vectors based on batch ID.
+  PredictorBatchID(
+    list_modules=[
+        torch.nn.Sequential(
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, 1, bias=False),
+            torch.nn.Tanh()
+        ) for _ in range(list_slice.list_slice[0]._global_num_Batch)
+    ],
+    num_batches=kwargs_genmodel['dict_varname_to_dim']['BatchEmb']
+  )
+
+
+module_predictor_xbarspl2notBatchID: >  # The module that tries to predict batch IDs from xbarspl vectors. The gradient is used to mix the xbar_spl vectors based on batch ID.
+  PredictorBatchID(
+    list_modules=[
+        torch.nn.Sequential(
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.LayerNorm(kwargs_genmodel['dict_varname_to_dim']['z']//2),
+            torch.nn.ReLU(),
+            torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, 1, bias=False),
+            torch.nn.Tanh()
+        ) for _ in range(list_slice.list_slice[0]._global_num_Batch)
+    ],
+    num_batches=kwargs_genmodel['dict_varname_to_dim']['BatchEmb']
+  )
+
+
+coef_loss_CTpredfromZ: 1.0  # coefficient of loss term that encourages CT (cell type) being predictable from Z.
+module_classifier_P1loss: >  # the predictor module for the above loss term. # TODO:check: is linear better than, e.g., 2-layer?
+  torch.nn.Sequential(
+        torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
+        torch.nn.ReLU(),
+        torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, list_slice.list_slice[0]._global_num_CT)
+  )
+
+coef_loss_NCCpredfromSin: 1.0  # coefficient of loss term that encourages NCC (neighbourhood cell type decomposition) being predictable from S_in.
+module_predictor_P3loss: >  # the predictor module for the above loss term. # TODO:check: is linear better than, e.g., 2-layer?
+  torch.nn.Sequential(
+        torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['s'], kwargs_genmodel['dict_varname_to_dim']['s']//2),
+        torch.nn.ReLU(),
+        torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['s']//2, list_slice.list_slice[0]._global_num_CT)
+  )
+str_modeP3loss_regorcls: 'reg'  # specifies if the above loss term is regression or classification loss. Recommended: reg
+
+
+anneal_logp_ZSout_coef_min: 0.5
+anneal_logp_ZSout_coef_max: 1.0
+anneal_logp_ZSout_num_cycles: "0"  # can be an integer or "np.inf"
+anneal_logp_ZSout_numepochs_in_cycle: 50
+# The above 4 parameters may potentially anneal the conditional likelihood terms for Z and Sout
+# Since `anneal_logp_ZSout_num_cycles` above is set to "0", it means the coefficient will always be 1.0 --> i.e. no annealing, which is the recommended setting.
+# The above parametrs specify a linear and cyclical annealing, where `anneal_logp_ZSout_num_cycles` is the number of cycles after which the coefficient becomes `anneal_logp_ZSout_coef_max`.
+# In each cycle the coefficient starts from `anneal_logp_ZSout_coef_min` and linearly is increased to `anneal_logp_ZSout_coef_max`.
+# Each cycle takes `anneal_logp_ZSout_numepochs_in_cycle` epochs.
+
+weight_logprob_zinbpos: 10.0  # the weight of ZINB likelihood for positive counts. One can set this weight to counteract the effet of number of zero-s being larger than one-s.
+weight_logprob_zinbzero: 1.0  # the weight of ZINB likelihood for zero counts. One can set this weight to counteract the effet of number of zero-s being larger than one-s.
+
+flag_drop_loss_logQdisentangler: 'True'
+# If set to True, the conditional likelihood of x_int and x_spl in varitiaonl distribution are discarded from the training objective.
+# It's done to not discourage higher entropy in variational distribution of x_int and x_spl, so different decompositions are explored.
+
+
+coef_xbarintCT_loss: 1.0  # coefficient of loss term that encourages CT (cell type) being predictable from xbar_int. TODO:check, TODO:internalcheck:it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
+module_classifier_xbarintCT: >  #The predictor for the above loss term. TODO:check: is linear better than, e.g., 2-layer?,
+  torch.nn.Sequential(
+        torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
+        torch.nn.ReLU(),
+        torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, list_slice.list_slice[0]._global_num_CT)
+  )
+
+
+coef_xbarsplNCC_loss: 1.0  # coefficient of loss term that encourages NCC (neighbourhood cell type decomposition) being predictable from xbar_spl. TODO:check, TODO:internalcheck:it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
+module_predictor_xbarsplNCC: > #The predictor for the above loss term. TODO:check: is linear better than, e.g., 2-layer?,
+  torch.nn.Sequential(
+        torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['s'], kwargs_genmodel['dict_varname_to_dim']['s']//2),
+        torch.nn.ReLU(),
+        torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['s']//2, list_slice.list_slice[0]._global_num_CT)
+  )
+
+str_modexbarsplNCCloss_regorcls: 'reg'  # determine if the above loss is regression (reg) or classification (cls).
+
+coef_rankloss_xbarint: 0.0
+# coefficient of a loss term saying: from xbar_int the rank of neighbouring cells (rank based on closeness) should not be preditable.
+# The recommended value is 0.0 (it's not fully supported/tested yet, nor does it seem essential).
+
+num_subsample_XYrankloss: 20
+# related to subsampling for efficient computation of the above loss (again not important atm).
+
+
+coef_xbarint2notNCC_loss: 1.0  # TODO:TUNE. An important parameter. The coefficient of a loss saying: NCC (neighbouhood cell type composition) should not be preditable from xbar_int.
+str_modexbarint2notNCCloss_regorclsorwassdist: 'wassdist'
+
+coef_z2notNCC_loss: 1.0  # TODO:TUNE. An important parameter. The coefficient of a loss saying: NCC (neighbouhood cell type composition) should not be preditable from Z.
+
+coef_rankloss_Z: 0.0
+# coefficient of a loss term saying: from z the rank of neighbouring cells (rank based on closeness) should not be preditable.
+# The recommended value is 0.0 (it's not fully supported/tested yet, nor does it seem essential).
+
+coef_xbarint2notbatchID_loss: 1.0  # TODO:TUNE
+coef_xbarspl2notbatchID_loss: 0.01  # TODO:TUNE
+# The above two parameters are essential to tune and are the weight of batch mixing losses on xbar_int and xbar_spl.
+# The higher these values, the more the corresponding embeddings (Xbar_int and Xbar_spl) are encouraged to mix based on biological batch ID.
+# At the moment we've observed that batch mixing should be done mainly with xbarint and not with xbarspl.
+# Therefore in above the recommended values are 1.0 (for xbarint) and 0.01 (for xbarspl) respectively.
+# One may say setting these parameters to large values may blindly mix embedding which should not be biologically mixed.
+# So it's recommended to also try very small values (and even 0.0) for the above paremters `coef_xbarint2notbatchID_loss` and `coef_xbarint2notbatchID_loss`
+
+
+coef_loss_closeness_zz: 100.0  # TODO:TUNE
+coef_loss_closeness_xbarintxbarint: 100.0  # TODO:TUNE
+coef_loss_closeness_xintxint: 100.0  # TODO:TUNE
+# Above: very important parametrs.
+# If two cells are of the same type, these loss terms enourage their Z-s, xbar_int-s, and xint-s to be close, respectively.
+# Refer to the manuscript to see why doing so is needed
