@@ -140,17 +140,6 @@ class ListGeneMicScore:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 def func_get_map_geneidx_to_R2(
     adata,
     obskey_spatial_x,

@@ -1,4 +1,4 @@
-
+import os
 from typing import List
 
 import pandas
@@ -16,13 +16,94 @@ from ..interface import module_predict
 
 
 def test_listdir():
-    # f = importlib.resources.open_binary(
-    #     "mintflow.data.for_evaluation.db_signalling_genes",
-    #     "df_LRpairs_Armingoletal.txt"
-    # )
-    return importlib.resources.files(
-        "mintflow.data.for_evaluation.db_signalling_genes"
-    )
+    pass
+    # return importlib.resources.files(
+    #     "mintflow.data.for_evaluation.db_signalling_genes"
+    # )  It is the absolute path to that package.
+
+def _process_selected_genemicscore(
+    selected_precomputed_gene_socres: List[List[str, list]] | str
+):
+
+    # check the type
+    msg_arg_incorrect = \
+        "The argument `selected_precomputed_gene_socres` can either be equal to 'all' or a list like `[['skin', ['partoffilename1', 'partoffilename2']], ['kidney', ['partoffilename3', 'partoffilename4']]]`."+\
+        " Please refer to the documentaiton of `evaluate_by_spatial_scores_for_genes` for more details."
+
+    if isinstance(selected_precomputed_gene_socres, str):
+        if selected_precomputed_gene_socres != "all":
+            raise Exception(msg_arg_incorrect)
+    elif isinstance(selected_precomputed_gene_socres, list):
+        for organ_listpartname in selected_precomputed_gene_socres:
+            if isinstance(organ_listpartname, list) and len(organ_listpartname) == 2:
+                organ, listpartname = organ_listpartname
+                if isinstance(organ, str) and isinstance(listpartname, list):
+                    for partname in listpartname:
+                        if isinstance(partname, str):
+                            pass
+                        else:
+                            raise Exception(msg_arg_incorrect)
+                else:
+                    raise Exception(msg_arg_incorrect)
+            else:
+                raise Exception(msg_arg_incorrect)
+    else:
+        raise Exception(msg_arg_incorrect)
+
+    # get the list of absolute paths to the DBs
+    rootpath_DBs = importlib.resources.files(
+        "mintflow.data.for_evaluation.mcc_predictability_precomputed_gene_scores."
+    )  # TODO:shouldn't "mintflow." be removed?
+
+    list_absolute_fname = []
+    if selected_precomputed_gene_socres != 'all':
+        # select specific organs/files
+        for organ_listpartname in selected_precomputed_gene_socres:
+            organ, listpartname = organ_listpartname
+            if organ not in os.listdir(rootpath_DBs):
+                raise Exception(
+                    "The provided organ name {} was not found in 'mintflow/data/for_evaluation/mcc_predictability_precomputed_gene_scores/'."
+                )
+            for partname in listpartname:
+                for fname in os.listdir(
+                    os.path.join(
+                        rootpath_DBs,
+                        organ
+                    )
+                ):
+                    if partname in fname:
+                        # cought one of the picked resources
+                        list_absolute_fname.append(
+                            os.path.join(
+                                rootpath_DBs,
+                                organ,
+                                fname
+                            )
+                        )
+        pass
+    else:
+        # selected all resources
+        for organ in os.listdir(rootpath_DBs):
+            for fname in os.listdir(
+                os.path.join(
+                    rootpath_DBs,
+                    organ
+                )
+            ):
+                list_absolute_fname.append(
+                    os.path.join(
+                        rootpath_DBs,
+                        organ,
+                        fname
+                    )
+                )
+
+    list_absolute_fname = list(set(list_absolute_fname))
+
+    return list_absolute_fname
+
+
+
 
 def _create_eval_df(
     idx_sl,
@@ -111,6 +192,7 @@ def _create_eval_df(
 
 
 def evaluate_by_spatial_scores_for_genes(
+    selected_precomputed_gene_socres:List[List[str, list]] | str,
     dict_all4_configs:dict,
     data_mintflow:dict,
     model:vardist.InFlowVarDist,
@@ -118,6 +200,15 @@ def evaluate_by_spatial_scores_for_genes(
     optional_list_colvaltype_toadd:List[list] = None
 ):
     """
+    :param selected_precomputed_gene_socres: Determines which of the files in 'mintflow/data/for_evaluation/mcc_predictability_precomputed_gene_scores/' are picked to evaluate the MintFlow checkpoint.
+    In that directory there are different subdirectories for different organs, and each subfolder contains some files.
+    You can set `selected_precomputed_gene_socres` to pick different organs and files.
+    For example if `selected_precomputed_gene_socres` equal [['skin', ['partoffilename1', 'partoffilename2']], ['kidney', ['partoffilename3', 'partoffilename4']]]
+    then the following files will be selected:
+    - any file that contains either 'partoffilename1' or 'partoffilename2' in 'mintflow/data/for_evaluation/mcc_predictability_precomputed_gene_scores/skin/'
+    - any file that contains either 'partoffilename3' or 'partoffilename4' in 'mintflow/data/for_evaluation/mcc_predictability_precomputed_gene_scores/kidney/'
+
+    If `selected_precomputed_gene_socres` equals "all", the evaluation is done on all files. Doing so may increase the evaluation time and thus is not recommended.
     :param dict_all4_configs:
     :param model: the mintflow model.
     :param data_mintflow: MintFlow data, as returned by `mintflow.setup_data`
@@ -135,6 +226,8 @@ def evaluate_by_spatial_scores_for_genes(
 
     :return: A pandas dataframe that contains the evaluation result for each tissue section.
     """
+    # get the selected gene score resources
+    list_absolute_fname_genescoreDB = _process_selected_genemicscore(selected_precomputed_gene_socres)
 
     # get list of evaluation tissue sections to pick
     list_sliceidx_evalulate_on_sections = base_evaluation.parse_arg_evalulate_on_sections(
@@ -142,6 +235,9 @@ def evaluate_by_spatial_scores_for_genes(
         data_mintflow=data_mintflow,
         evalulate_on_sections=evalulate_on_sections
     )
+
+    assert False # TODO:HERE complete
+
 
     # get the known signalling genes in the database
     f = importlib.resources.open_binary(
