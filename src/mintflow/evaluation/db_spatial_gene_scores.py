@@ -7,19 +7,15 @@ import importlib
 import importlib.resources
 import anndata
 import numpy as np
+import pickle
 
 
 from .. import vardist
 from . import base_evaluation
 
 from ..interface import module_predict
+from .mcp_predictability import ListGeneMicScore
 
-
-def test_listdir():
-    pass
-    # return importlib.resources.files(
-    #     "mintflow.data.for_evaluation.db_signalling_genes"
-    # )  It is the absolute path to that package.
 
 def _process_selected_genemicscore(
     selected_precomputed_gene_socres: List[List[str, list]] | str
@@ -55,7 +51,7 @@ def _process_selected_genemicscore(
         "mintflow.data.for_evaluation.mcc_predictability_precomputed_gene_scores."
     )  # TODO:shouldn't "mintflow." be removed?
 
-    list_absolute_fname = []
+    list_relative_fname = []
     if selected_precomputed_gene_socres != 'all':
         # select specific organs/files
         for organ_listpartname in selected_precomputed_gene_socres:
@@ -73,9 +69,8 @@ def _process_selected_genemicscore(
                 ):
                     if partname in fname:
                         # cought one of the picked resources
-                        list_absolute_fname.append(
+                        list_relative_fname.append(
                             os.path.join(
-                                rootpath_DBs,
                                 organ,
                                 fname
                             )
@@ -90,28 +85,33 @@ def _process_selected_genemicscore(
                     organ
                 )
             ):
-                list_absolute_fname.append(
+                list_relative_fname.append(
                     os.path.join(
-                        rootpath_DBs,
                         organ,
                         fname
                     )
                 )
 
-    list_absolute_fname = list(set(list_absolute_fname))
+    print("\nThe following precopmuted gene score resources were used:")
+    for u in list_relative_fname:
+        print("    {}".format(u))
+    print("\n")
+
+    list_absolute_fname = [os.path.join(rootpath_DBs, relfname) for relfname in list(set(list_relative_fname))]
 
     return list_absolute_fname
 
 
 
 
-def _create_eval_df(
+def _create_eval_df_spatial_genescores(
     idx_sl,
     dict_all4_configs,
     anal_dict_varname_to_output,
-    list_known_LRgenes_inDB,
+    list_objscorer: List[ListGeneMicScore],
     adata_before_scppnormalizetotal:anndata.AnnData
 ):
+
     # find UID of the tissue section
     UID_tissue_section = list(
         set(
@@ -126,6 +126,9 @@ def _create_eval_df(
     print("In the gene panel {} genes were found in the list of known signalling genes.".format(num_found_in_LRDB))
     if num_found_in_LRDB == 0:
         return
+
+    # TODO:HERE complete
+    assert False
 
     X_inLRDB = adata_before_scppnormalizetotal[
         :,
@@ -228,6 +231,13 @@ def evaluate_by_spatial_scores_for_genes(
     """
     # get the selected gene score resources
     list_absolute_fname_genescoreDB = _process_selected_genemicscore(selected_precomputed_gene_socres)
+    list_objscorer = []
+    for absfname in list_absolute_fname_genescoreDB:
+        with open(absfname, 'rb') as f:
+            list_objscorer.append(
+                pickle.load(f)
+            )
+
 
     # get list of evaluation tissue sections to pick
     list_sliceidx_evalulate_on_sections = base_evaluation.parse_arg_evalulate_on_sections(
@@ -236,22 +246,7 @@ def evaluate_by_spatial_scores_for_genes(
         evalulate_on_sections=evalulate_on_sections
     )
 
-    assert False # TODO:HERE complete
 
-
-    # get the known signalling genes in the database
-    f = importlib.resources.open_binary(
-        "mintflow.data.for_evaluation.db_signalling_genes",
-        "df_LRpairs_Armingoletal.txt"
-    )
-    df_LRpairs = pd.read_csv(f)
-    f.close()
-
-    list_known_LRgenes_inDB = [
-        genename
-        for colname in ['LigName', 'RecName'] for group in df_LRpairs[colname].tolist() for genename in str(group).split("__")
-    ]
-    list_known_LRgenes_inDB = set(list_known_LRgenes_inDB)
 
     # evaluate tissue sections one by one (the ones picked by `list_sliceidx_evalulate_on_sections`)
     dict_sliceid_to_evaldf = {}
@@ -266,11 +261,11 @@ def evaluate_by_spatial_scores_for_genes(
                 ).items()
             )[0][1]
 
-            dict_sliceid_to_evaldf['TissueSection {} (zero-based)'.format(idx_sl)] = _create_eval_df(
+            dict_sliceid_to_evaldf['TissueSection {} (zero-based)'.format(idx_sl)] = _create_eval_df_spatial_genescores(
                 idx_sl=idx_sl,
                 dict_all4_configs=dict_all4_configs,
                 anal_dict_varname_to_output=anal_dict_varname_to_output,
-                list_known_LRgenes_inDB=list_known_LRgenes_inDB,
+                list_objscorer=list_objscorer,
                 adata_before_scppnormalizetotal=sl.adata_before_scppnormalize_total
             )
 

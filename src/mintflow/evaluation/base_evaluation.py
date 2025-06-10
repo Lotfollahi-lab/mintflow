@@ -9,6 +9,9 @@ class EvalDFColname(Enum):
     fraction_Xmic = "fraction_assigned_to_Xmic"
     among_signalling_genes = "is_among_signalling_genes"
     tissue_section_unique_ID = "uniqueID_tissuse_section"
+    gene_spatial_score = "spatial_socre_of_gene"
+    gene_ens_ID = "gene_Ensembl_ID"
+    gene_name = "gene_name"
 
 
 

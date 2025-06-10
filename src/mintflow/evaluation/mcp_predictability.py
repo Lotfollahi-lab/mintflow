@@ -20,15 +20,17 @@ from sklearn.linear_model import LinearRegression
 import time
 from dataclasses import dataclass
 
+from . import base_evaluation
+
 @dataclass
 class GeneMicScore:
     """
     A gene ensemble ID, it's score, tissue_info_scoreomputed, and optionally the gene-name.
     """
-    ens_ID:str
+    ens_ID:str | None
     score:float
     tissue_info_scoreomputed:str
-    gene_name:str = None
+    gene_name: str | None = None
 
 class ListGeneMicScore:
     def __init__(self, list_genemicscore:List[GeneMicScore]):
@@ -40,8 +42,8 @@ class ListGeneMicScore:
 
     def retrieve_existing_genes(
         self,
-        list_ens_ID,
-        list_gene_name
+        list_ens_ID: list | None,
+        list_gene_name: list | None
     ):
         """
         Tries to find genes in the collectio by first checking the ensemble IDs and then gene names.
@@ -52,6 +54,8 @@ class ListGeneMicScore:
         if list_ens_ID is None:
             assert list_gene_name is not None
             assert isinstance(list_gene_name, list)
+        else:
+            assert isinstance(list_ens_ID, list)
 
         list_idx_toret = []
         dict_map_idxincollection_to_idxininput = {}
@@ -120,6 +124,30 @@ class ListGeneMicScore:
             Xmic_before_scppnormalizetotal / (Xint_before_scppnormalizetotal + Xmic_before_scppnormalizetotal)
         )  # [N x num_selgenes] and dense
 
+        # get ens_ID-s and gene_name-s
+        list_idxincollection = [
+            dict_map_idxininput_to_idxincollection[idx_ininput]
+            for idx_ininput in list_idx_selgene
+        ]
+        np_ens_ID_s = np.array(
+            [self.list_genemicscore[idxincollection].ens_ID for idxincollection in list_idxincollection]
+        )  # [num_selgenes]
+        np_gene_name_s = np.array(
+            [self.list_genemicscore[idxincollection].gene_name for idxincollection in list_idxincollection]
+        )  # [num_selgenes]
+        np_ens_ID_s = np.stack(
+            X_before_scppnormalizetotal.shape[0] * [np_ens_ID_s],
+            0
+        )  # [N x num_selgenes] and dense
+        np_gene_name_s = np.stack(
+            X_before_scppnormalizetotal.shape[0] * [np_gene_name_s],
+            0
+        )  # [N x num_selgenes] and dense
+
+
+
+
+
         # create the dataframe toreturn
 
 
@@ -127,11 +155,27 @@ class ListGeneMicScore:
             np.stack([
                 X_before_scppnormalizetotal.toarray()[mask_readcount],
                 fraction_Xmic[mask_readcount],
-                np_r2score_amongfoundgenes[mask_readcount]
+                np_r2score_amongfoundgenes[mask_readcount],
+                np_ens_ID_s[mask_readcount],
+                np_gene_name_s[mask_readcount]
             ],
             1),
-            columns=['raw counts', 'fraction assigned to Xmic', 'r2score of gene']
+            columns=[
+                base_evaluation.EvalDFColname.readcount.value,
+                base_evaluation.EvalDFColname.fraction_Xmic.value,
+                base_evaluation.EvalDFColname.gene_spatial_score.value,
+                base_evaluation.EvalDFColname.gene_ens_ID,
+                base_evaluation.EvalDFColname.gene_name
+            ]
         )
+
+        # correct the dtype of each column
+        df_toret['base_evaluation.EvalDFColname.readcount.value'] = df_toret['base_evaluation.EvalDFColname.readcount.value'].astype(float)
+        df_toret['base_evaluation.EvalDFColname.fraction_Xmic.value'] = df_toret['base_evaluation.EvalDFColname.fraction_Xmic.value'].astype(float)
+        df_toret['base_evaluation.EvalDFColname.gene_spatial_score.value'] = df_toret['base_evaluation.EvalDFColname.gene_spatial_score.value'].astype(float)
+        df_toret['base_evaluation.EvalDFColname.gene_ens_ID'] = df_toret['base_evaluation.EvalDFColname.gene_ens_ID'].astype('category')
+        df_toret['base_evaluation.EvalDFColname.gene_name'] = df_toret['base_evaluation.EvalDFColname.gene_name'].astype('category')
+
 
         return df_toret
 
@@ -250,7 +294,11 @@ def func_get_map_geneidx_to_R2(
                 'wb'
             ) as f:
                 pickle.dump(
-                    {'r2_score':r2_score, 'idx_gene':idx_gene, 'gene_name':adata.var.index.tolist()[idx_gene]},
+                    {
+                        'r2_score':r2_score,
+                        'idx_gene':idx_gene,
+                        'gene_name':adata.var.index.tolist()[idx_gene]
+                    },
                     f
                 )
 
