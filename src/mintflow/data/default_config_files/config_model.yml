@@ -62,7 +62,7 @@ args_list_adjmatloss: ""
 # Variable names can be chosen from: z, s_in, s_out, xbar_int, xbar_spl, x_int, and x_spl.
 
 
-CTNCC_usage_moduledisent: "{'CT':modules.gnn_disentangler.ArchInsertionPoint.NONE, 'NCC':modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO:TUNE  TODO:internalcheck
+CTNCC_usage_moduledisent: "{'CT':modules.gnn_disentangler.ArchInsertionPoint.BACKBONE, 'NCC':modules.gnn_disentangler.ArchInsertionPoint.HEADSPL}"  # TODO:TUNE  TODO:internalcheck , specially the 1st one.
 # Specifies how CT (i.e. cell type) and NCC (neighbourhood cell type composition) are fed to the disentangler module, i.e. the encoder for x --> [x_int, x_spl]
 # Different assignable values to each of the `CT` and `NCC` keys
 #     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.NONE: `CT` or `NCC` not fed to the disentangler module
@@ -71,7 +71,7 @@ CTNCC_usage_moduledisent: "{'CT':modules.gnn_disentangler.ArchInsertionPoint.NON
 #     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL: `CT` or `NCC` is fed to the spatial output head.
 
 
-dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_spl#0.0#True&varphi_enc_int#0.0#True&varphi_enc_spl#0.0#True&z#0.0#True&sin#0.0#True&sout#0.0#True"
+dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_spl#0.0#True&varphi_enc_int#0.0#True&varphi_enc_spl#0.0#True&z#1.0#True&sin#1.0#True&sout#0.0#True"
 # a set of strings separated by &, where each string specifies 1. the scale of the conditional likelihood of each variable in variational distribution and 2. Whether it's likelihood will be unweighted.
 # If the scale paramtetr comes form a module, that scale will override the scale number provided above.
 # For example 'sin#1.0#True' means the scale of the conditional varitial term for sin is set to 1.0, and the last part set as True implies that the likelihood is unweighted.
@@ -97,11 +97,11 @@ flag_enable_batchtoken_disentangler: 'True'
 
 
 
-coef_flowmatchingloss: 0.0  # TODO:TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
+coef_flowmatchingloss: 10.0  # TODO:TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
 flowmatching_mode_samplex0: 'ModeSampleX0.FROMINFLOW'
 flowmatching_mode_minibatchper: 'ModeMinibatchPerm.RANDOM'
 flowmatching_mode_timesched: 'ModeTimeSched.UNIFORM'
-flowmatching_sigma: 0.01
+flowmatching_sigma: 0.0
 flowmatching_mode_fmloss: 'ModeFMLoss.NOISEDIR'
 neuralODE_t_num_steps: 10  # number of steps for the ODE solver of the NeuralODE decoder [z,s] --> [xbar_int, xbar_spl]
 # Above: related to flow matching
@@ -217,7 +217,7 @@ module_predictor_xbarspl2notBatchID: >  # The module that tries to predict batch
   )
 
 
-coef_loss_CTpredfromZ: 0.1  # coefficient of loss term that encourages CT (cell type) being predictable from Z.
+coef_loss_CTpredfromZ: 1.0  # coefficient of loss term that encourages CT (cell type) being predictable from Z.
 module_classifier_P1loss: >  # the predictor module for the above loss term. # TODO:check: is linear better than, e.g., 2-layer?
   torch.nn.Sequential(
         torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
@@ -225,7 +225,7 @@ module_classifier_P1loss: >  # the predictor module for the above loss term. # T
         torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z']//2, list_slice.list_slice[0]._global_num_CT)
   )
 
-coef_loss_NCCpredfromSin: 0.1  # coefficient of loss term that encourages NCC (neighbourhood cell type decomposition) being predictable from S_in.
+coef_loss_NCCpredfromSin: 1.0  # coefficient of loss term that encourages NCC (neighbourhood cell type decomposition) being predictable from S_in.
 module_predictor_P3loss: >  # the predictor module for the above loss term. # TODO:check: is linear better than, e.g., 2-layer?
   torch.nn.Sequential(
         torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['s'], kwargs_genmodel['dict_varname_to_dim']['s']//2),
@@ -253,7 +253,7 @@ flag_drop_loss_logQdisentangler: 'True'
 # It's done to not discourage higher entropy in variational distribution of x_int and x_spl, so different decompositions are explored.
 
 
-coef_xbarintCT_loss: 0.0  # coefficient of loss term that encourages CT (cell type) being predictable from xbar_int. TODO:check, TODO:internalcheck:it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
+coef_xbarintCT_loss: 1.0  # coefficient of loss term that encourages CT (cell type) being predictable from xbar_int. TODO:check, TODO:internalcheck:it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
 module_classifier_xbarintCT: >  #The predictor for the above loss term. TODO:check: is linear better than, e.g., 2-layer?,
   torch.nn.Sequential(
         torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['z'], kwargs_genmodel['dict_varname_to_dim']['z']//2),
@@ -262,7 +262,7 @@ module_classifier_xbarintCT: >  #The predictor for the above loss term. TODO:che
   )
 
 
-coef_xbarsplNCC_loss: 0.0  # coefficient of loss term that encourages NCC (neighbourhood cell type decomposition) being predictable from xbar_spl. TODO:check, TODO:internalcheck:it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
+coef_xbarsplNCC_loss: 1.0  # coefficient of loss term that encourages NCC (neighbourhood cell type decomposition) being predictable from xbar_spl. TODO:check, TODO:internalcheck:it initially was set to 0.0, but > 0.0 might be needed. Please ref to the manuscript for more info.
 module_predictor_xbarsplNCC: > #The predictor for the above loss term. TODO:check: is linear better than, e.g., 2-layer?,
   torch.nn.Sequential(
         torch.nn.Linear(kwargs_genmodel['dict_varname_to_dim']['s'], kwargs_genmodel['dict_varname_to_dim']['s']//2),

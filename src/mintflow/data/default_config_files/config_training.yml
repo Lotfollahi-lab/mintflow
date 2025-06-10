@@ -12,10 +12,10 @@ wandb_stepsize_log: 2  # The step size to log to wandb, increase this number if 
 
 lr_training: 0.001  # TODO:check. Learning rate for training optimisers. The default value of 0.001 should be OK but one may need to tune it.
 
-num_training_epochs: 10  # TODO:ESSENTIAL:TUNE, number of training epochs. Recommended: ~50 epochs. A good practice is to run inflow with `num_training_epochs` to get a sense of running time and to see if the code runs. Afterwards one can increase `num_training_epochs` to, e.g., 50.
+num_training_epochs: 50  # TODO:ESSENTIAL:TUNE, number of training epochs. Recommended: ~50 epochs. A good practice is to run inflow with `num_training_epochs` to get a sense of running time and to see if the code runs. Afterwards one can increase `num_training_epochs` to, e.g., 50.
 
 numiters_updateduals_seprately_perepoch: 200  # TODO:check, TODO: make important notes about how it affects the running time and the correct set up.
-batchsize_updateduals_seprately_perepoch: 500  # TODO:check
+batchsize_updateduals_seprately_perepoch: 100  # TODO:check
 # Before each training epoch the dual functions are updates separately for `numiters_updateduals_seprately_perepoch` iterations.
 # This is done to keep the dual functions a good, e.g., Wasserstein distance approximators.
 
