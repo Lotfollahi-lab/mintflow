@@ -557,16 +557,6 @@ def setup_model(
     # due to exec limitaiton for locals()
     tmp_ldict = locals().copy()
     exec(
-        "print('>>>>>>>>>', 'kwargs_genmodel' in globals())",
-        {**globals(), **locals()},
-        tmp_ldict
-    )
-    exec(
-        "print('>>>>>>>>>', 'kwargs_genmodel' in locals())",
-        {**globals(), **locals()},
-        tmp_ldict
-    )
-    exec(
         "module_predictor_z2notNCC = {}".format(
             config_model['module_predictor_z2notNCC']
         ),
