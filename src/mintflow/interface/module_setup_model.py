@@ -415,7 +415,7 @@ def setup_model(
     tmp_ldict = locals().copy()
     exec(
         'flowmatching_mode_samplex0 = {}'.format(config_model['flowmatching_mode_samplex0']),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     flowmatching_mode_samplex0 = tmp_ldict['flowmatching_mode_samplex0']
@@ -425,7 +425,7 @@ def setup_model(
     tmp_ldict = locals().copy()
     exec(
         'flowmatching_mode_minibatchper = {}'.format(config_model['flowmatching_mode_minibatchper']),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     flowmatching_mode_minibatchper = tmp_ldict['flowmatching_mode_minibatchper']
@@ -435,7 +435,7 @@ def setup_model(
     tmp_ldict = locals().copy()
     exec(
         'flowmatching_mode_timesched = {}'.format(config_model['flowmatching_mode_timesched']),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     flowmatching_mode_timesched = tmp_ldict['flowmatching_mode_timesched']
@@ -445,7 +445,7 @@ def setup_model(
     tmp_ldict = locals().copy()
     exec(
         'flowmatching_mode_fmloss = {}'.format(config_model['flowmatching_mode_fmloss']),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     flowmatching_mode_fmloss = tmp_ldict['flowmatching_mode_fmloss']
@@ -459,7 +459,7 @@ def setup_model(
         "module_encX_int = {}".format(
             locals()['config_model']['arch_module_encoder_X2Xbar']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_encX_int = tmp_ldict['module_encX_int']
@@ -471,7 +471,7 @@ def setup_model(
         "module_encX_spl = {}".format(
             config_model['arch_module_encoder_X2Xbar']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_encX_spl = tmp_ldict['module_encX_spl']
@@ -497,7 +497,7 @@ def setup_model(
     tmp_ldict = locals().copy()
     exec(
         'dict_varname_to_takeCT_takeNCC = {}'.format(config_model['CTNCC_usage_modulecond4flow']),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     dict_varname_to_takeCT_takeNCC = tmp_ldict['dict_varname_to_takeCT_takeNCC']
@@ -509,7 +509,7 @@ def setup_model(
         'tmp_encZ_list_dim_hidden = {}'.format(
             config_model['enc3_encZ_list_dim_hidden']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     tmp_encZ_list_dim_hidden = tmp_ldict['tmp_encZ_list_dim_hidden']
@@ -521,7 +521,7 @@ def setup_model(
         'tmp_encSin_list_dim_hidden = {}'.format(
             config_model['enc3_encSin_list_dim_hidden']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     tmp_encSin_list_dim_hidden = tmp_ldict['tmp_encSin_list_dim_hidden']
@@ -533,7 +533,7 @@ def setup_model(
         'tmp_encSout_list_dim_hidden = {}'.format(
             config_model['enc3_encSout_list_dim_hidden']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     tmp_encSout_list_dim_hidden = tmp_ldict['tmp_encSout_list_dim_hidden']
@@ -558,19 +558,19 @@ def setup_model(
     tmp_ldict = locals().copy()
     exec(
         "print('>>>>>>>>>', 'kwargs_genmodel' in globals())",
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     exec(
         "print('>>>>>>>>>', 'kwargs_genmodel' in locals())",
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     exec(
         "module_predictor_z2notNCC = {}".format(
             config_model['module_predictor_z2notNCC']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_predictor_z2notNCC = tmp_ldict['module_predictor_z2notNCC']
@@ -583,7 +583,7 @@ def setup_model(
         "module_predictor_xbarint2notNCC = {}".format(
             config_model['module_predictor_xbarint2notNCC']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_predictor_xbarint2notNCC = tmp_ldict['module_predictor_xbarint2notNCC']
@@ -596,7 +596,7 @@ def setup_model(
         "module_predictor_xbarint2notBatchID = {}".format(
             config_model['module_predictor_xbarint2notBatchID']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_predictor_xbarint2notBatchID = tmp_ldict['module_predictor_xbarint2notBatchID']
@@ -609,7 +609,7 @@ def setup_model(
         "module_predictor_xbarspl2notBatchID = {}".format(
             config_model['module_predictor_xbarspl2notBatchID']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_predictor_xbarspl2notBatchID = tmp_ldict['module_predictor_xbarspl2notBatchID']
@@ -623,7 +623,7 @@ def setup_model(
         "module_classifier_P1loss = {}".format(
             config_model['module_classifier_P1loss']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_classifier_P1loss = tmp_ldict['module_classifier_P1loss']
@@ -636,7 +636,7 @@ def setup_model(
         "module_predictor_P3loss = {}".format(
             config_model['module_predictor_P3loss']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_predictor_P3loss = tmp_ldict['module_predictor_P3loss']
@@ -649,7 +649,7 @@ def setup_model(
         "module_classifier_xbarintCT = {}".format(
             config_model['module_classifier_xbarintCT']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
     module_classifier_xbarintCT = tmp_ldict['module_classifier_xbarintCT']
@@ -662,9 +662,11 @@ def setup_model(
         "module_predictor_xbarsplNCC = {}".format(
             config_model['module_predictor_xbarsplNCC']
         ),
-        globals(),
+        {**globals(), **locals()},
         tmp_ldict
     )
+    # TODO: is the change correct?
+    # TODO: (cont.) Depending on the python version, it seems, e.g., `kwargs_genmodel` is sometimes local and sometimes global.
     module_predictor_xbarsplNCC = tmp_ldict['module_predictor_xbarsplNCC']
     gc.collect()
 
