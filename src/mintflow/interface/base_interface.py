@@ -1,5 +1,7 @@
+import torch
 
 from .. import utils_multislice
+from .. import vardist
 
 dict_oldvarname_to_newvarname = {
     'muxint':'MintFlow_Xint',
@@ -36,6 +38,46 @@ def check_arg_data_mintflow(data_mintflow):
             "There is an issue with the passed argument `data_mintflow`. " +\
             "Please make sure it is returned by the function `mintflow.setup_data`."
         )
+
+
+
+def dump_model(
+    model,
+    path_dump
+):
+    """
+    Dumps a MintFlow model.
+    Because
+    :param model:
+    :param path_dump:
+    :return:
+    """
+    if not isinstance(model, vardist.InFlowVarDist):
+        raise Exception(
+            "The argument `model` is of incorrect type.\n"+\
+            "This function is meant to be used for dumping an object returned by `mintflow.setup_model`."
+        )
+
+    model: vardist.InFlowVarDist
+    # save to tmp variables
+    torevert_module_annealing = model.module_annealing  # to restore after dump.
+    torevert_module_annealing_decoderXintXspl = model.module_annealing_decoderXintXspl  # to restore after dump.
+
+    # dump
+    model.module_annealing = "NONE"  # so it can be dumped.
+    model.module_annealing_decoderXintXspl = "NONE"  # so it can be dumped.
+    torch.save(
+        model,
+        path_dump
+    )
+
+    # revert back
+    model.module_annealing = torevert_module_annealing  # restore after dump.
+    model.module_annealing_decoderXintXspl = torevert_module_annealing_decoderXintXspl  # restore after dump.
+
+
+
+
 
 
 

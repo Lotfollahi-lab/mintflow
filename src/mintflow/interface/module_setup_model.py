@@ -652,7 +652,7 @@ def setup_model(
         "module_predictor_xbarsplNCC = {}".format(
             config_model['module_predictor_xbarsplNCC']
         ),
-        {**globals(), **locals()},
+        {**globals(), **locals()},  # TODO: should it be locals() only???
         tmp_ldict
     )
     # TODO: is the change correct?

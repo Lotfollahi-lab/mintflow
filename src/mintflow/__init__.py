@@ -56,6 +56,9 @@ from .interface import \
 from .evaluation import \
     evaluate_by_known_signalling_genes
 
+from .interface import \
+    dump_model
+
 # from .interface.auxiliary_modules import *
 #
 # from .interface.analresults import disentanglement_jointplot

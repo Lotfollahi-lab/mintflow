@@ -20,6 +20,9 @@ from .setup_trainer import  Trainer
 from . import module_predict
 from .module_predict import predict
 
+from . import base_interface
+from .base_interface import dump_model
+
 
 
 
