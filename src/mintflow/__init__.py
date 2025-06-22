@@ -45,12 +45,14 @@
 # from .modules.predictorbatchID import PredictorBatchID
 #
 
-from .interface import \
-    get_defaultconfig_data_train, verify_and_postprocess_config_data_train,\
-    get_defaultconfig_data_evaluation, verify_and_postprocess_config_data_evaluation,\
-    get_defaultconfig_model, verify_and_postprocess_config_model,\
-    get_defaultconfig_training, verify_and_postprocess_config_training,\
-    setup_data, setup_model, Trainer, predict
+# from .interface import \
+#     get_defaultconfig_data_train, verify_and_postprocess_config_data_train,\
+#     get_defaultconfig_data_evaluation, verify_and_postprocess_config_data_evaluation,\
+#     get_defaultconfig_model, verify_and_postprocess_config_model,\
+#     get_defaultconfig_training, verify_and_postprocess_config_training
+
+from .interface import get_default_configurations
+from .interface import setup_data, setup_model, Trainer, predict
 
 
 from .evaluation import \

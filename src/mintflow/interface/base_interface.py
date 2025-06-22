@@ -1,7 +1,13 @@
 import torch
 
+
 from .. import utils_multislice
 from .. import vardist
+
+from .module_parse_config_data_train import get_defaultconfig_data_train, verify_and_postprocess_config_data_train
+from .module_parse_config_data_evaluation import get_defaultconfig_data_evaluation, verify_and_postprocess_config_data_evaluation
+from .module_parse_config_model import get_defaultconfig_model, verify_and_postprocess_config_model
+from .module_parse_config_training import get_defaultconfig_training, verify_and_postprocess_config_training
 
 dict_oldvarname_to_newvarname = {
     'muxint':'MintFlow_Xint',
@@ -47,7 +53,7 @@ def dump_model(
 ):
     """
     Dumps a MintFlow model.
-    Because
+    Params
     :param model:
     :param path_dump:
     :return:
@@ -74,6 +80,29 @@ def dump_model(
     # revert back
     model.module_annealing = torevert_module_annealing  # restore after dump.
     model.module_annealing_decoderXintXspl = torevert_module_annealing_decoderXintXspl  # restore after dump.
+
+
+
+
+def get_default_configurations(
+    num_tissue_sections_training: int,
+    num_tissue_sections_evaluation: int
+):
+    """
+    Creates and returns 4 default configuration objects.
+    :param num_tissue_sections_training: Number of tissue sections for training.
+    :param num_tissue_sections_evaluation: Number of tissue sections for evaluation. If its set to
+    :return: For objects
+    - config_data_train
+    - config_data_evaluation
+    - config_model
+    - config_training
+    """
+    config_data_train = get_defaultconfig_data_train(num_tissue_sections=num_tissue_sections_training)
+    config_data_evaluation = get_defaultconfig_data_evaluation(num_tissue_sections=num_tissue_sections_evaluation)
+    config_model = get_defaultconfig_model()
+    config_training = get_defaultconfig_training()
+    return config_data_train, config_data_evaluation, config_model, config_training
 
 
 
