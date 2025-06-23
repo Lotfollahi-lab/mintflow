@@ -98,7 +98,7 @@ from . import \
     get_defaultconfig_data_evaluation, verify_and_postprocess_config_data_evaluation,\
     get_defaultconfig_model, verify_and_postprocess_config_model,\
     get_defaultconfig_training, verify_and_postprocess_config_training,\
-    check_listtissue_trtest
+    check_listtissue_trtest, base_interface
 
 
 from .auxiliary_modules import *
@@ -118,6 +118,8 @@ def setup_data(
     flag_verbose=True,
     flag_visualise_tissue_sections=True
 ):
+    base_interface.checkif_4configs_are_verified(dict_all4_configs)
+
     # grab args
     args = types.SimpleNamespace()
     args.flag_verbose = flag_verbose

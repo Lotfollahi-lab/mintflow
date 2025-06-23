@@ -1,8 +1,7 @@
 
 
+from typing import Dict
 import torch
-
-
 from .. import utils_multislice
 from .. import vardist
 
@@ -23,6 +22,37 @@ dict_oldvarname_to_newvarname = {
     'muxint_before_sc_pp_normalize_total':'MintFlow_Xint (before_sc_pp_normalize_total)',
     'muxspl_before_sc_pp_normalize_total':'MintFlow_Xmic (before_sc_pp_normalize_total)'
 }  # map names according to the latest glossery of the manuscript.
+
+
+def checkif_4configs_are_verified(dict_all4_configs: Dict):
+    assert set(dict_all4_configs.keys()) == {
+        'config_data_train', 'config_data_evaluation', 'config_model', 'config_training'
+    }
+    config_data_train = dict_all4_configs['config_data_train']
+    config_data_evaluation = dict_all4_configs['config_data_evaluation']
+    config_model = dict_all4_configs['config_model']
+    config_training = dict_all4_configs['config_training']
+
+    if not isinstance(config_data_train, list):
+        raise Exception(
+            "`config_data_train` is of invalid type. Make sure it is verified and post-processed by `config_data_train = mintflow.verify_and_postprocess_config_data_train(config_data_train)`"
+        )
+    if not isinstance(config_data_evaluation, list):
+        raise Exception(
+            "`config_data_evaluation` is of invalid type. Make sure it is verified and post-processed by `config_data_evaluation = mintflow.verify_and_postprocess_config_data_evaluation(config_data_evaluation)`"
+        )
+
+    if 'CONFIG_MODEL_VERIFIED' not in config_model.keys():
+        raise Exception(
+            "It seems `config_model` is not post-processed and verified by the function `mintflow.verify_and_postprocess_config_model`."
+        )
+
+    if 'CONFIG_TRAINING_VERIFIED' not in config_training.keys():
+        raise Exception(
+            "It seems `config_training` is not post-processed and verified by the function `mintflow.verify_and_postprocess_config_training`."
+        )
+
+
 
 
 def check_arg_data_mintflow(data_mintflow):
