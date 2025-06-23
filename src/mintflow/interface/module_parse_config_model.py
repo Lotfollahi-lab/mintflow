@@ -179,5 +179,6 @@ def verify_and_postprocess_config_model(dict_config_model, num_tissue_sections, 
         dict_config_model['coef_xbarint2notbatchID_loss'] = 0.0
         dict_config_model['coef_xbarspl2notbatchID_loss'] = 0.0
 
+    dict_config_model['CONFIG_MODEL_VERIFIED'] = 'DONE'
 
     return dict_config_model

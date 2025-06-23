@@ -123,4 +123,6 @@ def verify_and_postprocess_config_training(dict_config_training, fname_config_tr
                 "In config_model, the following keys and their corresponding values are missing: {}".format(set_2m1)
             )
 
+    dict_config_training['CONFIG_TRAINING_VERIFIED'] = "DONE"
+    
     return dict_config_training
