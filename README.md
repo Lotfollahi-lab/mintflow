@@ -25,7 +25,7 @@ To do so:
 
 
 ## Tutorial
-This repository is still being developed. Some sample notebooks are available in
+This repository is still being developed. Some sample notebooks are available in `docs/tutorials/notebooks/`.
 
 ## Release notes
 See the [changelog][changelog].
