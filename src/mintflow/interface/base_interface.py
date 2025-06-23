@@ -115,6 +115,51 @@ def dump_model(
     model.module_annealing_decoderXintXspl = torevert_module_annealing_decoderXintXspl  # restore after dump.
 
 
+def dump_checkpoint(
+    model: vardist.InFlowVarDist,
+    data_mintflow: Dict,
+    dict_all4_configs: Dict,
+    path_dump
+):
+    # check input args
+    if not isinstance(model, vardist.InFlowVarDist):
+        raise Exception(
+            "The passed argument `model` is of incorrect type. Make sure `model` is returned by the function `mintflow.setup_model`."
+        )
+    check_arg_data_mintflow(data_mintflow=data_mintflow)
+    checkif_4configs_are_verified(dict_all4_configs=dict_all4_configs)
+
+    # make `model` serialisable =====================
+    model: vardist.InFlowVarDist
+    # save to tmp variables
+    torevert_module_annealing = model.module_annealing  # to restore after dump.
+    torevert_module_annealing_decoderXintXspl = model.module_annealing_decoderXintXspl  # to restore after dump.
+
+    # dump
+    model.module_annealing = "NONE"  # so it can be dumped.
+    model.module_annealing_decoderXintXspl = "NONE"  # so it can be dumped.
+    # torch.save(
+    #     model,
+    #     path_dump
+    # )
+
+    dict_todump = {
+        'model':model,
+        'data_mintflow':data_mintflow,
+        'dict_all4_configs':dict_all4_configs
+    }
+
+    torch.save(
+        dict_todump,
+        path_dump
+    )
+
+
+    # ======================= revert back
+    model.module_annealing = torevert_module_annealing  # restore after dump.
+    model.module_annealing_decoderXintXspl = torevert_module_annealing_decoderXintXspl  # restore after dump.
+
+
 
 
 def get_default_configurations(

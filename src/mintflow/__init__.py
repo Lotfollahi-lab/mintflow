@@ -54,14 +54,16 @@ from .interface import \
 # from .interface import get_default_configurations
 
 
-from .interface import get_default_configurations, setup_data, setup_model, Trainer, predict
+from .interface import \
+    get_default_configurations, setup_data, setup_model, Trainer, predict, \
+    dump_model, dump_checkpoint
 
 
 from .evaluation import \
     evaluate_by_known_signalling_genes
 
-from .interface import \
-    dump_model
+# from .interface import \
+#     dump_model, dump_checkpoint
 
 # from .interface.auxiliary_modules import *
 #

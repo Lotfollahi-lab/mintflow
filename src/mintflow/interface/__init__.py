@@ -15,13 +15,13 @@ from . import module_setup_model
 from .module_setup_model import setup_model
 
 from . import setup_trainer
-from .setup_trainer import  Trainer
+from .setup_trainer import Trainer
 
 from . import module_predict
 from .module_predict import predict
 
 from . import base_interface
-from .base_interface import dump_model, get_default_configurations
+from .base_interface import dump_model, get_default_configurations, dump_checkpoint
 
 
 
