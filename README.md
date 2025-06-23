@@ -24,7 +24,7 @@ To do so:
 - Create a project called "MintFlow".
 
 
-## Tutorial
+## Tutorials
 This repository is still being developed. Some sample notebooks are available in `docs/tutorials/notebooks/`.
 
 ## Release notes
