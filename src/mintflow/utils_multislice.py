@@ -353,7 +353,7 @@ class Slice:
                 "inflow_CT",
             ],
             title=[
-                "inflow_CT \n ({})".format(self._get_batchid()),
+                "MintFlow_CT \n ({})".format(self._get_batchid()),
             ],
             crop_coord=crop_coord,
             **self.kwargs_sq_pl_spatial_scatter
@@ -387,7 +387,7 @@ class Slice:
                 "inflow_CT",
             ],
             title=[
-                "inflow_CT \n (sampleID: {}) \n (biological batch ID: {}".format(
+                "MintFlow_CT \n (sampleID: {}) \n (biological batch ID: {}".format(
                     list(self.adata.obs[self.dict_obskey['sliceid_to_checkUnique']])[0],
                     self._get_batchid()
                 ),

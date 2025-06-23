@@ -705,7 +705,7 @@ class InFlowVarDist(nn.Module):
 
         pbar = tqdm(
             total=max([len(dl) for dl in list_dl]),
-            desc='Inflow training epoch'
+            desc='MintFlow training epoch'
         )
         pbar_idx_biggestDL = np.argmax([len(dl) for dl in list_dl])
         while not np.all(list_iterfinished_normal): # for batch in tqdm(dl):
