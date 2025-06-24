@@ -2,6 +2,8 @@
 
 
 from typing import Dict, List
+
+import anndata
 import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -61,7 +63,7 @@ def generate_mic_sizefactors(
             del dict_preds
             gc.collect()
 
-    adata_cond_CT_MCC = pd.concat(adata_cond_CT_MCC)
+    adata_cond_CT_MCC = anndata.concat(adata_cond_CT_MCC)
 
 
 
