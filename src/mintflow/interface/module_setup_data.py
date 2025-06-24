@@ -201,7 +201,7 @@ def setup_data(
 
         return dict_input
 
-    
+
     print(">>>>>>>>>>>>>>>")
     for dict_current_anndata in config_data_train:
         print(dict_current_anndata['config_neighbourhood_graph'])  # TODO:FORDEBUG:DELETE
