@@ -25,6 +25,20 @@ from .. import module_predict
 from ...modules.gnn import KhopAvgPoolWithoutselfloop
 
 
+dict_generate_oldvarname_to_newvarname = {
+    'z':'MintFlow_Generated_Z',
+    's_out':'MintFLow_Generated_S_out',
+    's_in':'MintFLow_Generated_S_in',
+    'xbar_int':'MintFlow_Generated_Xbar_int',
+    'xbar_spl':'MintFlow_Generated_Xbar_mic',
+    'x_int':'MintFlow_Generated_Xint',
+    'x_spl':'MintFLow_Generated_Xmic',
+    'x_int_softmax':'MintFlow_Generated_Xint_softmax_output',
+    'x_spl_softmax':'MintFlow_Generated_Xmic_softmax_output',
+    'ten_u_int':'MintFlow_Cond_int',
+    'ten_u_spl':'MintFlow_Cond_mic'
+}
+
 @torch.no_grad()
 def generate_insilico_ST_data(
     adata:anndata.AnnData,
@@ -138,7 +152,16 @@ def generate_insilico_ST_data(
     # generate realisations
     list_idx_MCCcluster = obj_sizefacgenerator.kmeans.predict(ten_MCC.detach().cpu().numpy()).tolist()
 
+    ten_BatchEmb_in = torch.eye(len(set(data_mintflow['train_list_tissue_section'].map_Batchname_to_inflowBatchID.keys())))[
+        len(list_CTindex) * [batch_index_trainingdata],
+        :
+    ]
+    if len(data_mintflow['train_list_tissue_section'].list_slice) == 1:
+        ten_BatchEmb_in = ten_BatchEmb_in * 0.0  # when a single tissue section is used for training, the batch identifier is all-zero
+
     model.to(device)
+
+    list_generated_realisations = []
     for idx_realisation in tqdm(
         range(num_generated_realisations),
         desc='Generating the realisations of the expression data (i.e. generative samples) for the provided in silico tissue'
@@ -161,21 +184,23 @@ def generate_insilico_ST_data(
                 'num_workers': 0
             },
             ten_CT=ten_CT.to(device),
-            ten_BatchEmb_in=torch.eye(len(set(data_mintflow['train_list_tissue_section'].map_Batchname_to_inflowBatchID.keys())))[
-                len(list_CTindex)*[batch_index_trainingdata],
-                :
-            ].to(device),
+            ten_BatchEmb_in=ten_BatchEmb_in.to(device),
             sizefactor_int=dict_all4_configs['config_training']['val_scppnorm_total'] - np.array(list_micenv_sizefactors),
             sizefactor_spl=np.array(list_micenv_sizefactors)
         )
 
-        print(set(generated_realisation.keys()))
+        # print(set(generated_realisation.keys()))
+        # prints:    {'xbar_spl', 'z', 'x_spl_softmax', 's_out', 's_in', 'x_spl', 'x_int', 'ten_u_spl', 'x_int_softmax', 'xbar_int', 'ten_u_int'}
+
+        # replace the keys in dictionary
+        for k_old, k_new in dict_generate_oldvarname_to_newvarname.items():
+            generated_realisation[k_new] = generated_realisation.pop(k_old)
+
+        list_generated_realisations.append(generated_realisation)
 
 
-
-
-    # pass
-
+    return list_generated_realisations
+    
 
 
 
