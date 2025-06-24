@@ -79,9 +79,9 @@ def generate_mic_sizefactors(
     # for each MintFlow celltype and MCC kmeans cluster, consider a subsect of `adata_cond_CT_MCC`
     dict_idxct_to_dict_idxcluster_to_adata = {
         idxct: {idxcluster:None for idxcluster in range(kmeans.n_clusters)}
-        for idxct in range(len(list(data_mintflow['training_list_tissue_section'].map_CT_to_inflowCT.keys())))
+        for idxct in range(len(list(data_mintflow['train_list_tissue_section'].map_CT_to_inflowCT.keys())))
     }
-    for idxct in range(len(list(data_mintflow['training_list_tissue_section'].map_CT_to_inflowCT.keys()))):
+    for idxct in range(len(list(data_mintflow['train_list_tissue_section'].map_CT_to_inflowCT.keys()))):
         for idxcluster in range(kmeans.n_clusters):
             selrow_CT = (adata_cond_CT_MCC.obs['inflow_CT'] == 'inflowCT_{}'.format(idxct)).tolist()
             selrow_MCC = (adata_cond_CT_MCC.obs['MintFlow_MCC_cluster'] == idxcluster).tolist()
@@ -106,7 +106,7 @@ def generate_mic_sizefactors(
                 pass # never reaches here since MCC index has to be in range(n_clusters)
 
 
-
+    
     return adata_cond_CT_MCC, kmeans, dict_idxct_to_dict_idxcluster_to_adata
 
 
