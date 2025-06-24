@@ -58,6 +58,7 @@ def generate_mic_sizefactors(
             # create/add the anndata
             adata_toadd = sl.adata.copy()
             adata_toadd.obs['MintFLow_signalling_Activity'] = Xmic.sum(1) / (dict_all4_configs['config_training']['val_scppnorm_total'] + 0.0)
+            adata_toadd.obsm['Mintflow_MCC'] = sl.ten_NCC.detach().cpu().numpy()
             adata_cond_CT_MCC.append(adata_toadd)
 
             del dict_preds
