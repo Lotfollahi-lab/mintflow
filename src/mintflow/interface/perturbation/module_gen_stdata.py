@@ -194,13 +194,13 @@ def generate_insilico_ST_data(
 
         # replace the keys in dictionary
         for k_old, k_new in dict_generate_oldvarname_to_newvarname.items():
-            generated_realisation[k_new] = generated_realisation.pop(k_old)
+            generated_realisation[k_new] = generated_realisation.pop(k_old).detach().cpu().numpy()
 
         list_generated_realisations.append(generated_realisation)
 
 
     return list_generated_realisations
-    
+
 
 
 
