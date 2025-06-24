@@ -26,7 +26,7 @@ from ...modules.gnn import KhopAvgPoolWithoutselfloop
 
 
 @torch.no_grad()
-def generate_ST_data(
+def generate_insilico_ST_data(
     adata:anndata.AnnData,
     obskey_celltype:str,
     obspkey_neighbourhood_graph:str,
@@ -168,6 +168,8 @@ def generate_ST_data(
             sizefactor_int=dict_all4_configs['config_training']['val_scppnorm_total'] - np.array(list_micenv_sizefactors),
             sizefactor_spl=np.array(list_micenv_sizefactors)
         )
+
+        print(set(generated_realisation.keys()))
 
 
 
