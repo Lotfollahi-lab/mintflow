@@ -12,6 +12,7 @@ import gc
 import torch
 import torch_geometric as pyg
 from torch_geometric.utils.convert import from_scipy_sparse_matrix
+from tqdm.autonotebook import tqdm
 
 from . import module_gen_micsizefactor
 
@@ -31,6 +32,7 @@ def generate_ST_data(
     obspkey_neighbourhood_graph:str,
     device,
     batch_index_trainingdata:int,
+    num_generated_realisations:int,
     model:vardist.InFlowVarDist,
     data_mintflow:Dict,
     dict_all4_configs:Dict,
@@ -43,6 +45,7 @@ def generate_ST_data(
     :param adata:
     :param obskey_celltype:
     :param batch_index_trainingdata:
+    :param num_generated_realisations:
     :param obspkey_neighbourhood_graph:
     :param device
     :param model:
@@ -132,15 +135,45 @@ def generate_ST_data(
 
 
 
-    # generate mic size factors
+    # generate realisations
     list_idx_MCCcluster = obj_sizefacgenerator.kmeans.predict(ten_MCC.detach().cpu().numpy()).tolist()
 
-    list_micenv_sizefactors = obj_sizefacgenerator.gen_sizefactors(
-        list_idx_CT=list_CTindex,
-        list_idx_MCCcluster=list_idx_MCCcluster
-    )
+    model.to(device)
+    for idx_realisation in tqdm(
+        range(num_generated_realisations),
+        desc='Generating the realisations of the expression data (i.e. generative samples) for the provided in silico tissue'
+    ):
+        list_micenv_sizefactors = obj_sizefacgenerator.gen_sizefactors(
+            list_idx_CT=list_CTindex,
+            list_idx_MCCcluster=list_idx_MCCcluster
+        )
 
-    return list_micenv_sizefactors
+
+        generated_realisation = model.module_genmodel.sample_withZINB(
+            edge_index=edge_index.to(device),
+            t_num_steps=dict_all4_configs['config_model']['neuralODE_t_num_steps'],
+            device=device,
+            batch_size_feedforward=10,  # local settings (TODO:modify if needed) ===
+            kwargs_dl_neighbourloader={
+                'num_neighbors': [-1] * dict_all4_configs['config_model']['num_graph_hops'],
+                'batch_size': 5,  # local settings (TODO:modify if needed) ===
+                'shuffle': False,
+                'num_workers': 0
+            },
+            ten_CT=ten_CT.to(device),
+            ten_BatchEmb_in=torch.eye(len(set(data_mintflow['train_list_tissue_section'].map_Batchname_to_inflowBatchID.keys())))[
+                len(list_CTindex)*[batch_index_trainingdata],
+                :
+            ].to(device),
+            sizefactor_int=dict_all4_configs['config_training']['val_scppnorm_total'] - np.array(list_micenv_sizefactors),
+            sizefactor_spl=np.array(list_micenv_sizefactors)
+        )
+
+
+
+
+    # pass
+
 
 
 
