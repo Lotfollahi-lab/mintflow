@@ -201,6 +201,12 @@ def setup_data(
 
         return dict_input
 
+    
+    print(">>>>>>>>>>>>>>>")
+    for dict_current_anndata in config_data_train:
+        print(dict_current_anndata['config_neighbourhood_graph'])  # TODO:FORDEBUG:DELETE
+    print(">>>>>>>>>>>>>>>")
+
     list_slice = []
     for dict_current_anndata in config_data_train:
         current_anndata = sc.read_h5ad(dict_current_anndata['file'])
@@ -211,7 +217,7 @@ def setup_data(
             inplace=True
         )
 
-        print(dict_current_anndata['config_neighbourhood_graph'])
+        print(dict_current_anndata['config_neighbourhood_graph'])  # TODO:FORDEBUG:DELETE
 
         list_slice.append(
             Slice(
