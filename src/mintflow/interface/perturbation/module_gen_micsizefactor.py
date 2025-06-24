@@ -58,7 +58,7 @@ def generate_mic_sizefactors(
             # create/add the anndata
             adata_toadd = sl.adata.copy()
             adata_toadd.obs['MintFLow_signalling_Activity'] = Xmic.sum(1) / (dict_all4_configs['config_training']['val_scppnorm_total'] + 0.0)
-            adata_toadd.obsm['Mintflow_MCC'] = sl.ten_NCC.detach().cpu().numpy()
+            adata_toadd.obsm['MintFlow_MCC'] = sl.ten_NCC.detach().cpu().numpy()
             adata_cond_CT_MCC.append(adata_toadd)
 
             del dict_preds
@@ -68,11 +68,14 @@ def generate_mic_sizefactors(
 
 
 
-    # np_MCC = np.concatenate(np_MCC, 0)  # [num_cells x num_CT]
-    # kmeans = KMeans(
-    #     **kwargs_Kmeans_MCC
-    # ).fit(np_MCC)
+    # get an MCC kmeans index for MCC vectors
+    kmeans = KMeans(
+        **kwargs_Kmeans_MCC
+    ).fit(adata_cond_CT_MCC.obsm['MintFlow_MCC'])
+    adata_cond_CT_MCC.obs['MintFlow_MCC_cluster'] = kmeans.labels_.tolist()
+    adata_cond_CT_MCC.obs['MintFlow_MCC_cluster'] = adata_cond_CT_MCC.obs['MintFlow_MCC_cluster'].astype('category')
 
-    return adata_cond_CT_MCC
+
+    return adata_cond_CT_MCC, kmeans
 
 
