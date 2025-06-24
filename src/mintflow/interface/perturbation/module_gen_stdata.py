@@ -133,14 +133,14 @@ def generate_ST_data(
 
 
     # generate mic size factors
-    list_idx_MCCcluster = obj_sizefacgenerator.kmeans.predict(ten_MCC.detach().cpu().numpy())
-    print(list_idx_MCCcluster)
-    print(type(list_idx_MCCcluster))
+    list_idx_MCCcluster = obj_sizefacgenerator.kmeans.predict(ten_MCC.detach().cpu().numpy()).tolist()
 
-    obj_sizefacgenerator.gen_sizefactors(
+    list_micenv_sizefactors = obj_sizefacgenerator.gen_sizefactors(
         list_idx_CT=list_CTindex,
         list_idx_MCCcluster=list_idx_MCCcluster
     )
+
+    return list_micenv_sizefactors
 
 
 

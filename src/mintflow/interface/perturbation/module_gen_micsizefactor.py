@@ -104,7 +104,7 @@ class GeneratorMicSizeFactor:
                     dict_idxct_to_dict_idxcluster_to_adata[idxct][idxcluster] = adata_cond_CT_MCC[
                         (adata_cond_CT_MCC.obs['MintFlow_MCC_cluster'] == idxcluster)
                     ].obs['MintFLow_signalling_Activity'].tolist()
-                    print("Warning: cell type '{}' was not found in the set of tissue sections used to generate size factors for Xmic. Therefore, only MCC used.".format(
+                    print("Warning: To generate size factors, failed to find cells with same cell type and MCC cluster. Therefore, only MCC cluster was used.".format(
                         dict_4warning_map_mintflowCT_to_strCT['inflowCT_{}'.format(idxct)]
                     ))
                 else:
