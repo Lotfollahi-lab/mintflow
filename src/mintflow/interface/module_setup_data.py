@@ -211,6 +211,8 @@ def setup_data(
             inplace=True
         )
 
+        print(dict_current_anndata['config_neighbourhood_graph'])
+
         list_slice.append(
             Slice(
                 adata=current_anndata,
