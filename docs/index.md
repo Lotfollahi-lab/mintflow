@@ -1,6 +1,6 @@
 # Documentation
 
-MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package for decomposing intrinsic and microenvironment-induced cellular variation in spatial transcriptomics data. MintFlow is interoperable with [AnnData](https://anndata.readthedocs.io/en/latest/) objects.
+MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package for generating disentangled intrinsic and microenvironment-induced gene expression vectors from spatial transcriptomics data. MintFlow is interoperable with [AnnData](https://anndata.readthedocs.io/en/latest/) objects.
 The package is developed and maintained by the [Lotfollahi Lab](https://github.com/Lotfollahi-lab) at the Wellcome Sanger Institute.
 
 ::::{grid} 1 2 3 3
@@ -49,7 +49,7 @@ Help improve Inigen.
 :::
 ::::
 
-If you find Inigen useful for your research, please consider citing the Inigen manuscript.
+If you find MintFlow useful for your research, please consider citing the MintFlow manuscript.
 
 ```{toctree}
 :hidden: true
