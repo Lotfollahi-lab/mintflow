@@ -112,7 +112,7 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
 html_title = "MintFlow"
-html_logo = "_static/mintflow_logo_readme.png"
+html_logo = "_static/mintflow_logo.svg"
 
 html_theme_options = {
     "repository_url": repository_url,
