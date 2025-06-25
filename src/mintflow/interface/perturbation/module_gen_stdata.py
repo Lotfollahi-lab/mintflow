@@ -188,8 +188,8 @@ def generate_insilico_ST_data(
             },
             ten_CT=ten_CT.to(device),
             ten_BatchEmb_in=ten_BatchEmb_in.to(device),
-            sizefactor_int=dict_all4_configs['config_training']['val_scppnorm_total'] - np.array(list_micenv_sizefactors),
-            sizefactor_spl=np.array(list_micenv_sizefactors)
+            sizefactor_int=dict_all4_configs['config_training']['val_scppnorm_total'] - np.array(list_micenv_sizefactors)*dict_all4_configs['config_training']['val_scppnorm_total'],
+            sizefactor_spl=np.array(list_micenv_sizefactors)*dict_all4_configs['config_training']['val_scppnorm_total']
         )
 
         # print(set(generated_realisation.keys()))
