@@ -45,9 +45,7 @@ Follow the latest changes to MintFlow.
 :link: contributing
 :link-type: doc
 
-Help improve Inigen.
-:::
-::::
+Help improve MintFlow. ::: ::::
 
 If you find MintFlow useful for your research, please consider citing the MintFlow manuscript.
 
