@@ -1,4 +1,4 @@
-
+import copy
 import os, sys
 import yaml
 import importlib
@@ -32,7 +32,7 @@ def get_defaultconfig_data_evaluation(num_tissue_sections):
         print(exc)
 
     for idx_new_slice in range(num_tissue_sections-1):
-        config_data_eval['list_tissue']['anndata{}'.format(idx_new_slice+2)] = config_data_eval['list_tissue']['anndata1'].copy()
+        config_data_eval['list_tissue']['anndata{}'.format(idx_new_slice+2)] = copy.deepcopy(config_data_eval['list_tissue']['anndata1'])
         config_data_eval['list_tissue']['anndata{}'.format(idx_new_slice + 2)]['file'] = config_data_eval['list_tissue']['anndata{}'.format(idx_new_slice + 2)]['file'].replace(
             "adata_1.h5ad",
             "adata_{}.h5ad".format(idx_new_slice + 2)
