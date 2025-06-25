@@ -161,7 +161,7 @@ def generate_insilico_ST_data(
 
     model.to(device)
 
-    list_generated_realisations = []
+    list_generated_realisations, list_generated_mic_sizefactors = [], []
     for idx_realisation in tqdm(
         range(num_generated_realisations),
         desc='Generating the realisations of the expression data (i.e. generative samples) for the provided in silico tissue'
@@ -197,9 +197,13 @@ def generate_insilico_ST_data(
             generated_realisation[k_new] = generated_realisation.pop(k_old).detach().cpu().numpy()
 
         list_generated_realisations.append(generated_realisation)
+        list_generated_mic_sizefactors.append(list_micenv_sizefactors)
 
 
-    return list_generated_realisations
+    return dict(
+        list_generated_realisations=list_generated_realisations,
+        list_generated_mic_sizefactors=list_generated_mic_sizefactors
+    )
 
 
 
