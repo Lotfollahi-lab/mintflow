@@ -96,6 +96,7 @@ def generate_insilico_ST_data(
         evalulate_on_sections=evalulate_on_sections,
         kwargs_Kmeans_MCC=kwargs_Kmeans_MCC
     )
+    model.eval()
 
     # check that there are no novel cell types in the CT col
     if obskey_celltype not in adata.obs.columns:
