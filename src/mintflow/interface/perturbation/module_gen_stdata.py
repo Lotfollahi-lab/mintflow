@@ -71,6 +71,8 @@ def generate_insilico_ST_data(
     :return:
     """
 
+    model.eval()
+
     if kwargs_Kmeans_MCC is None:
         kwargs_Kmeans_MCC = {'n_clusters': 10, 'random_state': 0, 'n_init': "auto"}
 
@@ -199,6 +201,7 @@ def generate_insilico_ST_data(
         list_generated_realisations.append(generated_realisation)
         list_generated_mic_sizefactors.append(list_micenv_sizefactors)
 
+    model.train()
 
     return dict(
         list_generated_realisations=list_generated_realisations,
