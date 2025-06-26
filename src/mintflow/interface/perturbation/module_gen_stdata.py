@@ -156,9 +156,6 @@ def generate_insilico_ST_data(
     # generate realisations
     list_idx_MCCcluster = obj_sizefacgenerator.kmeans.predict(ten_MCC.detach().cpu().numpy()).tolist()
 
-    print(">>>>>>")
-    print(list_idx_MCCcluster)  # TODO:DELETE:4DEBUG
-    
 
     ten_BatchEmb_in = torch.eye(len(set(data_mintflow['train_list_tissue_section'].map_Batchname_to_inflowBatchID.keys())))[
         len(list_CTindex) * [batch_index_trainingdata],
@@ -197,8 +194,7 @@ def generate_insilico_ST_data(
             sizefactor_spl=np.array(list_micenv_sizefactors)*dict_all4_configs['config_training']['val_scppnorm_total']
         )
 
-        # print(set(generated_realisation.keys()))
-        # prints:    {'xbar_spl', 'z', 'x_spl_softmax', 's_out', 's_in', 'x_spl', 'x_int', 'ten_u_spl', 'x_int_softmax', 'xbar_int', 'ten_u_int'}
+
 
         # replace the keys in dictionary
         for k_old, k_new in dict_generate_oldvarname_to_newvarname.items():
