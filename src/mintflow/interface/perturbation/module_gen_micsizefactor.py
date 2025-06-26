@@ -74,7 +74,7 @@ class GeneratorMicSizeFactor:
         print(set(adata_cond_CT_MCC.obs['info_id']))
         print("adata_cond_CT_MCC.shape = {}".format(adata_cond_CT_MCC.shape))
         print(">>>>>>>>>>>>>>>>>>>>>>>>")  # TODO:DELETE
-        
+
         # get an MCC kmeans index for MCC vectors
         kmeans = KMeans(
             **kwargs_Kmeans_MCC

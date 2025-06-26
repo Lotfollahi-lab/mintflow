@@ -136,6 +136,8 @@ def generate_insilico_ST_data(
     edge_index = torch.Tensor(
         pyg.utils.remove_self_loops(pyg.utils.to_undirected(edge_index))[0]
     )
+    print("edge_index.shape = {}".format(edge_index.shape))
+    # TODO:DELETE
 
     # compute np_MCC (needed for generating micenv size factors)
     module_compNCC = KhopAvgPoolWithoutselfloop(
