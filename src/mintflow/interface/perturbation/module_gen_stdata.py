@@ -136,8 +136,7 @@ def generate_insilico_ST_data(
     edge_index = torch.Tensor(
         pyg.utils.remove_self_loops(pyg.utils.to_undirected(edge_index))[0]
     )
-    print("edge_index.shape = {}".format(edge_index.shape))
-    # TODO:DELETE
+
 
     # compute np_MCC (needed for generating micenv size factors)
     module_compNCC = KhopAvgPoolWithoutselfloop(
@@ -156,6 +155,10 @@ def generate_insilico_ST_data(
 
     # generate realisations
     list_idx_MCCcluster = obj_sizefacgenerator.kmeans.predict(ten_MCC.detach().cpu().numpy()).tolist()
+
+    print(">>>>>>")
+    print(list_idx_MCCcluster)  # TODO:DELETE:4DEBUG
+    
 
     ten_BatchEmb_in = torch.eye(len(set(data_mintflow['train_list_tissue_section'].map_Batchname_to_inflowBatchID.keys())))[
         len(list_CTindex) * [batch_index_trainingdata],
