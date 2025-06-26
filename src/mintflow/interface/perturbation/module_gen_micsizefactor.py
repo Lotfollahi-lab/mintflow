@@ -108,8 +108,9 @@ class GeneratorMicSizeFactor:
                     dict_idxct_to_dict_idxcluster_to_adata[idxct][idxcluster] = adata_cond_CT_MCC[
                         (adata_cond_CT_MCC.obs['MintFlow_MCC_cluster'] == idxcluster)
                     ].obs['MintFLow_signalling_Activity'].tolist()
-                    print("Warning: To generate size factors, failed to find cells with same cell type and MCC cluster. Therefore, only MCC cluster was used.".format(
-                        dict_4warning_map_mintflowCT_to_strCT['inflowCT_{}'.format(idxct)]
+                    print("Warning: To generate size factors, failed to find cells with same cell type `{}` and MCC cluster `{}`. Therefore, only MCC cluster was used.".format(
+                        dict_4warning_map_mintflowCT_to_strCT['inflowCT_{}'.format(idxct)],
+                        idxcluster
                     ))
                 else:
                     pass # never reaches here since MCC index has to be in range(n_clusters)
