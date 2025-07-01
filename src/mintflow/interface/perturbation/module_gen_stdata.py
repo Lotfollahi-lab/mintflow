@@ -91,6 +91,7 @@ def generate_insilico_ST_data(
 
     obj_sizefacgenerator = module_gen_micsizefactor.GeneratorMicSizeFactor(
         model=model,
+        device=device,
         data_mintflow=data_mintflow,
         dict_all4_configs=dict_all4_configs,
         evalulate_on_sections=evalulate_on_sections,

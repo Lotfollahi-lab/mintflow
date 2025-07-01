@@ -20,6 +20,7 @@ class GeneratorMicSizeFactor:
     def __init__(
         self,
         model:vardist.InFlowVarDist,
+        device,
         data_mintflow:Dict,
         dict_all4_configs:Dict,
         evalulate_on_sections: List[int] | List[str] | str,
@@ -51,6 +52,7 @@ class GeneratorMicSizeFactor:
                 # get the predictions
                 dict_preds = module_predict.predict(
                     dict_all4_configs=dict_all4_configs,
+                    device=device,
                     data_mintflow=data_mintflow,
                     model=model,
                     evalulate_on_sections=[idx_sl]
