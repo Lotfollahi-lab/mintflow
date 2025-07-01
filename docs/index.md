@@ -13,6 +13,15 @@ The package is developed and maintained by the [Lotfollahi Lab](https://github.c
 Check out the installation guide.
 :::
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials:
+   :hidden:
+
+   notebooks/nb1_demo_training_single_tissue_section
+   notebooks/nb2_demo_insilico_generation
+
+
 :::{grid-item-card} Tutorials {octicon}`play;1em;`
 :link: tutorials/index
 :link-type: doc
