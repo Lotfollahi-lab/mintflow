@@ -207,7 +207,7 @@ def generate_insilico_ST_data(
     model.train()
 
     return dict(
-        list_generated_realisations=list_generated_realisations,
+        list_generated_realisations_ie_expressions=list_generated_realisations,
         list_generated_microenv_sizefactors=list_generated_mic_sizefactors,
         np_CT=ten_CT.detach().cpu().numpy(),
         np_MCC=ten_MCC.detach().cpu().numpy()
