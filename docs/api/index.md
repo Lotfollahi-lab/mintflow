@@ -1,3 +1,20 @@
+
+
+Welcome to CellTypist's documentation!
+======================================
+.. toctree::
+   :maxdepth: 2
+   :caption: Installation:
+   :hidden:
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials:
+   :hidden:
+
+   
+
 # API
 
 Import MintFlow as:
