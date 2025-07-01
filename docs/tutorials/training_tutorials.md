@@ -1,7 +1,6 @@
 
-# Training tutorials
+# Tutorial notebooks
 
-S sD fs df sdf sdf sdf sdf sdf.
 
 ```{toctree}
 :maxdepth: 2
