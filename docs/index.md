@@ -53,7 +53,6 @@ If you find MintFlow useful for your research, please consider citing the MintFl
 
 installation
 tutorials/index
-api/index
 release_notes/index
 contributing.md
 references.md
