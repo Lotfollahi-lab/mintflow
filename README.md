@@ -25,7 +25,8 @@ To do so:
 
 
 ## Tutorials
-This repository is still being developed. Some sample notebooks are available in `docs/tutorials/notebooks/`.
+The repository and documentation are being developed (we haven't yet released a usable pypi pacakge).
+In the meanwhile, some sample notebooks are available in `docs/tutorials/notebooks/`.
 
 ## Release notes
 See the [changelog][changelog].
