@@ -13,7 +13,8 @@ def predict(
     dict_all4_configs:dict,
     data_mintflow:dict,
     model:vardist.InFlowVarDist,
-    evalulate_on_sections: List[int] | List[str] | str
+    device,
+    evalulate_on_sections: List[int] | List[str] | str = 'all'
 ):
     model.eval()
 
@@ -33,7 +34,7 @@ def predict(
             anal_dict_varname_to_output_slice = model.eval_on_pygneighloader_dense(
                 dl=sl.pyg_dl_test,
                 # this is correct, because all neighbours are to be included (not a subset of neighbours).
-                ten_xy_absolute=sl.ten_xy_absolute,
+                ten_xy_absolute=sl.ten_xy_absolute.to(device),
                 tqdm_desc="Evaluating on tissue section: {}".format(idx_sl)
             )
 
