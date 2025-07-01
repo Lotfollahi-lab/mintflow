@@ -1,6 +1,6 @@
 
 
-Welcome to CellTypist's documentation!
+Welcome to MintFlow's documentation!
 ======================================
 .. toctree::
    :maxdepth: 2
@@ -13,7 +13,12 @@ Welcome to CellTypist's documentation!
    :caption: Tutorials:
    :hidden:
 
-   
+   notebook/celltypist_tutorial
+   notebook/celltypist_tutorial_ml
+   notebook/celltypist_tutorial_cv
+
+
+
 
 # API
 

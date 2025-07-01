@@ -13,14 +13,6 @@ The package is developed and maintained by the [Lotfollahi Lab](https://github.c
 Check out the installation guide.
 :::
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials:
-   :hidden:
-
-   notebooks/nb1_demo_training_single_tissue_section
-   notebooks/nb2_demo_insilico_generation
-
 
 :::{grid-item-card} Tutorials {octicon}`play;1em;`
 :link: tutorials/index
@@ -36,12 +28,6 @@ Learn by following example applications of MintFlow.
 Review good practices for training MintFlow models on your own data.
 :::
 
-:::{grid-item-card} API {octicon}`info;1em;`
-:link: api/index
-:link-type: doc
-
-Find a detailed description of MintFlow APIs.
-:::
 
 :::{grid-item-card} Release Notes {octicon}`tag;1em;`
 :link: release_notes/index
