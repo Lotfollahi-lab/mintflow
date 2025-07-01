@@ -50,7 +50,7 @@ def generate_insilico_ST_data(
     model:vardist.InFlowVarDist,
     data_mintflow:Dict,
     dict_all4_configs:Dict,
-    evalulate_on_sections: List[int] | List[str] | str,
+    estimate_spatial_sizefactors_on_sections: List[int] | List[str] | str,
     kwargs_Kmeans_MCC=None,
     kwargs_pygdl_computeMCC=None,
 ):
@@ -65,7 +65,7 @@ def generate_insilico_ST_data(
     :param model:
     :param data_mintflow:
     :param dict_all4_configs:
-    :param evalulate_on_sections:
+    :param estimate_spatial_sizefactors_on_sections:
     :param kwargs_Kmeans_MCC:
     :param kwargs_pygdl_computeMCC
     :return:
@@ -94,7 +94,7 @@ def generate_insilico_ST_data(
         device=device,
         data_mintflow=data_mintflow,
         dict_all4_configs=dict_all4_configs,
-        evalulate_on_sections=evalulate_on_sections,
+        evalulate_on_sections=estimate_spatial_sizefactors_on_sections,
         kwargs_Kmeans_MCC=kwargs_Kmeans_MCC
     )
     model.eval()
@@ -208,7 +208,9 @@ def generate_insilico_ST_data(
 
     return dict(
         list_generated_realisations=list_generated_realisations,
-        list_generated_mic_sizefactors=list_generated_mic_sizefactors
+        list_generated_microenv_sizefactors=list_generated_mic_sizefactors,
+        np_CT=ten_CT.detach().cpu().numpy(),
+        np_MCC=ten_MCC.detach().cpu().numpy()
     )
 
 
