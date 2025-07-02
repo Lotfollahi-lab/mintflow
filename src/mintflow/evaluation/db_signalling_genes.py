@@ -102,6 +102,7 @@ def _create_eval_df(
 
 def evaluate_by_known_signalling_genes(
     dict_all4_configs:dict,
+    device,
     data_mintflow:dict,
     model:vardist.InFlowVarDist,
     evalulate_on_sections: List[int] | List[str] | str,
@@ -109,6 +110,7 @@ def evaluate_by_known_signalling_genes(
 ):
     """
     :param dict_all4_configs:
+    :param device:
     :param model: the mintflow model.
     :param data_mintflow: MintFlow data, as returned by `mintflow.setup_data`
     :param evalulate_on_sections: Specifies whcih evaluation tissue sections to choose and evaluate on.
@@ -154,6 +156,7 @@ def evaluate_by_known_signalling_genes(
         if idx_sl in list_sliceidx_evalulate_on_sections:
             anal_dict_varname_to_output = list(
                 module_predict.predict(
+                    device=device,
                     dict_all4_configs=dict_all4_configs,
                     data_mintflow=data_mintflow,
                     model=model,
