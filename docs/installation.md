@@ -34,7 +34,7 @@ pip list | grep torch
 ```
 and the version number is printed next to "torch".
 
-If you want to use GPU acceleration, run the following command to know about your CUDA version:
+If you want to use GPU acceleration, please run the following command to know your CUDA version:
 ```commandline
 nvidia-smi
 ```
@@ -50,7 +50,7 @@ To install these libraries, run
 pip install pyg_lib torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html
 ```
 where `${TORCH}` and `${CUDA}` should be replaced by the specific PyTorch and
-CUDA versions, respectively.
+CUDA versions that we explained how to obtain in previous section.
 
 For example, for PyTorch 2.6.0 and CUDA 12.4, type:
 ```
