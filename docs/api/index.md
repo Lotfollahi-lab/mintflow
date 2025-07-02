@@ -1,9 +1,9 @@
 # API
 
-Import NicheCompass as:
+Import MintFlow as:
 
 ```
-import nichecompass
+import mintflow
 ```
 
 ```{toctree}
