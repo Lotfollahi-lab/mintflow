@@ -37,7 +37,16 @@ See the [changelog][changelog].
 
 ## Citation
 
-> t.b.a
+```
+@article{Akbarnejad2025,
+  author    = {Akbarnejad, A. et al.},
+  title     = {Mapping and reprogramming microenvironment-induced cell states in human disease using generative AI},
+  journal   = {bioRxiv},
+  year      = {2025},
+  doi       = {10.1101/2025.06.24.661094},
+  url       = {https://doi.org/10.1101/2025.06.24.661094}
+}
+```
 
 [scverse-discourse]: https://discourse.scverse.org/
 [issue-tracker]: https://github.com/sebastianbirk/celldino/issues
