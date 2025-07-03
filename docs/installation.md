@@ -20,15 +20,15 @@ conda create -n mintflow python=3.11
 conda activate mintflow
 ```
 ## Step 1: Install PyTorch
-Visit [Pytorch website] and install its appropriate version based on your OS and compute platform.
+Visit the [PyTorch website] and install its appropriate version based on your OS and compute platform.
 
 ## Step 2: Install PyTorch Geometric
-### Step 2.1: Figure out your pytorch and cuda versions
-To learn your pytorch version, if you installed pytorch with conda, you can run
+### Step 2.1: Figure out your PyTorch and CUDA versions
+To learn your PyTorch version, if you installed PyTorch with conda, you can run
 ```commandline
 conda list | grep torch
 ```
-or if you installed pytorch via pip, you can run
+or if you installed PyTorch via pip, you can run
 ```commandline
 pip list | grep torch
 ```
