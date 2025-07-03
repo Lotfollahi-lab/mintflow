@@ -8,30 +8,21 @@
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to decompose spatial transcriptomics data into microenvironment-induced and intrinsic gene expression components. It interoperates with the [scverse](https://scverse.org/) ecosystem to enable seamless analysis workflows of spatial transcriptomics data to identify spatial biomarkers.
+MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to generate disentangled microenvironment-induced and intrinsic gene expression from spatial transcriptomics data. It interoperates with the [scverse](https://scverse.org/) ecosystem to enable seamless analysis workflows of spatial transcriptomics data.
 
 ## Installation
 
-```commandline
+Install MintFlow via pip:
+```
 pip install mintflow
 ```
+For more detailed instructions, visit our [documentation](https://mintflow.readthedocs.io/en/latest/installation.html)
 
-## Installing WandB
-It's highly recommended to setup wandb when using MintFlow.
+It's highly recommended to setup wandb when training your own MintFlow models.
 
 To do so:
-- Go to https://wandb.ai/ and create an account.
+- Go to [wandb](https://wandb.ai/) and create an account.
 - Create a project called "MintFlow".
-
-
-## Tutorials
-The repository and documentation are being developed (we haven't yet released a usable pypi pacakge).
-In the meanwhile, some sample notebooks are available in `docs/tutorials/notebooks/`.
-
-## Release notes
-See the [changelog][changelog].
-
-## Contact
 
 ## Resources
 - An installation guide, tutorials and API documentation is available in the [documentation](https://mintflow.readthedocs.io/).
