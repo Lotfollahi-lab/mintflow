@@ -39,7 +39,7 @@ nvidia-smi
 ```
 
 ### Step 2.2: Install additional libraries related to PyTorch Geometric
-Before installing PyTorch geometric, you need to install some additional external libraries. These include:
+Before installing PyTorch Geometric, you need to install some additional external libraries. These include:
 - [PyG-lib]
 - [PyTorch Scatter]
 - [PyTorch Sparse]
