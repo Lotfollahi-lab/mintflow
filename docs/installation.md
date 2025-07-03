@@ -32,7 +32,6 @@ or if you installed PyTorch via pip, you can run
 ```commandline
 pip list | grep torch
 ```
-and the version number is printed next to "torch".
 
 If you want to use GPU acceleration, please run the following command to know your CUDA version:
 ```commandline
