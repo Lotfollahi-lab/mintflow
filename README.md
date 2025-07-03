@@ -16,7 +16,7 @@ Install MintFlow via pip:
 ```
 pip install mintflow
 ```
-For more detailed instructions, visit our [documentation](https://mintflow.readthedocs.io/en/latest/installation.html)
+For more detailed instructions, visit our [documentation](https://mintflow.readthedocs.io/en/latest/installation.html).
 
 It's highly recommended to setup wandb when training your own MintFlow models.
 
