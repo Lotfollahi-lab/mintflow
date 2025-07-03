@@ -33,10 +33,13 @@ See the [changelog][changelog].
 
 ## Contact
 
-> t.b.a
+## Resources
+- An installation guide, tutorials and API documentation is available in the [documentation](https://mintflow.readthedocs.io/).
+- Please use [issues](https://github.com/Lotfollahi-lab/mintflow/issues) to submit bug reports.
+- If you would like to contribute, check out the [contributing guide](https://mintflow.readthedocs.io/en/latest/contributing.html).
+- If you find MintFlow useful for your research, please consider citing the MintFlow manuscript.
 
-## Citation
-
+## Reference
 ```
 @article{Akbarnejad2025,
   author    = {Akbarnejad, A. et al.},
