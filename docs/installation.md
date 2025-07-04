@@ -22,7 +22,7 @@ conda activate mintflow
 ## Step 1: Install PyTorch
 Visit the [PyTorch website] and install its appropriate version based on your OS and compute platform.
 
-## Step 2: Install PyTorch Geometric
+## Step 2: Install PyTorch Geometric Dependencies
 ### Step 2.1: Figure out your PyTorch and CUDA versions
 To learn your PyTorch version, if you installed PyTorch with conda, you can run
 ```commandline
@@ -55,12 +55,6 @@ For example, for PyTorch 2.6.0 and CUDA 12.4, type:
 pip install torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-2.6.0+cu124.html
 ```
 If you have chosen not to use GPU acceleration, `${CUDA}` should be replaced by "cpu".
-
-### Step 2.3: Install PyTorch Geometric
-Run
-```
-pip install torch_geometric
-```
 
 ## Step 3: Install MintFlow
 
