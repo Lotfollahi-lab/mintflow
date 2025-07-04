@@ -8,7 +8,7 @@
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to generate disentangled microenvironment-induced and intrinsic gene expression from spatial transcriptomics data. It interoperates with the [scverse](https://scverse.org/) ecosystem to enable seamless analysis workflows of spatial transcriptomics data.
+MintFlow (**M**icroenvironment-induced and **IN**trinsic **T**ranscriptomic **FLOW**s) is a package to generate disentangled microenvironment-induced and intrinsic gene expression vectors from spatial transcriptomics data. It interoperates with the [scverse](https://scverse.org/) ecosystem to enable seamless analysis workflows of spatial transcriptomics data.
 
 ## Installation
 
