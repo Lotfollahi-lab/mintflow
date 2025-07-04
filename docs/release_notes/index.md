@@ -4,9 +4,14 @@ All notable changes to this project will be documented in this file. The format
 is based on [keep a changelog], and this project adheres to
 [Semantic Versioning]. Full commit history is available in the [commit logs].
 
-### 0.1.0 (11.04.2025)
+### 0.1.0 (04.07.2025)
 
--   First MintFlow version.
+-  The first official release of MintFlow after preprint publication.
+[@sebastianbirk]
+
+### 0.0.1 (11.04.2025)
+
+-   Initial MintFlow version.
 [@sebastianbirk]
 
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/

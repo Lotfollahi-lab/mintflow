@@ -4,7 +4,7 @@ requires = ["hatchling"]
 
 [project]
 name = "mintflow"
-version = "0.0.1"
+version = "0.1.0"
 description = "Microenvironment-induced and INtrinsic Transcriptomic FLOWs"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
@@ -48,11 +48,12 @@ dependencies = [
     "scib-metrics",
     #"torch-sparse",
 ]
-optional-dependencies.dev = [
+[project.optional-dependencies]
+dev = [
     "pre-commit",
     "twine>=4.0.2",
 ]
-optional-dependencies.docs = [
+docs = [
     "docutils>=0.8,!=0.18.*,!=0.19.*",
     "sphinx>=4.1",
     "sphinx-book-theme>=1.0.0",
@@ -70,14 +71,14 @@ optional-dependencies.docs = [
     "ipython",
     "pandas",
 ]
-optional-dependencies.docsbuild = [
+docsbuild = [
     "mintflow[docs]"
 ]  # docs build dependencies
-optional-dependencies.tests = [
+tests = [
     "pytest",
     "coverage",
 ]
-optional-dependencies.tutorials = [
+tutorials = [
     "jupyterlab",
 ]
 all = ["mintflow[dev,docs,tests,tutorials]"]
