@@ -40,16 +40,15 @@ nvidia-smi
 
 ### Step 2.2: Install additional libraries related to PyTorch Geometric
 Before installing PyTorch Geometric, you need to install some additional external libraries. These include:
-- [PyG-lib]
 - [PyTorch Scatter]
 - [PyTorch Sparse]
 
 To install these libraries, run
 ```
-pip install pyg_lib torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html
+pip install torch_scatter torch_sparse -f https://data.pyg.org/whl/torch-${TORCH}+${CUDA}.html
 ```
 where `${TORCH}` and `${CUDA}` should be replaced by the specific PyTorch and
-CUDA versions that we explained how to obtain in previous section.
+CUDA versions (see previous section how to obtain them).
 
 For example, for PyTorch 2.6.0 and CUDA 12.4, type:
 ```
@@ -59,7 +58,7 @@ If you have chosen not to use GPU acceleration, `${CUDA}` should be replaced by 
 
 ### Step 2.3: Install PyTorch Geometric
 Run
-```commandline
+```
 pip install torch_geometric
 ```
 
