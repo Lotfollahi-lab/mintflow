@@ -1,10 +1,10 @@
 import pytest
 
-import celldino
+import mintflow
 
 
 def test_package_has_version():
-    assert celldino.__version__ is not None
+    assert mintflow.__version__ is not None
 
 
 @pytest.mark.skip(reason="This decorator should be removed when test passes.")
