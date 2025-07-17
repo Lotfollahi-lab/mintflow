@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file. The format
 is based on [keep a changelog], and this project adheres to
 [Semantic Versioning]. Full commit history is available in the [commit logs].
 
+### 0.2.0 (17.07.2025)
+
+-  Fixed version of zarr in dependencies to avoid incompatibility issue with squidpy in new v3 releases of zarr.
+[@sebastianbirk]
+
 ### 0.1.0 (04.07.2025)
 
 -  The first official release of MintFlow after preprint publication.
