@@ -46,6 +46,8 @@ dependencies = [
     "scvi-tools",
     "linformer_pytorch",
     "scib-metrics",
+    "zarr>=2.6.1,<3.0.0",
+    "spatialdata>=0.2.5",
     #"torch-sparse",
 ]
 [project.optional-dependencies]
