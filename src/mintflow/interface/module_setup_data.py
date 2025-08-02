@@ -171,7 +171,7 @@ def setup_data(
             device = torch.device("cuda:0")
         else:
             print("Although flag_use_GPU is set True in {}, but cuda is not available --> falling back to CPU.".format(
-                args.file_config_training
+                "training configuration"
             ))
             device = torch.device("cpu")
     else:
