@@ -852,7 +852,7 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']+batch.INFLOWMETAINF['dim_CT']+batch.INFLOWMETAINF['dim_NCC']+batch.INFLOWMETAINF['dim_BatchEmb']
                 ]
 
-                fm_loss = self.module_conditionalflowmatcher.get_fmloss(
+                fm_loss, time_taken_OT_pairing = self.module_conditionalflowmatcher.get_fmloss(
                     module_v=self.module_genmodel.module_Vflow_unwrapped,
                     x1=torch.cat(
                     [
@@ -879,6 +879,11 @@ class InFlowVarDist(nn.Module):
                     with torch.no_grad():
                         wandb.log(
                             {"Loss/FMloss (after mult by coef={})".format(coef_flowmatchingloss): coef_flowmatchingloss*fm_loss},
+                            step=itrcount_wandb
+                        )
+
+                        wandb.log(
+                            {"InspectVals/time_taken_OT_pairing": torch.tensor([time_taken_OT_pairing])},
                             step=itrcount_wandb
                         )
 

@@ -696,7 +696,7 @@ def setup_model(
         module_conditionalflowmatcher=ConditionalFlowMatcher(
             mode_samplex0=flowmatching_mode_samplex0,
             mode_minibatchper=flowmatching_mode_minibatchper,
-            kwargs_otsampler={}, #TODO: maybe add mini-batch OT
+            kwargs_otsampler=eval(config_model['kwargs_otsampler']), #TODO: maybe add mini-batch OT
             mode_timesched=flowmatching_mode_timesched,
             sigma=config_model['flowmatching_sigma'],
             mode_fmloss=flowmatching_mode_fmloss

@@ -4,7 +4,9 @@ Utilities for conditional flow matching
 
 from typing import Dict, Union, Callable, Tuple, Any, Optional
 import torch
+import time
 import torchcfm
+import numpy as np
 from torch.nn.modules.module import T
 from torch.utils.hooks import RemovableHandle
 from torchcfm.optimal_transport import OTPlanSampler
@@ -84,10 +86,27 @@ class ConditionalFlowMatcher:
     @torch.no_grad()
     def _perm_batches(self, x0:torch.Tensor, x1:torch.Tensor):
         if self.mode_minibatchper == ModeMinibatchPerm.RANDOM:
-            return x0, x1
+            time_taken = 0.0
+            return x0, x1, time_taken
+        
         elif self.mode_minibatchper == ModeMinibatchPerm.OT:
-            x0, x1 = self.ot_sampler.sample_plan(x0, x1)
-            return x0, x1
+            t_tic = time.time()
+            
+            ot_map = self.ot_sampler.get_map(x0, x1)
+            list_0_ot_1 = [np.where(ot_map[i, :] > 0)[0].tolist()[0] for i in range(ot_map.shape[0])]
+
+            new_x0 = x0 + 0.0
+            new_x1 = x1[list_0_ot_1, :] + 0.0
+            
+            print("OT pairing for {} samples took {} seconds.".format(
+                x0.shape[0],
+                time.time() - t_tic
+            ))
+
+            time_taken = time.time() - t_tic
+
+            return new_x0, new_x1, time_taken
+        
         else:
             raise NotImplementedError("ddd")
 
@@ -121,7 +140,12 @@ class ConditionalFlowMatcher:
             x=xt,
             ten_BatchEmb=ten_batchEmb
         )
-        return torch.mean((vt - ut) ** 2)
+        return torch.mean(
+            torch.sum(
+                (vt - ut) ** 2,
+                1
+            )
+        )
 
     def get_fmloss(
         self,
@@ -145,7 +169,7 @@ class ConditionalFlowMatcher:
                 x1=x1,
                 x0_frominflow=x0_frominflow
             ) # [N, D].
-            x0, x1 = self._perm_batches(x0, x1)  # [N, D], [N, D]
+            x0, x1, time_taken = self._perm_batches(x0, x1)  # [N, D], [N, D]
             t = self._gen_t(batch_size=x1.size()[0]).unsqueeze(-1).to(x1.device)  # [N, 1]
             xt = t * x1 + (1 - t) * x0 + self.sigma * torch.randn_like(x1)
 
@@ -157,7 +181,7 @@ class ConditionalFlowMatcher:
             xt=xt,
             t=t[:,0],
             ten_batchEmb=ten_batchEmb
-        )
+        ), time_taken
 
 
 
