@@ -71,7 +71,7 @@ CTNCC_usage_moduledisent: "{'CT':modules.gnn_disentangler.ArchInsertionPoint.BAC
 #     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL: `CT` or `NCC` is fed to the spatial output head.
 
 
-dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_spl#0.0#True&varphi_enc_int#0.0#True&varphi_enc_spl#0.0#True&z#1.0#True&sin#1.0#True&sout#0.0#True"
+dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_spl#0.0#True&varphi_enc_int#0.0#True&varphi_enc_spl#0.0#True&z#0.0#True&sin#0.0#True&sout#0.0#True"
 # a set of strings separated by &, where each string specifies 1. the scale of the conditional likelihood of each variable in variational distribution and 2. Whether it's likelihood will be unweighted.
 # If the scale paramtetr comes form a module, that scale will override the scale number provided above.
 # For example 'sin#1.0#True' means the scale of the conditional varitial term for sin is set to 1.0, and the last part set as True implies that the likelihood is unweighted.
