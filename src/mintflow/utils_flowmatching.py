@@ -88,7 +88,7 @@ class ConditionalFlowMatcher:
         if self.mode_minibatchper == ModeMinibatchPerm.RANDOM:
             time_taken = 0.0
             return x0, x1, time_taken
-        
+
         elif self.mode_minibatchper == ModeMinibatchPerm.OT:
             t_tic = time.time()
             
@@ -97,11 +97,6 @@ class ConditionalFlowMatcher:
 
             new_x0 = x0 + 0.0
             new_x1 = x1[list_0_ot_1, :] + 0.0
-            
-            print("OT pairing for {} samples took {} seconds.".format(
-                x0.shape[0],
-                time.time() - t_tic
-            ))
 
             time_taken = time.time() - t_tic
 
