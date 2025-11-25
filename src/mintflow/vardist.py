@@ -852,7 +852,7 @@ class InFlowVarDist(nn.Module):
                     batch.INFLOWMETAINF['dim_u_int']+batch.INFLOWMETAINF['dim_u_spl']+batch.INFLOWMETAINF['dim_CT']+batch.INFLOWMETAINF['dim_NCC']+batch.INFLOWMETAINF['dim_BatchEmb']
                 ]
 
-                fm_loss, time_taken_OT_pairing = self.module_conditionalflowmatcher.get_fmloss(
+                dict_vectname_to_dict_fmloss_timetaken = self.module_conditionalflowmatcher.get_fmloss(
                     module_v=self.module_genmodel.module_Vflow_unwrapped,
                     x1=torch.cat(
                     [
@@ -873,19 +873,26 @@ class InFlowVarDist(nn.Module):
                         rng_batchemb[0]:rng_batchemb[1]
                     ][:batch.batch_size].to(list_ten_xy_absolute[0].device)
                 )
-                loss = loss + coef_flowmatchingloss*fm_loss
+
+                for vectname in dict_vectname_to_dict_fmloss_timetaken.keys():
+                    loss = loss + coef_flowmatchingloss * dict_vectname_to_dict_fmloss_timetaken[vectname]['fmloss']
 
                 if flag_tensorboardsave:
                     with torch.no_grad():
-                        wandb.log(
-                            {"Loss/FMloss (after mult by coef={})".format(coef_flowmatchingloss): coef_flowmatchingloss*fm_loss},
-                            step=itrcount_wandb
-                        )
+                        
+                        for vectname in dict_vectname_to_dict_fmloss_timetaken.keys():
 
-                        wandb.log(
-                            {"InspectVals/time_taken_OT_pairing": torch.tensor([time_taken_OT_pairing])},
-                            step=itrcount_wandb
-                        )
+                            wandb.log(
+                                {"Loss/FMloss {} (after mult by coef={})".format(vectname, coef_flowmatchingloss): coef_flowmatchingloss * dict_vectname_to_dict_fmloss_timetaken[vectname]['fmloss']},
+                                step=itrcount_wandb
+                            )
+
+                            wandb.log(
+                                {"InspectVals/{} time_taken_OT_pairing".format(vectname): torch.tensor([
+                                    dict_vectname_to_dict_fmloss_timetaken[vectname]['time_taken']
+                                ])},
+                                step=itrcount_wandb
+                            )
 
             # add P1 loss ===
             if self.coef_P1loss > 0.0:

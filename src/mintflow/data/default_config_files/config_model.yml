@@ -101,6 +101,7 @@ coef_flowmatchingloss: 10.0  # TODO:TUNE, if one uses inflow only for disentangl
 flowmatching_mode_samplex0: 'ModeSampleX0.FROMINFLOW'
 flowmatching_mode_minibatchper: 'ModeMinibatchPerm.RANDOM'
 kwargs_otsampler: "{'method':'exact'}"
+fmloss_combinationmode: "FMLossCombinationMode.ZSIN_SEPARATE"
 flowmatching_mode_timesched: 'ModeTimeSched.UNIFORM'
 flowmatching_sigma: 0.0
 flowmatching_mode_fmloss: 'ModeFMLoss.NOISEDIR'
