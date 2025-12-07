@@ -370,6 +370,7 @@ def setup_data(
     print("Customised neighbourloader sampler: computing some initial stats (max number of central nodes, etc) for each tissue.")
     list_maxsize_subgraph = []
     dict_slideID_to_maxnumcentralnodes, dict_slideID_to_worsecasebatchsize = {}, {}
+    dict_sliceID_to_pygdltrain_num_neighbours = {}
     for idx_sl, sl in enumerate(list_slice.list_slice):
         print("Tissue # {}".format(idx_sl+1))
         sl: Slice
@@ -402,7 +403,9 @@ def setup_data(
 
             dict_slideID_to_maxnumcentralnodes[list(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']])[0]] = pyg_neighloader_train.batch_sampler.get_maxnumpoints_insquare()
             dict_slideID_to_worsecasebatchsize[list(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']])[0]] = maxsize_subgraph
-
+            dict_sliceID_to_pygdltrain_num_neighbours[
+                list(sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']])[0]
+            ] = sl.kwargs_pygdl_train['num_neighbors']
 
     maxsize_subgraph = max(list_maxsize_subgraph)
 
@@ -432,7 +435,10 @@ def setup_data(
     return dict(
         train_list_tissue_section=list_slice,
         evaluation_list_tissue_section=test_list_slice,
-        maxsize_subgraph=maxsize_subgraph
+        maxsize_subgraph=maxsize_subgraph,
+        dict_slideID_to_maxnumcentralnodes=dict_slideID_to_maxnumcentralnodes,
+        dict_slideID_to_worsecasebatchsize=dict_slideID_to_worsecasebatchsize,
+        dict_sliceID_to_pygdltrain_num_neighbours=dict_sliceID_to_pygdltrain_num_neighbours
     )
 
 

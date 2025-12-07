@@ -153,7 +153,11 @@ class ConditionalFlowMatcher:
 
                 time_taken = time.time() - t_tic
 
-                dict_toret['Z'] = {'x0':x0[:, 0:D] + 0.0, 'x1':x1[list_0_ot_1, :][:, 0:D] + 0.0, 'time_taken':time_taken + 0.0}
+                dict_toret['Z'] = {
+                    'x0':x0 + 0.0,
+                    'x1':x1[list_0_ot_1, :] + 0.0,
+                    'time_taken':time_taken + 0.0
+                }  # here it doesn't slice dim 1, because the xt fed to the flow has to be 2D dimensional.
 
                 return dict_toret
 
@@ -175,7 +179,12 @@ class ConditionalFlowMatcher:
         else:
             raise NotImplementedError("ddd")
 
-    def _get_fmloss(self, module_v:neuralODE.MLP, x0, x1, xt, t, ten_batchEmb):
+    def _get_fmloss(self, module_v:neuralODE.MLP, x0, x1, xt, t, ten_batchEmb, str_vectname:str):
+        
+        # check str_vectname
+        assert isinstance(str_vectname, str)
+        str_vectname in ['Z', 'ZSin']
+
         # make ut
         if self.mode_fmloss == ModeFMLoss.NOISEDIR:
             ut = x1 - x0
@@ -197,6 +206,16 @@ class ConditionalFlowMatcher:
             x=xt,
             ten_BatchEmb=ten_batchEmb
         )
+
+        # take the 1st half (i.e. Z) if needed
+        if str_vectname == 'Z':
+            assert x0.size()[1] % 2 == 0
+            D = int(x0.size()[1] // 2)
+            vt = vt[:, 0:D]
+            ut = ut[:, 0:D]
+            
+
+
         return torch.mean(
             torch.sum(
                 (vt - ut) ** 2,
@@ -250,10 +269,13 @@ class ConditionalFlowMatcher:
                     x1=x1,
                     xt=xt,
                     t=t[:,0],
-                    ten_batchEmb=ten_batchEmb
+                    ten_batchEmb=ten_batchEmb,
+                    str_vectname=vectname
                 ),
                 'time_taken':time_taken
-            }
+            }  
+            # TODO: the flow doesn't currently take in the batch token, 
+            # If it does in the next versions, apply the mini-batch ordering on the batch embeddings as well.
 
 
         return dict_vectname_to_dict_fmloss_timetaken    
