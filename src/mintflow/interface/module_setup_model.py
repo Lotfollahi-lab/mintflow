@@ -136,7 +136,14 @@ def setup_model(
     # check the 2nd arg
     flag_isvalid_arg_mintflow_data = True
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow, dict)
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {'train_list_tissue_section', 'evaluation_list_tissue_section', 'maxsize_subgraph'}
+    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {
+        'train_list_tissue_section',
+        'evaluation_list_tissue_section',
+        'maxsize_subgraph',
+        'dict_slideID_to_maxnumcentralnodes',
+        'dict_slideID_to_worsecasebatchsize',
+        'dict_sliceID_to_pygdltrain_num_neighbours'
+    }
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['train_list_tissue_section'], utils_multislice.ListSlice)
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['evaluation_list_tissue_section'], utils_multislice.ListSlice)
     maxsize_subgraph = data_mintflow['maxsize_subgraph']
