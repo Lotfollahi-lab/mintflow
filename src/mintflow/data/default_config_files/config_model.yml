@@ -237,7 +237,7 @@ module_predictor_P3loss: >  # the predictor module for the above loss term. # TO
 str_modeP3loss_regorcls: 'reg'  # specifies if the above loss term is regression or classification loss. Recommended: reg
 
 
-anneal_logp_ZSout_coef_min: 0.5
+anneal_logp_ZSout_coef_min: 1.0
 anneal_logp_ZSout_coef_max: 1.0
 anneal_logp_ZSout_num_cycles: "0"  # can be an integer or "np.inf"
 anneal_logp_ZSout_numepochs_in_cycle: 50

@@ -29,7 +29,7 @@ num_updateseparate_afterGRLs: 5  # TODO:TUNE, TODO: make important notes about h
 
 
 annealing_decoder_XintXspl_coef_min: 0.00001  # TODO:check, TODO:internalcheck: recomm a good setting
-annealing_decoder_XintXspl_coef_max: 0.001  # TODO:check, TODO:internalcheck: recomm a good setting
+annealing_decoder_XintXspl_coef_max: 0.1  # TODO:check, TODO:internalcheck: recomm a good setting
 annealing_decoder_XintXspl_fractionepochs_phase1: 0.5  # TODO:check, TODO:internalcheck: recomm a good setting
 annealing_decoder_XintXspl_fractionepochs_phase2: 0.2  # TODO:check, TODO:internalcheck: recomm a good setting
 # Above: four VERY IMPORTANT parameters that specify the annealing for the decoder ZINB loss of Xint and Xspl (please refer to the manuscript to the discussion about why this is needed).
