@@ -12,9 +12,10 @@ def _errormsg_config_data(fname_config_data, key_raisederror):
         key_raisederror,
         fname_config_data
     )
-    toret = toret + "Please refer to TODO: for sample file config_data_train.yml, and double check the config file that you have provided {}.".format(
+    toret = toret + "Please refer to sample file config_data_train.yml, and double check the config file that you have provided {}.".format(
         fname_config_data
     )
+    
     return toret
 
 
@@ -98,15 +99,28 @@ def verify_and_postprocess_config_data_train(dict_config_data, fname_config_data
             raise Exception(
                 _errormsg_config_data(
                     fname_config_data=fname_config_data,
-                    key_raisederror=key_sample
+                    key_raisederror=key_sample,
                 )
             )
 
         if set(dict_config_data['list_tissue'][key_sample].keys()) != set_keys_eachanndata:
+            str_exact_error = "\npossibly missing: {}, \n".format(
+                set_keys_eachanndata.difference(
+                    set(dict_config_data['list_tissue'][key_sample].keys())
+                )
+            )
+            str_exact_error += "\npossibly redundant: , \n".format(
+                set(dict_config_data['list_tissue'][key_sample].keys()).difference(
+                    set_keys_eachanndata
+                )
+            )
             raise Exception(
                 _errormsg_config_data(
                     fname_config_data=fname_config_data,
-                    key_raisederror=" some fields under {}.".format(key_sample)
+                    key_raisederror=" some fields under {} (in specific, {}).".format(
+                        key_sample,
+                        str_exact_error
+                    )
                 )
             )
 

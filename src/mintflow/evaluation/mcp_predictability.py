@@ -1,4 +1,5 @@
 
+
 '''
 Implements a
 '''
@@ -52,7 +53,7 @@ class ListGeneMicScore:
         :return:
         """
         if list_ens_ID is None:
-            assert list_gene_name is not None
+            assert list_gene_name is not None, print("Both list_ens_ID and list_gene_name are set to None.")
             assert isinstance(list_gene_name, list)
         else:
             assert isinstance(list_ens_ID, list)
@@ -91,7 +92,7 @@ class ListGeneMicScore:
         assert sparse.issparse(Xmic_before_scppnormalizetotal)
 
         # query genes in this collection
-        dict_map_idxincollection_to_idxininput, dict_map_idxininput_to_idxincollection = self.retrieve_existing_genes(
+        _, dict_map_idxininput_to_idxincollection = self.retrieve_existing_genes(
             list_ens_ID=list_ens_ID,
             list_gene_name=list_gene_name
         )
@@ -113,16 +114,20 @@ class ListGeneMicScore:
         # compute r2scores
         np_r2score_amongfoundgenes = np.array([
             self.list_genemicscore[dict_map_idxininput_to_idxincollection[idx_ininput]].score for idx_ininput in list_idx_selgene
-        ])  # [num_selgenes]
+        ])  # [num_selgenes], the micscore of the genes found in the collection
+
         np_r2score_amongfoundgenes = np.stack(
             X_before_scppnormalizetotal.shape[0]*[np_r2score_amongfoundgenes],
             0
         )  # [N x num_selgenes] and dense
 
         # compute fraction of readcount assigned to Xmic
-        fraction_Xmic = np.array(
-            Xmic_before_scppnormalizetotal / (Xint_before_scppnormalizetotal + Xmic_before_scppnormalizetotal)
-        )  # [N x num_selgenes] and dense
+        assert sparse.issparse(Xmic_before_scppnormalizetotal)
+        assert sparse.issparse(Xint_before_scppnormalizetotal)
+
+        fraction_Xmic = \
+            np.array(Xmic_before_scppnormalizetotal) / np.array(Xint_before_scppnormalizetotal + Xmic_before_scppnormalizetotal)
+        # [N x num_selgenes] and dense
 
         # get ens_ID-s and gene_name-s
         list_idxincollection = [
@@ -146,11 +151,7 @@ class ListGeneMicScore:
 
 
 
-
-
         # create the dataframe toreturn
-
-
         df_toret = pd.DataFrame(
             np.stack([
                 X_before_scppnormalizetotal.toarray()[mask_readcount],
@@ -176,6 +177,7 @@ class ListGeneMicScore:
         df_toret['base_evaluation.EvalDFColname.gene_ens_ID'] = df_toret['base_evaluation.EvalDFColname.gene_ens_ID'].astype('category')
         df_toret['base_evaluation.EvalDFColname.gene_name'] = df_toret['base_evaluation.EvalDFColname.gene_name'].astype('category')
 
+        assert False # TODO:HERE, above, shouldn't it be base_evaluation.XXX.YYY without ''-s ???
 
         return df_toret
 
@@ -219,7 +221,7 @@ def func_get_map_geneidx_to_R2(
 
     np_edge_index = edge_index.detach().cpu().numpy()  # [2 x num_edges]  and for each i,j it contains both [i,j] and [j,i]
 
-    # compute `dict_nodeindex_to_listX` and `dict_nodeindex_to_nodedegree`
+    # compute `dict_nodeindex_to_listX`
     set_ij = set([
         "{}_{}".format(np_edge_index[0, n], np_edge_index[1, n]) for n in range(np_edge_index.shape[1])
     ])
@@ -227,18 +229,20 @@ def func_get_map_geneidx_to_R2(
     for ij in tqdm(set_ij, desc="Analysing the neighbourhood graph"):
         i, j = ij.split("_")
         i, j = int(i), int(j)
+        assert i != j
         dict_nodeindex_to_listX[i].append(
             adata.X[j, :]
         )
 
-    dict_nodeindex_to_nodedegree = {
-        nodeindex: len(dict_nodeindex_to_listX[nodeindex])
-        for nodeindex in range(adata.shape[0])
-    }
+    # dict_nodeindex_to_nodedegree = {
+    #     nodeindex: len(dict_nodeindex_to_listX[nodeindex])
+    #     for nodeindex in range(adata.shape[0])
+    # }
 
     for nodeindex in tqdm(range(adata.shape[0]), desc='Precomputing regression input'):
-        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(dict_nodeindex_to_listX[nodeindex])[:, 0:adata.shape[1]*kwargs_compute_graph['n_neighs']]  # [1 x num_genes*num_NNs]
-
+        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(
+            dict_nodeindex_to_listX[nodeindex]
+        )[:, 0:adata.shape[1]*kwargs_compute_graph['n_neighs']]  # [1 x num_genes*num_NNs]
 
 
     # loop over genes and compute R2 scores

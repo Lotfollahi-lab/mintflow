@@ -111,7 +111,7 @@ class ConditionalFlowMatcher:
                 }
             elif self.fmloss_combinationmode == FMLossCombinationMode.ZSIN_SEPARATE:
                 return {
-                    "Z":{'x0':x0[:, 0:D], 'x1':x1[:, 0:D], 'time_taken':0.0},
+                    "Z":{'x0':x0, 'x1':x1, 'time_taken':0.0},
                     "ZSin":{'x0':x0, 'x1':x1, 'time_taken':0.0}
                 }
             else:
