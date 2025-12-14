@@ -18,6 +18,7 @@ from torch_geometric.utils.convert import from_scipy_sparse_matrix
 import pickle
 import cupy as cp
 from cuml.ensemble import RandomForestRegressor as cuRF
+from cuml.decomposition import PCA
 
 
 
@@ -328,8 +329,12 @@ def func_get_map_geneidx_to_R2(
             Y = all_Y[list_idx_train]
 
             # fit and transform scalars X and Y 
-            scaler_x = StandardScaler()
+            # scaler_x = StandardScaler()
             # scaler_y = StandardScaler()
+            scaler_x = Pipeline([
+                ('pca', PCA(n_components=100)),
+                ('scaler', StandardScaler())
+            ])
 
             scaler_x.fit(cp.asarray(X))
             # scaler_y.fit(cp.asarray(Y))
