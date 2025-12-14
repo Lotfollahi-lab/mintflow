@@ -8,6 +8,7 @@ import gc
 import os, sys
 import numpy as np
 import pandas as pd
+import pickle
 import torch
 import scanpy as sc
 from scipy import sparse
@@ -15,9 +16,20 @@ import squidpy as sq
 import torch_geometric as pyg
 from torch_geometric.utils.convert import from_scipy_sparse_matrix
 import pickle
+import cupy as cp
+from cuml.ensemble import RandomForestRegressor as cuRF
+
+
 
 from tqdm.autonotebook import tqdm
-from sklearn.linear_model import LinearRegression
+
+# from sklearn.linear_model import LinearRegression
+from cuml.linear_model import LinearRegression
+from cuml.pipeline import Pipeline
+from cuml.preprocessing import StandardScaler
+from cuml.linear_model import Ridge
+
+
 import time
 from dataclasses import dataclass
 
@@ -239,6 +251,10 @@ def func_get_map_geneidx_to_R2(
     #     for nodeindex in range(adata.shape[0])
     # }
 
+    # at this point `dict_nodeindex_to_listX[nodeindex]` is a list of lenght ~ num_NNs and of shape [1 x num_genes] 
+    # So the output of `sparse.hstack` below, specially after the final slicing is `[1 x num_genes*num_NNs]`
+    #   For each node, `dict_nodeindex_to_listX[nodeindex]` contains the input to the regression model to compute the R^2 score.
+
     for nodeindex in tqdm(range(adata.shape[0]), desc='Precomputing regression input'):
         dict_nodeindex_to_listX[nodeindex] = sparse.hstack(
             dict_nodeindex_to_listX[nodeindex]
@@ -247,7 +263,18 @@ def func_get_map_geneidx_to_R2(
 
     # loop over genes and compute R2 scores
     list_r2score = []
-    for idx_gene in tqdm(range(adata.shape[1])):
+    precomputed_all_X = sparse.vstack(
+        [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
+    ).toarray()  # [N x num_genes*num_NNs]
+
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    
+    max_r2socre_sofar = -np.inf
+    for idx_gene in tqdm(range(adata.shape[1]), desc='Going through different genes'):
         t_begin = time.time()
 
         # deterimine if calculation has to be done.
@@ -261,16 +288,14 @@ def func_get_map_geneidx_to_R2(
             continue
 
         # create all_X and all_Y
-        all_X = sparse.vstack(
-            [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
-        ).toarray()  # [N x num_genes*num_NNs]
+        all_X = precomputed_all_X + 0.0 # [N x num_genes*num_NNs]
 
         if flag_drop_the_targetgene_from_input:
             list_idx_keep = [u for u in set(range(all_X.shape[1])) if u%adata.shape[1] != idx_gene]
             # print("len(list_idx_keep) = {}".format(len(list_idx_keep)))
             all_X = all_X[:, list_idx_keep]
 
-        all_Y = adata.X[:, idx_gene].toarray() # np.array([float(adata.X[n, idx_gene]) for n in range(adata.X.shape[0])])
+        all_Y = adata.X[:, idx_gene].toarray() + 0.0 # np.array([float(adata.X[n, idx_gene]) for n in range(adata.X.shape[0])])
 
         # split X and Y to train/test
         randperm_N = np.random.permutation(adata.shape[0])
@@ -280,15 +305,74 @@ def func_get_map_geneidx_to_R2(
 
         # print("all_X.shape = {}".format(all_X.shape))
 
-        reg = LinearRegression()
-        reg.fit(
-            all_X[list_idx_train, :],
-            all_Y[list_idx_train]
+        # reg = Pipeline([
+        #     ('scaler', StandardScaler()),
+        #     ('regressor', LinearRegression(algorithm='eig', fit_intercept=True))
+        # ])
+
+        # reg = LinearRegression(algorithm='eig', fit_intercept=True)
+        # reg = Ridge(alpha=1.0)
+        reg = cuRF(
+            n_estimators=100,
+            max_depth=10,
+            random_state=42
         )
-        r2_score = reg.score(
-            all_X[list_idx_test, :],
-            all_Y[list_idx_test]
-        )
+
+
+        print(" >>>>>> reached here")
+
+        if True: #try:
+
+            # get X and Y
+            X = all_X[list_idx_train, :]
+            Y = all_Y[list_idx_train]
+
+            # fit and transform scalars X and Y 
+            scaler_x = StandardScaler()
+            # scaler_y = StandardScaler()
+
+            scaler_x.fit(cp.asarray(X))
+            # scaler_y.fit(cp.asarray(Y))
+
+            X_tfmed = scaler_x.transform(cp.asarray(X))
+            Y_tfmed = cp.asarray(Y)  # scaler_y.transform(cp.asarray(Y))
+            assert isinstance(X_tfmed, cp.ndarray)
+            assert isinstance(X_tfmed, cp.ndarray)
+
+            reg.fit(
+                X_tfmed,
+                Y_tfmed
+            )
+
+            X_test = scaler_x.transform(
+                cp.asarray(all_X[list_idx_test, :])
+            )
+            Y_test = cp.asarray(all_Y[list_idx_test])
+            assert isinstance(X_test, cp.ndarray)
+            assert isinstance(Y_test, cp.ndarray)
+
+            r2_score = reg.score(
+                X_test,
+                Y_test
+            )
+
+
+            max_r2socre_sofar = max(max_r2socre_sofar, r2_score)
+
+
+            print("Fit and got the score succesfully for a gene at least :D  = {} \n     {}".format(
+                r2_score,
+                reg.score(X_tfmed, Y_tfmed)
+            ))
+
+            print(">>>>>>>> max so far = {}".format(max_r2socre_sofar))
+            
+        # except:
+
+        #     r2_score = None
+        #     print("      >>> .fit failed")
+
+
 
         if path_incremental_dump is None:
             list_r2score.append(r2_score)
@@ -306,7 +390,7 @@ def func_get_map_geneidx_to_R2(
                     f
                 )
 
-        del all_X
+        del all_X, all_Y
         gc.collect()
         gc.collect()
         gc.collect()
