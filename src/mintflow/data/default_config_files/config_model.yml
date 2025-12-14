@@ -71,7 +71,7 @@ CTNCC_usage_moduledisent: "{'CT':modules.gnn_disentangler.ArchInsertionPoint.BAC
 #     - mintflow.modules.gnn_disentangler.ArchInsertionPoint.HEADSPL: `CT` or `NCC` is fed to the spatial output head.
 
 
-dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_spl#0.0#True&varphi_enc_int#0.0#True&varphi_enc_spl#0.0#True&z#1.0#True&sin#1.0#True&sout#0.0#True"
+dict_qname_to_scaleandunweighted: "impanddisentgl_int#0.1#True&impanddisentgl_spl#0.0#True&varphi_enc_int#0.0#True&varphi_enc_spl#0.0#True&z#0.0#True&sin#0.0#True&sout#0.0#True"
 # a set of strings separated by &, where each string specifies 1. the scale of the conditional likelihood of each variable in variational distribution and 2. Whether it's likelihood will be unweighted.
 # If the scale paramtetr comes form a module, that scale will override the scale number provided above.
 # For example 'sin#1.0#True' means the scale of the conditional varitial term for sin is set to 1.0, and the last part set as True implies that the likelihood is unweighted.
@@ -100,6 +100,8 @@ flag_enable_batchtoken_disentangler: 'True'
 coef_flowmatchingloss: 10.0  # TODO:TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
 flowmatching_mode_samplex0: 'ModeSampleX0.FROMINFLOW'
 flowmatching_mode_minibatchper: 'ModeMinibatchPerm.RANDOM'
+kwargs_otsampler: "{'method':'exact'}"
+fmloss_combinationmode: "FMLossCombinationMode.ZSIN_SEPARATE"
 flowmatching_mode_timesched: 'ModeTimeSched.UNIFORM'
 flowmatching_sigma: 0.0
 flowmatching_mode_fmloss: 'ModeFMLoss.NOISEDIR'
@@ -235,7 +237,7 @@ module_predictor_P3loss: >  # the predictor module for the above loss term. # TO
 str_modeP3loss_regorcls: 'reg'  # specifies if the above loss term is regression or classification loss. Recommended: reg
 
 
-anneal_logp_ZSout_coef_min: 0.5
+anneal_logp_ZSout_coef_min: 1.0
 anneal_logp_ZSout_coef_max: 1.0
 anneal_logp_ZSout_num_cycles: "0"  # can be an integer or "np.inf"
 anneal_logp_ZSout_numepochs_in_cycle: 50

@@ -65,7 +65,7 @@ from ..modules.disentonly import Disentangler # exec('from {}.modules.disentonly
 from ..modules.disentonly_twosep import DisentanglerTwoSep # exec('from {}.modules.disentonly_twosep import DisentanglerTwoSep'.format(STR_INFLOW_OR_INFLOW_SYNTH))
 from ..zs_samplers import RandomZSSampler, PerCelltypeZSSampler #exec('from {}.zs_samplers import RandomZSSampler, PerCelltypeZSSampler'.format(STR_INFLOW_OR_INFLOW_SYNTH))
 from ..predadjmat import ListAdjMatPredLoss, AdjMatPredLoss #  exec('from {}.predadjmat import ListAdjMatPredLoss, AdjMatPredLoss'.format(STR_INFLOW_OR_INFLOW_SYNTH))
-from ..utils_flowmatching import ModeSampleX0, ModeMinibatchPerm, ModeTimeSched, ModeFMLoss, ConditionalFlowMatcher
+from ..utils_flowmatching import ModeSampleX0, ModeMinibatchPerm, ModeTimeSched, ModeFMLoss, ConditionalFlowMatcher, FMLossCombinationMode
 
 from ..modules.cond4flow import Cond4FlowVarphi0
 
@@ -136,7 +136,14 @@ def setup_model(
     # check the 2nd arg
     flag_isvalid_arg_mintflow_data = True
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow, dict)
-    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {'train_list_tissue_section', 'evaluation_list_tissue_section', 'maxsize_subgraph'}
+    flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and set(data_mintflow.keys()) == {
+        'train_list_tissue_section',
+        'evaluation_list_tissue_section',
+        'maxsize_subgraph',
+        'dict_slideID_to_maxnumcentralnodes',
+        'dict_slideID_to_worsecasebatchsize',
+        'dict_sliceID_to_pygdltrain_num_neighbours'
+    }
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['train_list_tissue_section'], utils_multislice.ListSlice)
     flag_isvalid_arg_mintflow_data = flag_isvalid_arg_mintflow_data and isinstance(data_mintflow['evaluation_list_tissue_section'], utils_multislice.ListSlice)
     maxsize_subgraph = data_mintflow['maxsize_subgraph']
@@ -696,10 +703,11 @@ def setup_model(
         module_conditionalflowmatcher=ConditionalFlowMatcher(
             mode_samplex0=flowmatching_mode_samplex0,
             mode_minibatchper=flowmatching_mode_minibatchper,
-            kwargs_otsampler={}, #TODO: maybe add mini-batch OT
+            kwargs_otsampler=eval(config_model['kwargs_otsampler']), #TODO: maybe add mini-batch OT
             mode_timesched=flowmatching_mode_timesched,
             sigma=config_model['flowmatching_sigma'],
-            mode_fmloss=flowmatching_mode_fmloss
+            mode_fmloss=flowmatching_mode_fmloss,
+            fmloss_combinationmode=eval(config_model['fmloss_combinationmode'])
         ),
         coef_P1loss=config_model['coef_loss_CTpredfromZ'], # config_model['coef_P1loss'],
         module_classifier_P1loss=module_classifier_P1loss,

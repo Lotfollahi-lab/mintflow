@@ -61,7 +61,10 @@ def check_arg_data_mintflow(data_mintflow):
     flag_isvalid = flag_isvalid and set(data_mintflow.keys()) == {
         'train_list_tissue_section',
         'evaluation_list_tissue_section',
-        'maxsize_subgraph'
+        'maxsize_subgraph',
+        'dict_slideID_to_maxnumcentralnodes',
+        'dict_slideID_to_worsecasebatchsize',
+        'dict_sliceID_to_pygdltrain_num_neighbours'
     }
     flag_isvalid = flag_isvalid and isinstance(
         data_mintflow['train_list_tissue_section'],
