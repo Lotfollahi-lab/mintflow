@@ -268,6 +268,7 @@ def func_get_map_geneidx_to_R2(
     num_PCA_components,
     flag_drop_the_targetgene_from_input:bool,
     perc_trainsplit:int,
+    perc_testsplit:int,
     flag_verbose:bool=False,
     path_incremental_dump=None
 ):
@@ -329,7 +330,7 @@ def func_get_map_geneidx_to_R2(
     list_r2score = []
     precomputed_all_X = sparse.vstack(
         [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
-    ).toarray()  # [N x num_genes*num_NNs]
+    )  # [N x num_genes*num_NNs]
 
     gc.collect()
     gc.collect()
@@ -364,8 +365,15 @@ def func_get_map_geneidx_to_R2(
         # split X and Y to train/test
         randperm_N = np.random.permutation(adata.shape[0])
         N_train = int((perc_trainsplit/100.0) * adata.shape[0])
+        N_test  = int((perc_testsplit/100.0) * adata.shape[0])
         list_idx_train = randperm_N[0:N_train]
-        list_idx_test  = randperm_N[N_train:]
+        list_idx_test  = randperm_N[N_train:N_train+N_test]
+
+        if flag_verbose:
+            print("{} and {} cells were selected for training and testing.".format(
+                len(list_idx_train),
+                len(list_idx_test)
+            ))
 
 
         # reg = Pipeline([
@@ -377,7 +385,7 @@ def func_get_map_geneidx_to_R2(
         # reg = Ridge(alpha=1.0)
         reg = cuRF(
             n_estimators=100,
-            max_depth=10,
+            max_depth=16,
             random_state=42
         )
         
@@ -385,36 +393,58 @@ def func_get_map_geneidx_to_R2(
         try:
 
             # get X and Y
-            X = all_X[list_idx_train, :]
-            Y = all_Y[list_idx_train]
+            X = all_X[list_idx_train, :].toarray() + 0.0
+            Y = all_Y[list_idx_train] + 0.0
 
-            # fit and transform scalars X and Y 
+            print("selected X and Y of shapes {} and {}".format(X.shape, Y.shape))
+
+            # X and Y, X_test and Y_test 
             scaler_x = Pipeline([
                 ('pca', SplitDimPCA(n_components=num_PCA_components, num_NNs=kwargs_compute_graph['n_neighs'])),
                 ('scaler', StandardScaler())
             ])
             scaler_x.fit(cp.asarray(X))
+
+            print("Fitted `scaler_x`.")
+
             X_tfmed = scaler_x.transform(cp.asarray(X))
+
+            print("Transformed X.")
+
             Y_tfmed = cp.asarray(Y)
             assert isinstance(X_tfmed, cp.ndarray)
             assert isinstance(X_tfmed, cp.ndarray)
+
+            X_test = scaler_x.transform(
+                cp.asarray(all_X[list_idx_test, :].toarray() + 0.0)
+            )
+            print("Transformed X_test.")
+
+            Y_test = cp.asarray(all_Y[list_idx_test] + 0.0)
+            assert isinstance(X_test, cp.ndarray)
+            assert isinstance(Y_test, cp.ndarray)
+
+            del all_X, all_Y
+            gc.collect()
+            gc.collect()
+            gc.collect()
+            gc.collect()
 
             # fit to train and transform test
             reg.fit(
                 X_tfmed,
                 Y_tfmed
             )
-            X_test = scaler_x.transform(
-                cp.asarray(all_X[list_idx_test, :])
-            )
-            Y_test = cp.asarray(all_Y[list_idx_test])
-            assert isinstance(X_test, cp.ndarray)
-            assert isinstance(Y_test, cp.ndarray)
+            
+            print("Fitted the cuRF predictor")
 
+            # get the scroe
             r2_score = reg.score(
                 X_test,
                 Y_test
             )
+
+            print("Computed the r2 score.")
 
 
             max_r2socre_sofar = max(max_r2socre_sofar, r2_score)
@@ -451,10 +481,6 @@ def func_get_map_geneidx_to_R2(
                     f
                 )
 
-        del all_X, all_Y
-        gc.collect()
-        gc.collect()
-        gc.collect()
-        gc.collect()
+        
 
     return list_r2score if (path_incremental_dump is not None) else None
