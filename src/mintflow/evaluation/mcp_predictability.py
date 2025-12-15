@@ -195,6 +195,67 @@ class ListGeneMicScore:
         return df_toret
 
 
+class SplitDimPCA:
+    def __init__(self, n_components:int, num_NNs:int):
+        # grab args
+        self.num_NNs = num_NNs
+
+        # create as many pca's as `num_NNs`
+        self.list_pca = [
+            PCA(n_components=n_components) for _ in range(num_NNs)
+        ]
+
+    def fit(self, X:cp.ndarray, y=None):
+        assert isinstance(X, cp.ndarray)
+        assert y is None
+        assert X.shape[1] % self.num_NNs == 0
+
+        Gmin1 = X.shape[1] // self.num_NNs  # i.e. number of genes minus one
+
+        for idx_pca in range(self.num_NNs):
+            self.list_pca[idx_pca].fit(
+                X[:, idx_pca*Gmin1 : (idx_pca+1)*Gmin1]
+            )
+    
+    def fit_transform(self, X:cp.ndarray, y=None):
+        assert isinstance(X, cp.ndarray)
+        assert y is None
+        assert X.shape[1] % self.num_NNs == 0
+
+        self.fit(X)
+
+        Gmin1 = X.shape[1] // self.num_NNs  # i.e. number of genes minus one
+
+        list_toret = []
+        for idx_pca in range(self.num_NNs):
+            list_toret.append(
+                self.list_pca[idx_pca].transform(
+                    X[:, idx_pca*Gmin1 : (idx_pca+1)*Gmin1]
+                )
+            )
+        
+
+        return cp.concatenate(list_toret, 1)
+
+
+    def transform(self, X:cp.ndarray, y=None):
+        assert isinstance(X, cp.ndarray)
+        assert y is None
+        assert X.shape[1] % self.num_NNs == 0
+
+        Gmin1 = X.shape[1] // self.num_NNs  # i.e. number of genes minus one
+
+        list_toret = []
+        for idx_pca in range(self.num_NNs):
+            list_toret.append(
+                self.list_pca[idx_pca].transform(
+                    X[:, idx_pca*Gmin1 : (idx_pca+1)*Gmin1]
+                )
+            )
+
+        return cp.concatenate(list_toret, 1)
+            
+
 
 
 
@@ -204,8 +265,10 @@ def func_get_map_geneidx_to_R2(
     obskey_spatial_x,
     obskey_spatial_y,
     kwargs_compute_graph,
+    num_PCA_components,
     flag_drop_the_targetgene_from_input:bool,
-    perc_trainsplit:int=50,
+    perc_trainsplit:int,
+    flag_verbose:bool=False,
     path_incremental_dump=None
 ):
     """
@@ -304,7 +367,6 @@ def func_get_map_geneidx_to_R2(
         list_idx_train = randperm_N[0:N_train]
         list_idx_test  = randperm_N[N_train:]
 
-        # print("all_X.shape = {}".format(all_X.shape))
 
         # reg = Pipeline([
         #     ('scaler', StandardScaler()),
@@ -318,37 +380,30 @@ def func_get_map_geneidx_to_R2(
             max_depth=10,
             random_state=42
         )
+        
 
-
-        print(" >>>>>> reached here")
-
-        if True: #try:
+        try:
 
             # get X and Y
             X = all_X[list_idx_train, :]
             Y = all_Y[list_idx_train]
 
             # fit and transform scalars X and Y 
-            # scaler_x = StandardScaler()
-            # scaler_y = StandardScaler()
             scaler_x = Pipeline([
-                ('pca', PCA(n_components=100)),
+                ('pca', SplitDimPCA(n_components=num_PCA_components, num_NNs=kwargs_compute_graph['n_neighs'])),
                 ('scaler', StandardScaler())
             ])
-
             scaler_x.fit(cp.asarray(X))
-            # scaler_y.fit(cp.asarray(Y))
-
             X_tfmed = scaler_x.transform(cp.asarray(X))
-            Y_tfmed = cp.asarray(Y)  # scaler_y.transform(cp.asarray(Y))
+            Y_tfmed = cp.asarray(Y)
             assert isinstance(X_tfmed, cp.ndarray)
             assert isinstance(X_tfmed, cp.ndarray)
 
+            # fit to train and transform test
             reg.fit(
                 X_tfmed,
                 Y_tfmed
             )
-
             X_test = scaler_x.transform(
                 cp.asarray(all_X[list_idx_test, :])
             )
@@ -363,19 +418,20 @@ def func_get_map_geneidx_to_R2(
 
 
             max_r2socre_sofar = max(max_r2socre_sofar, r2_score)
-
-
-            print("Fit and got the score succesfully for a gene at least :D  = {} \n     {}".format(
-                r2_score,
-                reg.score(X_tfmed, Y_tfmed)
-            ))
-
-            print(">>>>>>>> max so far = {}".format(max_r2socre_sofar))
             
-        # except:
+            if flag_verbose:
+                print("Fit and got the score succesfully, scores on training and testing: {} \n     {}".format(
+                    r2_score,
+                    reg.score(X_tfmed, Y_tfmed)
+                ))
 
-        #     r2_score = None
-        #     print("      >>> .fit failed")
+                print(">>>>>>>> max so far = {}\n\n".format(max_r2socre_sofar))
+            
+        except:
+            r2_score = None
+            
+            if flag_verbose:
+                print("      >>> .fit failed")
 
 
 
@@ -402,4 +458,3 @@ def func_get_map_geneidx_to_R2(
         gc.collect()
 
     return list_r2score if (path_incremental_dump is not None) else None
-
