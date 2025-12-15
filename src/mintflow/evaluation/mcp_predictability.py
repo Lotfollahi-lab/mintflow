@@ -396,7 +396,6 @@ def func_get_map_geneidx_to_R2(
             X = all_X[list_idx_train, :].toarray() + 0.0
             Y = all_Y[list_idx_train] + 0.0
 
-            print("selected X and Y of shapes {} and {}".format(X.shape, Y.shape))
 
             # X and Y, X_test and Y_test 
             scaler_x = Pipeline([
@@ -405,11 +404,8 @@ def func_get_map_geneidx_to_R2(
             ])
             scaler_x.fit(cp.asarray(X))
 
-            print("Fitted `scaler_x`.")
-
             X_tfmed = scaler_x.transform(cp.asarray(X))
 
-            print("Transformed X.")
 
             Y_tfmed = cp.asarray(Y)
             assert isinstance(X_tfmed, cp.ndarray)
@@ -418,7 +414,7 @@ def func_get_map_geneidx_to_R2(
             X_test = scaler_x.transform(
                 cp.asarray(all_X[list_idx_test, :].toarray() + 0.0)
             )
-            print("Transformed X_test.")
+            
 
             Y_test = cp.asarray(all_Y[list_idx_test] + 0.0)
             assert isinstance(X_test, cp.ndarray)
@@ -436,15 +432,13 @@ def func_get_map_geneidx_to_R2(
                 Y_tfmed
             )
             
-            print("Fitted the cuRF predictor")
 
             # get the scroe
             r2_score = reg.score(
                 X_test,
                 Y_test
             )
-
-            print("Computed the r2 score.")
+            
 
 
             max_r2socre_sofar = max(max_r2socre_sofar, r2_score)
@@ -480,7 +474,6 @@ def func_get_map_geneidx_to_R2(
                     },
                     f
                 )
-
-        
+    
 
     return list_r2score if (path_incremental_dump is not None) else None
