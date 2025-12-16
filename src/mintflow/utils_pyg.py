@@ -51,11 +51,14 @@ class PygSTDataGridBatchSampler(Sampler):
             yield batch
 
     @torch.no_grad()
-    def _get_batchlist(self, eps_dilatewin=10.0):
+    def _get_batchlist(self):
         '''
         Places a grid on the xy position with a random offset.
         If the window is non-empty, it creates a batch for it.
         '''
+
+        eps_dilatewin = 0.0
+
         if not self.flag_disable_randoffset:
             offset_x, offset_y = int(np.random.rand() * self.width_window), int(np.random.rand() * self.width_window)
         else:
@@ -100,11 +103,14 @@ class PygSTDataGridBatchSampler(Sampler):
         return list_batch
 
     @torch.no_grad()
-    def get_maxnumpoints_insquare(self, eps_dilatewin=10.0):
+    def get_maxnumpoints_insquare(self):
         '''
         Computes the maximal number of cells within any window.
         The idea is that it puts the corner of a window on each cell position and reports the maximum number.
         '''
+        
+        eps_dilatewin = 0.0
+
         max_numpoints = -np.inf
         for n in tqdm(range(self.ten_xy.size()[0])):
             x, y = self.ten_xy[n, 0].detach().cpu().numpy().tolist(), self.ten_xy[
