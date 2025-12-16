@@ -47,8 +47,16 @@ class ExtenededNormal:
         if ten_in.size() == self.loc.size():
             num_samples = None
         else:
+            # print(">>>>>>>>>>>>>>>> ")
             # print("ten_in.size() = {}".format(ten_in.size()))
             # print("self.loc.size() = {}".format(self.loc.size()))
+
+            """
+            >>>>>>>>>>>>>>>> 
+            ten_in.size() = torch.Size([11, 100])
+            self.loc.size() = torch.Size([10, 100])
+            """
+
             assert(
                 len(ten_in.size()) == (len(self.loc.size())+1)
             )
