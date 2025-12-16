@@ -113,6 +113,22 @@ from .auxiliary_modules import *
 from ..anneal_decoder_xintxspl import AnnealingDecoderXintXspl
 
 
+def _func_doeshave_isolated_nodes_inneighgraph(adata_input:anndata.AnnData):
+    """
+    Checks if the neighbourhood graph of the provided anndata contain isolated cells, 
+    i.e. cells with no neighbours. This is an issue for MintFlow and has to be avoided.
+    :param adata_input: Description
+    :type adata_input: anndata.AnnData
+    """
+    assert isinstance(adata_input, anndata.AnnData)
+    connectivities = adata_input.obsp['spatial_connectivities']
+    node_degree = np.sum(connectivities, axis=1).A1
+
+    isolated_nodes_mask = node_degree == 0
+    number_of_isolated_nodes = np.sum(isolated_nodes_mask)
+
+    return number_of_isolated_nodes > 0, number_of_isolated_nodes
+
 def setup_data(
     dict_all4_configs,
     flag_verbose=True,
@@ -158,6 +174,8 @@ def setup_data(
         else:
             if args.flag_verbose:
                 print("    >>> also checked that anndata.X contains count data.")
+
+
 
         del fname_adata_temp, adata_temp
         gc.collect()
@@ -328,6 +346,21 @@ def setup_data(
                 sl.adata.shape[0]
             ))
         print("\n\n")
+
+    # check for isolated cells in the neighbourhood graph
+    for sl in list_slice.list_slice + test_list_slice.list_slice:
+        flag_has_isolated_nodes, number_of_isolated_nodes = _func_doeshave_isolated_nodes_inneighgraph(adata_input=sl.adata)
+
+        if flag_has_isolated_nodes:
+            raise Exception(
+                "For the anndata with identifier `adata.obs['{}'] = {}`, the created neighbourhood graph contains {} isolated cells, i.e. cells with no neighbours.\n".format(
+                    sl.dict_obskey['sliceid_to_checkUnique'],
+                    sl.adata.obs[sl.dict_obskey['sliceid_to_checkUnique']].tolist()[0],
+                    number_of_isolated_nodes
+                )+\
+                "This is an issue in MintFlow and has to be avoided.\n"+\
+                "You can modify the kwargs that MintFlow passes to `sq.gr.spatial_neighbors` by modifying `config_neighbourhood_graph` in the config files. "
+            )
 
 
 
