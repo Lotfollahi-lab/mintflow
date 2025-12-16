@@ -452,7 +452,7 @@ def func_get_map_geneidx_to_R2(
                 print(">>>>>>>> max so far = {}\n\n".format(max_r2socre_sofar))
             
         except:
-            r2_score = None
+            r2_score = "N.A."
             
             if flag_verbose:
                 print("      >>> .fit failed")
@@ -460,7 +460,7 @@ def func_get_map_geneidx_to_R2(
 
 
         if path_incremental_dump is None:
-            list_r2score.append(r2_score)
+            list_r2score.append(str(r2_score))
         else:
             with open(
                 os.path.join(path_incremental_dump, '{}.pkl'.format(idx_gene)),
@@ -476,4 +476,4 @@ def func_get_map_geneidx_to_R2(
                 )
     
 
-    return list_r2score if (path_incremental_dump is not None) else None
+    return list_r2score if (path_incremental_dump is None) else None
