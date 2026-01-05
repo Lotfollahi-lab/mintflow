@@ -21,7 +21,10 @@ from cuml.ensemble import RandomForestRegressor as cuRF
 from cuml.decomposition import PCA
 import anndata
 
-from scipy.sparse import csc_matrix
+import importlib
+import importlib.resources as resources
+
+from scipy.sparse import csc_matrix, spmatrix
 
 from tqdm.autonotebook import tqdm
 
@@ -36,6 +39,10 @@ import time
 from dataclasses import dataclass
 
 from . import base_evaluation
+
+
+from ..data.for_evaluation import mcc_predictability_precomputed_gene_scores
+
 
 
 @dataclass
@@ -99,10 +106,15 @@ class ListGeneMicScore:
 
     def score_Xmic_Xint(
         self,
-        list_gene_name,
-        Xint_before_scppnormalizetotal,
-        Xmic_before_scppnormalizetotal
+        list_gene_name:List[str],
+        predicted_Xint:spmatrix,
+        predicted_Xmic:spmatrix
     ):
+        
+        # these 2 variables are not necessarily before scppnormalizetotal, but they were renamed in the input args.
+        Xint_before_scppnormalizetotal = predicted_Xint
+        Xmic_before_scppnormalizetotal = predicted_Xmic
+
         assert sparse.issparse(Xint_before_scppnormalizetotal)
         assert sparse.issparse(Xmic_before_scppnormalizetotal)
 
@@ -520,3 +532,102 @@ def func_get_map_geneidx_to_R2(
     
 
     return list_r2score if (path_incremental_dump is None) else None
+
+
+
+
+def evaluate(
+    list_gene_in_adata:List[str],
+    predicted_Xint:spmatrix,
+    predicted_Xmic:spmatrix,
+    fname_pkl_precomputed_genescores:str,
+    tissuesectionname_in_pklfile:str
+):
+    # "dataset_Z_Melanoma_MintFlowPreprint.pkl"
+    # mcc_predictability_precomputed_gene_scores
+
+    # check args =======
+    if len(list_gene_in_adata) != predicted_Xint.shape[1]:
+        raise Exception(
+            "Error, the lenght of `list_gene_in_adata` must match `predicted_Xint.shape[1]`."+\
+            "Either of the args are wrong. Please refer to the documentation for more details."
+        )
+
+    if len(list_gene_in_adata) != predicted_Xmic.shape[1]:
+        raise Exception(
+            "Error, the lenght of `list_gene_in_adata` must match `predicted_Xmic.shape[1]`."+\
+            "Either of the args are wrong. Please refer to the documentation for more details."
+        )
+
+    # package_path = resources.files("mcc_predictability_precomputed_gene_scores")
+
+    package_path = importlib.resources.files(__package__).joinpath(
+        "..",
+        "data",
+        "for_evaluation",
+        "mcc_predictability_precomputed_gene_scores",
+        fname_pkl_precomputed_genescores
+    )
+
+    file_exists = package_path.is_file()
+
+    if not file_exists:
+        raise Exception(
+            "The provided arg `fname_pkl_precomputed_genesocres` = {} is invalid.".format(fname_pkl_precomputed_genescores) +\
+            "For valid file names, please refer to MintFlow's github repo, in `src/mintflow/data/for_evaluation/mcc_predictability_precomputed_gene_scores`."
+        )
+
+
+    # load the pkl file
+    with package_path.open('rb') as f:
+        dict_genescores = pickle.load(f)
+    
+    
+    # check if the tissue name is valid
+    if not (tissuesectionname_in_pklfile in dict_genescores.keys()):
+        msg_error = "The provided tissue section name `tissuesectionname_in_pklfile = {}` is not available for {}.\n".format(
+            tissuesectionname_in_pklfile,
+            fname_pkl_precomputed_genescores
+        )
+        msg_error = msg_error + "For the file '{}', the valid values for `tissuesectionname_in_pklfile` are:\n".format(
+            fname_pkl_precomputed_genescores
+        )
+        for k in dict_genescores.keys():
+            msg_error = msg_error + "    - {}\n".format(k)
+        
+        raise Exception(msg_error)
+    
+
+    # End of checking args =========
+
+    # create the scorer object
+
+    list_gene_names = dict_genescores[tissuesectionname_in_pklfile]['gene_names']
+    list_gene_scores = dict_genescores[tissuesectionname_in_pklfile]['gene_scores']
+
+    scorer = ListGeneMicScore(
+        list_genemicscore=[
+            GeneMicScore(
+                ens_ID=None,
+                score=list_gene_scores[idx_g],
+                tissue_info_scoreomputed=tissuesectionname_in_pklfile,
+                gene_name=list_gene_names[idx_g]
+            )
+            for idx_g in range(len(list_gene_names))
+        ]
+    )
+
+
+    df_eval_result = scorer.score_Xmic_Xint(
+        list_gene_name=list_gene_in_adata,
+        predicted_Xint=predicted_Xint,
+        predicted_Xmic=predicted_Xmic
+    )
+
+    return df_eval_result
+
+
+
+
+    
+
