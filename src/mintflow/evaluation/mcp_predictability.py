@@ -19,7 +19,7 @@ import pickle
 import cupy as cp
 from cuml.ensemble import RandomForestRegressor as cuRF
 from cuml.decomposition import PCA
-
+import anndata
 
 
 from tqdm.autonotebook import tqdm
@@ -256,6 +256,21 @@ class SplitDimPCA:
         return cp.concatenate(list_toret, 1)
             
 
+def _func_doeshave_isolated_nodes_inneighgraph(adata_input:anndata.AnnData):
+    """
+    Checks if the neighbourhood graph of the provided anndata contain isolated cells, 
+    i.e. cells with no neighbours. This is an issue for MintFlow and has to be avoided.
+    :param adata_input: Description
+    :type adata_input: anndata.AnnData
+    """
+    assert isinstance(adata_input, anndata.AnnData)
+    connectivities = adata_input.obsp['spatial_connectivities']
+    node_degree = np.sum(connectivities, axis=1).A1
+
+    isolated_nodes_mask = node_degree == 0
+    number_of_isolated_nodes = np.sum(isolated_nodes_mask)
+
+    return number_of_isolated_nodes > 0, number_of_isolated_nodes, set(node_degree)
 
 
 
@@ -284,6 +299,9 @@ def func_get_map_geneidx_to_R2(
     # read the anndata object and create neigh graph
     # adata = sc.read_h5ad(fname_adata)
 
+    adata.obsp = {}
+    adata.uns = {}
+
     adata.obsm['spatial'] = np.stack(
         [np.array(adata.obs[obskey_spatial_x].tolist()), np.array(adata.obs[obskey_spatial_y].tolist())],
         1
@@ -292,6 +310,13 @@ def func_get_map_geneidx_to_R2(
         adata=adata,
         **kwargs_compute_graph
     )
+
+    # check if there are isolated nodes in the neighbourhood graph
+    flag_has_isolatednodes, _, set_node_degrees = _func_doeshave_isolated_nodes_inneighgraph(adata_input=adata) 
+    # breakpoint()
+    assert not flag_has_isolatednodes, print("The neighbourhood graph contains some isolated nodes.")
+
+
     with torch.no_grad():
         edge_index, _ = from_scipy_sparse_matrix(adata.obsp['spatial_connectivities'])  # [2, num_edges]
         edge_index = torch.Tensor(pyg.utils.remove_self_loops(pyg.utils.to_undirected(edge_index))[0])
@@ -402,10 +427,11 @@ def func_get_map_geneidx_to_R2(
                 ('pca', SplitDimPCA(n_components=num_PCA_components, num_NNs=kwargs_compute_graph['n_neighs'])),
                 ('scaler', StandardScaler())
             ])
+
             scaler_x.fit(cp.asarray(X))
 
-            X_tfmed = scaler_x.transform(cp.asarray(X))
 
+            X_tfmed = scaler_x.transform(cp.asarray(X))
 
             Y_tfmed = cp.asarray(Y)
             assert isinstance(X_tfmed, cp.ndarray)
@@ -426,11 +452,16 @@ def func_get_map_geneidx_to_R2(
             gc.collect()
             gc.collect()
 
+            # breakpoint()
+            
             # fit to train and transform test
             reg.fit(
                 X_tfmed,
                 Y_tfmed
             )
+
+            if flag_verbose:
+                print(">>>>>>>>>>>>>>>>>> reg.fit was succesful!!!!")
             
 
             # get the scroe
@@ -438,6 +469,9 @@ def func_get_map_geneidx_to_R2(
                 X_test,
                 Y_test
             )
+
+            if flag_verbose:
+                print(">>>>>>>>>>>>>>>>>> reg.score was succesful!!!!")
             
 
 
@@ -450,12 +484,14 @@ def func_get_map_geneidx_to_R2(
                 ))
 
                 print(">>>>>>>> max so far = {}\n\n".format(max_r2socre_sofar))
+                
             
-        except:
+        except Exception as e:
             r2_score = "N.A."
             
             if flag_verbose:
-                print("      >>> .fit failed")
+                print("      >>> .fit failed with the following error msg.")
+                print("            {}".format(e))
 
 
 
