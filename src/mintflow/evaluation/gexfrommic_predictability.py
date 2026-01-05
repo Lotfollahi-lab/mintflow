@@ -21,6 +21,7 @@ from cuml.ensemble import RandomForestRegressor as cuRF
 from cuml.decomposition import PCA
 import anndata
 
+from scipy.sparse import csc_matrix
 
 from tqdm.autonotebook import tqdm
 
@@ -36,6 +37,7 @@ from dataclasses import dataclass
 
 from . import base_evaluation
 
+
 @dataclass
 class GeneMicScore:
     """
@@ -45,6 +47,7 @@ class GeneMicScore:
     score:float
     tissue_info_scoreomputed:str
     gene_name: str | None = None
+
 
 class ListGeneMicScore:
     def __init__(self, list_genemicscore:List[GeneMicScore]):
@@ -96,7 +99,6 @@ class ListGeneMicScore:
 
     def score_Xmic_Xint(
         self,
-        list_ens_ID,
         list_gene_name,
         Xint_before_scppnormalizetotal,
         Xmic_before_scppnormalizetotal
@@ -106,7 +108,7 @@ class ListGeneMicScore:
 
         # query genes in this collection
         _, dict_map_idxininput_to_idxincollection = self.retrieve_existing_genes(
-            list_ens_ID=list_ens_ID,
+            list_ens_ID=None,
             list_gene_name=list_gene_name
         )
 
@@ -118,6 +120,13 @@ class ListGeneMicScore:
         if len(list_idx_selgene) == 0:
             print("No gene was found in the collection.")
             return
+
+        # convert `` and `` to csr_matrix
+        if not isinstance(Xint_before_scppnormalizetotal, csc_matrix):
+            Xint_before_scppnormalizetotal = Xint_before_scppnormalizetotal.tocsc()
+        
+        if not isinstance(Xmic_before_scppnormalizetotal, csc_matrix):
+            Xmic_before_scppnormalizetotal = Xmic_before_scppnormalizetotal.tocsc()
 
         Xint_before_scppnormalizetotal = Xint_before_scppnormalizetotal[:, list_idx_selgene]
         Xmic_before_scppnormalizetotal = Xmic_before_scppnormalizetotal[:, list_idx_selgene]
@@ -153,6 +162,8 @@ class ListGeneMicScore:
         np_gene_name_s = np.array(
             [self.list_genemicscore[idxincollection].gene_name for idxincollection in list_idxincollection]
         )  # [num_selgenes]
+
+
         np_ens_ID_s = np.stack(
             X_before_scppnormalizetotal.shape[0] * [np_ens_ID_s],
             0
@@ -161,36 +172,34 @@ class ListGeneMicScore:
             X_before_scppnormalizetotal.shape[0] * [np_gene_name_s],
             0
         )  # [N x num_selgenes] and dense
-
-
+        
 
         # create the dataframe toreturn
         df_toret = pd.DataFrame(
             np.stack([
-                X_before_scppnormalizetotal.toarray()[mask_readcount],
-                fraction_Xmic[mask_readcount],
-                np_r2score_amongfoundgenes[mask_readcount],
-                np_ens_ID_s[mask_readcount],
-                np_gene_name_s[mask_readcount]
+                X_before_scppnormalizetotal.toarray()[mask_readcount].flatten(),
+                np.asarray(fraction_Xmic[mask_readcount]).flatten(),
+                np_r2score_amongfoundgenes[mask_readcount].flatten(),
+                np_ens_ID_s[mask_readcount].flatten(),
+                np_gene_name_s[mask_readcount].flatten()
             ],
             1),
             columns=[
                 base_evaluation.EvalDFColname.readcount.value,
                 base_evaluation.EvalDFColname.fraction_Xmic.value,
                 base_evaluation.EvalDFColname.gene_spatial_score.value,
-                base_evaluation.EvalDFColname.gene_ens_ID,
-                base_evaluation.EvalDFColname.gene_name
+                base_evaluation.EvalDFColname.gene_ens_ID.value,
+                base_evaluation.EvalDFColname.gene_name.value
             ]
         )
 
-        # correct the dtype of each column
-        df_toret['base_evaluation.EvalDFColname.readcount.value'] = df_toret['base_evaluation.EvalDFColname.readcount.value'].astype(float)
-        df_toret['base_evaluation.EvalDFColname.fraction_Xmic.value'] = df_toret['base_evaluation.EvalDFColname.fraction_Xmic.value'].astype(float)
-        df_toret['base_evaluation.EvalDFColname.gene_spatial_score.value'] = df_toret['base_evaluation.EvalDFColname.gene_spatial_score.value'].astype(float)
-        df_toret['base_evaluation.EvalDFColname.gene_ens_ID'] = df_toret['base_evaluation.EvalDFColname.gene_ens_ID'].astype('category')
-        df_toret['base_evaluation.EvalDFColname.gene_name'] = df_toret['base_evaluation.EvalDFColname.gene_name'].astype('category')
 
-        assert False # TODO:HERE, above, shouldn't it be base_evaluation.XXX.YYY without ''-s ???
+        # correct the dtype of each column
+        df_toret[base_evaluation.EvalDFColname.readcount.value] = df_toret[base_evaluation.EvalDFColname.readcount.value].astype(float)
+        df_toret[base_evaluation.EvalDFColname.fraction_Xmic.value] = df_toret[base_evaluation.EvalDFColname.fraction_Xmic.value].astype(float)
+        df_toret[base_evaluation.EvalDFColname.gene_spatial_score.value] = df_toret[base_evaluation.EvalDFColname.gene_spatial_score.value].astype(float)
+        df_toret[base_evaluation.EvalDFColname.gene_ens_ID.value] = df_toret[base_evaluation.EvalDFColname.gene_ens_ID.value].astype('category')
+        df_toret[base_evaluation.EvalDFColname.gene_name.value] = df_toret[base_evaluation.EvalDFColname.gene_name.value].astype('category')
 
         return df_toret
 
@@ -313,7 +322,7 @@ def func_get_map_geneidx_to_R2(
 
     # check if there are isolated nodes in the neighbourhood graph
     flag_has_isolatednodes, _, set_node_degrees = _func_doeshave_isolated_nodes_inneighgraph(adata_input=adata) 
-    # breakpoint()
+    
     assert not flag_has_isolatednodes, print("The neighbourhood graph contains some isolated nodes.")
 
 
@@ -451,8 +460,6 @@ def func_get_map_geneidx_to_R2(
             gc.collect()
             gc.collect()
             gc.collect()
-
-            # breakpoint()
             
             # fit to train and transform test
             reg.fit(
