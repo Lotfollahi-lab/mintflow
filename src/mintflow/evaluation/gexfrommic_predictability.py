@@ -543,6 +543,27 @@ def evaluate(
     fname_pkl_precomputed_genescores:str,
     tissuesectionname_in_pklfile:str
 ):
+    """
+    This function evaluates disentanglement by a set of precomputed gene scores.
+    Gene scores are calculated for different datasetes, and are available in different files in MintFlow's repository, the folder: `mintflow/data/for_evaluation/mcc_predictability_precomputed_gene_scores`
+    Each of those pkl files contain the gene scores for a specific dataset.
+    Each pkl file contains a dictionary that maps different tissue sections in that dataset to the corresponding precomputed gene scores.
+    So when calling this function, you need to provide the name of the pkl file `fname_pkl_precomputed_genescores` and the name of the tissue section
+    `tissuesectionname_in_pklfile`, as well as other arguments.
+
+    :param list_gene_in_adata: the gene panel of your annndata object, If your anndata object is called `adata`, you can pass, e.g., `adata.var.index.tolist()`.
+    :type list_gene_in_adata: List[str]
+    :param predicted_Xint: The predicted Xint component of expression matrix.
+    :type predicted_Xint: spmatrix
+    :param predicted_Xmic: The predicted Xmic component of expression matrix.
+    :type predicted_Xmic: spmatrix
+    :param fname_pkl_precomputed_genescores: The name of one of pkl files, i.e. datasets for which the gene scores are precomputed.
+    To see the list of those pkl files, you can refer to MintFlow's github repository, the folder: `mintflow/data/for_evaluation/mcc_predictability_precomputed_gene_scores` 
+    :type fname_pkl_precomputed_genescores: str
+    :param tissuesectionname_in_pklfile: The tissue name for which the gene scores are precomputed. You can initially pass in a dummy argument here, 
+    and the code gives you an error containing the valid options for `tissuesectionname_in_pklfile`.
+    :type tissuesectionname_in_pklfile: str
+    """
     # "dataset_Z_Melanoma_MintFlowPreprint.pkl"
     # mcc_predictability_precomputed_gene_scores
 
