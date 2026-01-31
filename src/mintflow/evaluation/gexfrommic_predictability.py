@@ -20,6 +20,9 @@ import cupy as cp
 from cuml.ensemble import RandomForestRegressor as cuRF
 from cuml.decomposition import PCA
 import anndata
+import random
+from cuml.ensemble import RandomForestClassifier
+from cuml.svm import SVC
 
 import importlib
 import importlib.resources as resources
@@ -434,6 +437,8 @@ def func_get_map_geneidx_to_R2(
             max_depth=16,
             random_state=42
         )
+
+
         
 
         try:
@@ -651,4 +656,527 @@ def evaluate(
 
 
     
+
+
+
+def func_get_map_geneidx_to_R2_V2(
+    adata,
+    obskey_spatial_x,
+    obskey_spatial_y,
+    kwargs_compute_graph,
+    num_PCA_components,
+    flag_drop_the_targetgene_from_input:bool,
+    max_num_cells_subsample_data:int,
+    flag_verbose:bool=False,
+    path_incremental_dump=None
+):
+    """
+    In this version, the regression and gene-score calculation is "only" performed on non-zero elements of adata.X.
+    :param adata:
+    :param obskey_spatial_x:
+    :param obskey_spatial_y:
+    :param kwargs_compute_graph
+    :param flag_drop_the_targetgene_from_input: if set to True, when predicting gene `g` it is dropped from neighbours' expression vectors.
+    :param max_num_cells_subsample_data: if number of cells that do not express the target gene are lower than this number, then it subsamples the data. 
+    :param path_incremental_dump: if it's not None, it incrementally (i.e. gene by gene) dumps the scores into that folder.
+    :return:
+    """
+    # Create neigh graph
+    # adata = sc.read_h5ad(fname_adata)
+
+    adata.obsp = {}
+    adata.uns = {}
+
+    adata.obsm['spatial'] = np.stack(
+        [np.array(adata.obs[obskey_spatial_x].tolist()), np.array(adata.obs[obskey_spatial_y].tolist())],
+        1
+    )
+    sq.gr.spatial_neighbors(
+        adata=adata,
+        **kwargs_compute_graph
+    )
+
+    # check if there are isolated nodes in the neighbourhood graph
+    flag_has_isolatednodes, _, set_node_degrees = _func_doeshave_isolated_nodes_inneighgraph(adata_input=adata) 
+    
+    assert not flag_has_isolatednodes, print("The neighbourhood graph contains some isolated nodes.")
+
+
+    with torch.no_grad():
+        edge_index, _ = from_scipy_sparse_matrix(adata.obsp['spatial_connectivities'])  # [2, num_edges]
+        edge_index = torch.Tensor(pyg.utils.remove_self_loops(pyg.utils.to_undirected(edge_index))[0])
+
+    np_edge_index = edge_index.detach().cpu().numpy()  # [2 x num_edges]  and for each i,j it contains both [i,j] and [j,i]
+
+    # compute `dict_nodeindex_to_listX`
+    set_ij = set([
+        "{}_{}".format(np_edge_index[0, n], np_edge_index[1, n]) for n in range(np_edge_index.shape[1])
+    ])
+    dict_nodeindex_to_listX = {nodeindex: [] for nodeindex in range(adata.shape[0])}
+    for ij in tqdm(set_ij, desc="Analysing the neighbourhood graph"):
+        i, j = ij.split("_")
+        i, j = int(i), int(j)
+        assert i != j
+        dict_nodeindex_to_listX[i].append(
+            adata.X[j, :]
+        )
+
+    # dict_nodeindex_to_nodedegree = {
+    #     nodeindex: len(dict_nodeindex_to_listX[nodeindex])
+    #     for nodeindex in range(adata.shape[0])
+    # }
+
+    # at this point `dict_nodeindex_to_listX[nodeindex]` is a list of lenght ~ num_NNs and of shape [1 x num_genes] 
+    # So the output of `sparse.hstack` below, specially after the final slicing is `[1 x num_genes*num_NNs]`
+    #   For each node, `dict_nodeindex_to_listX[nodeindex]` contains the input to the regression model to compute the R^2 score.
+
+    for nodeindex in tqdm(range(adata.shape[0]), desc='Precomputing regression input'):
+        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(
+            dict_nodeindex_to_listX[nodeindex]
+        )[:, 0:adata.shape[1]*kwargs_compute_graph['n_neighs']]  # [1 x num_genes*num_NNs]
+
+
+    # loop over genes and compute R2 scores
+    list_r2score = []
+    precomputed_all_X = sparse.vstack(
+        [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
+    )  # [N x num_genes*num_NNs]
+
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    
+    max_r2socre_sofar = -np.inf
+
+    for idx_gene in tqdm(range(adata.shape[1]), desc='Going through different genes'):
+        t_begin = time.time()
+
+        # deterimine if calculation has to be done.
+        if path_incremental_dump is None:
+           flag_hastodo_calculation = True
+        else:
+            # the incrementatl output path is not None
+            flag_hastodo_calculation = not os.path.isfile(os.path.join(path_incremental_dump, '{}.pkl'.format(idx_gene)))
+
+        if not flag_hastodo_calculation:
+            continue
+
+        # create all_X and all_Y
+        all_X = precomputed_all_X + 0.0 # [N x num_genes*num_NNs]
+
+        if flag_drop_the_targetgene_from_input:
+            list_idx_keep = [u for u in set(range(all_X.shape[1])) if u%adata.shape[1] != idx_gene]
+            # print("len(list_idx_keep) = {}".format(len(list_idx_keep)))
+            all_X = all_X[:, list_idx_keep]
+
+        all_Y = adata.X[:, idx_gene].toarray() + 0.0 # np.array([float(adata.X[n, idx_gene]) for n in range(adata.X.shape[0])])
+
+        # discard cells that do not express the gene with `idx_gene` and split X and Y to train/test
+        # essentially, make `list_idx_train` and `list_idx_test`
+        list_idx_gex_nonzero = np.where(adata.X[:, idx_gene].toarray().flatten() > 0)[0].tolist()
+        if len(list_idx_gex_nonzero) > max_num_cells_subsample_data:
+            list_idx_gex_nonzero = random.sample(list_idx_gex_nonzero, k=max_num_cells_subsample_data)
+        
+        assert len(list_idx_gex_nonzero) <= max_num_cells_subsample_data
+        
+        random.shuffle(list_idx_gex_nonzero)
+
+        N_train = int((50.0/100.0) * len(list_idx_gex_nonzero))
+        N_test  = int((50.0/100.0) * len(list_idx_gex_nonzero))
+        list_idx_train = list_idx_gex_nonzero[0:N_train]
+        list_idx_test  = list_idx_gex_nonzero[N_train:N_train+N_test]
+
+        assert set(list_idx_train).intersection(set(list_idx_test)) == set([])
+        assert isinstance(list_idx_train, list)
+        assert isinstance(list_idx_test, list)
+        list_idx_train.sort()
+        list_idx_test.sort()
+
+
+        if flag_verbose:
+            print("{} and {} cells were selected for training and testing.".format(
+                len(list_idx_train),
+                len(list_idx_test)
+            ))
+        
+
+        # reg = Pipeline([
+        #     ('scaler', StandardScaler()),
+        #     ('regressor', LinearRegression(algorithm='eig', fit_intercept=True))
+        # ])
+
+        # reg = LinearRegression(algorithm='eig', fit_intercept=True)
+        # reg = Ridge(alpha=1.0)
+        reg = cuRF(
+            n_estimators=100,
+            max_depth=16,
+            random_state=42
+        )
+        
+
+        try:
+
+            # get X and Y
+            X = all_X[list_idx_train, :].toarray() + 0.0
+            Y = all_Y[list_idx_train] + 0.0
+
+
+            # X and Y, X_test and Y_test 
+            scaler_x = Pipeline([
+                ('pca', SplitDimPCA(n_components=num_PCA_components, num_NNs=kwargs_compute_graph['n_neighs'])),
+                ('scaler', StandardScaler())
+            ])
+
+            scaler_x.fit(cp.asarray(X))
+
+
+            X_tfmed = scaler_x.transform(cp.asarray(X))
+
+            Y_tfmed = cp.asarray(Y)
+            assert isinstance(X_tfmed, cp.ndarray)
+            assert isinstance(X_tfmed, cp.ndarray)
+
+            X_test = scaler_x.transform(
+                cp.asarray(all_X[list_idx_test, :].toarray() + 0.0)
+            )
+            
+
+            Y_test = cp.asarray(all_Y[list_idx_test] + 0.0)
+            assert isinstance(X_test, cp.ndarray)
+            assert isinstance(Y_test, cp.ndarray)
+
+            del all_X, all_Y
+            gc.collect()
+            gc.collect()
+            gc.collect()
+            gc.collect()
+            
+            # fit to train and transform test
+            reg.fit(
+                X_tfmed,
+                Y_tfmed
+            )
+
+            if flag_verbose:
+                print(">>>>>>>>>>>>>>>>>> reg.fit was succesful!!!!")
+            
+
+            # get the scroe
+            r2_score = reg.score(
+                X_test,
+                Y_test
+            )
+
+            if flag_verbose:
+                print(">>>>>>>>>>>>>>>>>> reg.score was succesful!!!!")
+            
+
+
+            max_r2socre_sofar = max(max_r2socre_sofar, r2_score)
+            
+            if flag_verbose:
+                print("Fit and got the score succesfully, scores on testing and training: {} \n     {}".format(
+                    r2_score,
+                    reg.score(X_tfmed, Y_tfmed)
+                ))
+
+                print(">>>>>>>> max so far = {}\n\n".format(max_r2socre_sofar))
+                
+            
+        except Exception as e:
+            r2_score = "N.A."
+            
+            if flag_verbose:
+                print("      >>> .fit failed with the following error msg.")
+                print("            {}".format(e))
+
+
+
+        if path_incremental_dump is None:
+            list_r2score.append(str(r2_score))
+        else:
+            with open(
+                os.path.join(path_incremental_dump, '{}.pkl'.format(idx_gene)),
+                'wb'
+            ) as f:
+                pickle.dump(
+                    {
+                        'r2_score':r2_score,
+                        'idx_gene':idx_gene,
+                        'gene_name':adata.var.index.tolist()[idx_gene]
+                    },
+                    f
+                )
+    
+
+    return list_r2score if (path_incremental_dump is None) else None
+
+
+
+
+
+def func_get_map_geneidx_to_R2_V3(
+    adata,
+    obskey_spatial_x,
+    obskey_spatial_y,
+    kwargs_compute_graph,
+    num_PCA_components,
+    flag_drop_the_targetgene_from_input:bool,
+    perc_trainsplit:int,
+    perc_testsplit:int,
+    flag_verbose:bool=False,
+    path_incremental_dump=None
+):
+    """
+    The difference of V3:
+    - It uses RF classifier (instead of RF regressor), to better handle class imbalacnce, i.e., the majority of counts equal 0.
+    - In V3, class_weight='balanced'
+
+    :param adata:
+    :param obskey_spatial_x:
+    :param obskey_spatial_y:
+    :param kwargs_compute_graph
+    :param flag_drop_the_targetgene_from_input: if set to True, when predicting gene `g` it is dropped from neighbours' expression vectors.
+    :param path_incremental_dump: if it's not None, it incrementally (i.e. gene by gene) dumps the scores into that folder.
+    :return:
+    """
+    # read the anndata object and create neigh graph
+    # adata = sc.read_h5ad(fname_adata)
+
+    adata.obsp = {}
+    adata.uns = {}
+
+    adata.obsm['spatial'] = np.stack(
+        [np.array(adata.obs[obskey_spatial_x].tolist()), np.array(adata.obs[obskey_spatial_y].tolist())],
+        1
+    )
+    sq.gr.spatial_neighbors(
+        adata=adata,
+        **kwargs_compute_graph
+    )
+
+    # check if there are isolated nodes in the neighbourhood graph
+    flag_has_isolatednodes, _, set_node_degrees = _func_doeshave_isolated_nodes_inneighgraph(adata_input=adata) 
+    
+    assert not flag_has_isolatednodes, print("The neighbourhood graph contains some isolated nodes.")
+
+
+    with torch.no_grad():
+        edge_index, _ = from_scipy_sparse_matrix(adata.obsp['spatial_connectivities'])  # [2, num_edges]
+        edge_index = torch.Tensor(pyg.utils.remove_self_loops(pyg.utils.to_undirected(edge_index))[0])
+
+    np_edge_index = edge_index.detach().cpu().numpy()  # [2 x num_edges]  and for each i,j it contains both [i,j] and [j,i]
+
+    # compute `dict_nodeindex_to_listX`
+    set_ij = set([
+        "{}_{}".format(np_edge_index[0, n], np_edge_index[1, n]) for n in range(np_edge_index.shape[1])
+    ])
+    dict_nodeindex_to_listX = {nodeindex: [] for nodeindex in range(adata.shape[0])}
+    for ij in tqdm(set_ij, desc="Analysing the neighbourhood graph"):
+        i, j = ij.split("_")
+        i, j = int(i), int(j)
+        assert i != j
+        dict_nodeindex_to_listX[i].append(
+            adata.X[j, :]
+        )
+
+    # dict_nodeindex_to_nodedegree = {
+    #     nodeindex: len(dict_nodeindex_to_listX[nodeindex])
+    #     for nodeindex in range(adata.shape[0])
+    # }
+
+    # at this point `dict_nodeindex_to_listX[nodeindex]` is a list of lenght ~ num_NNs and of shape [1 x num_genes] 
+    # So the output of `sparse.hstack` below, specially after the final slicing is `[1 x num_genes*num_NNs]`
+    #   For each node, `dict_nodeindex_to_listX[nodeindex]` contains the input to the regression model to compute the R^2 score.
+
+    for nodeindex in tqdm(range(adata.shape[0]), desc='Precomputing regression input'):
+        dict_nodeindex_to_listX[nodeindex] = sparse.hstack(
+            dict_nodeindex_to_listX[nodeindex]
+        )[:, 0:adata.shape[1]*kwargs_compute_graph['n_neighs']]  # [1 x num_genes*num_NNs]
+
+
+    # loop over genes and compute R2 scores
+    list_r2score = []
+    precomputed_all_X = sparse.vstack(
+        [dict_nodeindex_to_listX[n] for n in range(adata.shape[0])]
+    )  # [N x num_genes*num_NNs]
+
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    gc.collect()
+    
+    max_r2socre_sofar = -np.inf
+    for idx_gene in tqdm(range(adata.shape[1]), desc='Going through different genes'):
+        t_begin = time.time()
+
+        # deterimine if calculation has to be done.
+        if path_incremental_dump is None:
+           flag_hastodo_calculation = True
+        else:
+            # the incrementatl output path is not None
+            flag_hastodo_calculation = not os.path.isfile(os.path.join(path_incremental_dump, '{}.pkl'.format(idx_gene)))
+
+        if not flag_hastodo_calculation:
+            continue
+
+        # create all_X and all_Y
+        all_X = precomputed_all_X + 0.0 # [N x num_genes*num_NNs]
+
+        if flag_drop_the_targetgene_from_input:
+            list_idx_keep = [u for u in set(range(all_X.shape[1])) if u%adata.shape[1] != idx_gene]
+            # print("len(list_idx_keep) = {}".format(len(list_idx_keep)))
+            all_X = all_X[:, list_idx_keep]
+
+        all_Y = adata.X[:, idx_gene].toarray() + 0.0 # np.array([float(adata.X[n, idx_gene]) for n in range(adata.X.shape[0])])
+
+        # split X and Y to train/test
+        randperm_N = np.random.permutation(adata.shape[0])
+        N_train = int((perc_trainsplit/100.0) * adata.shape[0])
+        N_test  = int((perc_testsplit/100.0) * adata.shape[0])
+        list_idx_train = randperm_N[0:N_train]
+        list_idx_test  = randperm_N[N_train:N_train+N_test]
+
+        if flag_verbose:
+            print("{} and {} cells were selected for training and testing.".format(
+                len(list_idx_train),
+                len(list_idx_test)
+            ))
+
+
+        # reg = Pipeline([
+        #     ('scaler', StandardScaler()),
+        #     ('regressor', LinearRegression(algorithm='eig', fit_intercept=True))
+        # ])
+
+        # reg = LinearRegression(algorithm='eig', fit_intercept=True)
+        # reg = Ridge(alpha=1.0)
+        
+        # reg = cuRF(
+        #     n_estimators=100,
+        #     max_depth=16,
+        #     random_state=42
+        # )
+
+        # reg = RandomForestClassifier(
+        #     n_estimators=100,
+        #     max_depth=16,
+        #     random_state=42
+        # )
+        
+        reg = SVC(
+            kernel='rbf',
+            C=1.0,
+            gamma='scale',
+            probability=True,
+            class_weight='balanced'
+        )
+
+
+        try:
+
+            # get X and Y
+            X = all_X[list_idx_train, :].toarray() + 0.0
+            Y = (all_Y[list_idx_train] + 0.0) > 0 
+
+
+            # X and Y, X_test and Y_test 
+            scaler_x = Pipeline([
+                ('pca', SplitDimPCA(n_components=num_PCA_components, num_NNs=kwargs_compute_graph['n_neighs'])),
+                ('scaler', StandardScaler())
+            ])
+
+            scaler_x.fit(
+                cp.asarray(X)
+            )
+
+
+            X_tfmed = scaler_x.transform(cp.asarray(X))
+
+            Y_tfmed = cp.asarray(Y)
+            assert isinstance(X_tfmed, cp.ndarray)
+            assert isinstance(X_tfmed, cp.ndarray)
+
+            X_test = scaler_x.transform(
+                cp.asarray(all_X[list_idx_test, :].toarray() + 0.0)
+            )
+            
+            
+            Y_test = cp.asarray(all_Y[list_idx_test] + 0.0)
+            assert isinstance(X_test, cp.ndarray)
+            assert isinstance(Y_test, cp.ndarray)
+
+            del all_X, all_Y
+            gc.collect()
+            gc.collect()
+            gc.collect()
+            gc.collect()
+            
+            
+
+            # fit to train and transform test
+            reg.fit(
+                X_tfmed,
+                Y_tfmed
+            )
+
+            if flag_verbose:
+                print(">>>>>>>>>>>>>>>>>> reg.fit was succesful!!!!")
+            
+
+            # get the scroe
+            r2_score = reg.score(
+                X_test,
+                Y_test
+            )
+
+            if flag_verbose:
+                print(">>>>>>>>>>>>>>>>>> reg.score was succesful!!!!")
+            
+
+
+            max_r2socre_sofar = max(max_r2socre_sofar, r2_score)
+            
+            if flag_verbose:
+                print("Fit and got the score succesfully, scores on training and testing: {} \n     {}".format(
+                    r2_score,
+                    reg.score(X_tfmed, Y_tfmed)
+                ))
+
+                print(">>>>>>>> max so far = {}\n\n".format(max_r2socre_sofar))
+                
+            
+        except Exception as e:
+            r2_score = "N.A."
+            
+            if flag_verbose:
+                print("      >>> .fit failed with the following error msg.")
+                print("            {}".format(e))
+
+
+
+        if path_incremental_dump is None:
+            list_r2score.append(str(r2_score))
+        else:
+            with open(
+                os.path.join(path_incremental_dump, '{}.pkl'.format(idx_gene)),
+                'wb'
+            ) as f:
+                pickle.dump(
+                    {
+                        'r2_score':r2_score,
+                        'idx_gene':idx_gene,
+                        'gene_name':adata.var.index.tolist()[idx_gene]
+                    },
+                    f
+                )
+    
+
+    return list_r2score if (path_incremental_dump is None) else None
+
+
+
 
