@@ -20,7 +20,8 @@ from .interface import \
 from .evaluation import \
     evaluate_by_known_signalling_genes
 
-from .interface.perturbation import generate_insilico_ST_data
+from .interface.perturbation import generate_insilico_ST_data, generate_insilico_ST_data_with_gene_perturbation
+
 
 # from .interface import \
 #     dump_model, dump_checkpoint

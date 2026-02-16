@@ -1,4 +1,4 @@
 
 
-from .module_gen_stdata import generate_insilico_ST_data
+from .module_gen_stdata import generate_insilico_ST_data, generate_insilico_ST_data_with_gene_perturbation
 
