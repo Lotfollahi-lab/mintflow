@@ -321,9 +321,9 @@ def generate_insilico_ST_data_with_gene_perturbation(
     assert (df_gene_perturbation.shape[1] == adata.shape[1]), print(
         "`df_gene_perturbation` has to have as many columns as the number of genes in `adata`, while it doesn't"
     )
+    
 
-    assert False
-
+    
 
 
     model.eval()
@@ -433,7 +433,7 @@ def generate_insilico_ST_data_with_gene_perturbation(
         )
 
 
-        generated_realisation = model.module_genmodel.sample_withZINB(
+        generated_realisation = model.module_genmodel.sample_withZINB_and_GuidanceLoss(
             edge_index=edge_index.to(device),
             t_num_steps=dict_all4_configs['config_model']['neuralODE_t_num_steps'],
             device=device,
@@ -447,7 +447,8 @@ def generate_insilico_ST_data_with_gene_perturbation(
             ten_CT=ten_CT.to(device),
             ten_BatchEmb_in=ten_BatchEmb_in.to(device),
             sizefactor_int=dict_all4_configs['config_training']['val_scppnorm_total'] - np.array(list_micenv_sizefactors)*dict_all4_configs['config_training']['val_scppnorm_total'],
-            sizefactor_spl=np.array(list_micenv_sizefactors)*dict_all4_configs['config_training']['val_scppnorm_total']
+            sizefactor_spl=np.array(list_micenv_sizefactors)*dict_all4_configs['config_training']['val_scppnorm_total'],
+            obj_get_loss=None
         )
 
 

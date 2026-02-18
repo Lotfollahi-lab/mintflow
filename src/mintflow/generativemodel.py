@@ -570,7 +570,7 @@ class InFlowGenerativeModel(nn.Module):
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
             ).sample().to(device)  # [num_cell, dim_s]
         else:
-            spl_cov_u = self.module_spl_cov_u(ten_u_spl)
+            spl_cov_u = self.module_spl_cov_u(ten_u_spl)  # MLP followed by .exp(), of shape [num_cells x dim_s]
 
             if isinstance(spl_cov_u, float):  # the case where the covariance is set to, e.g. 0.0 --> ExtendedNormal
                 s_out = probutils.ExtenededNormal(
@@ -920,17 +920,265 @@ class InFlowGenerativeModel(nn.Module):
             coef_anneal=coef_anneal
         )
         return dict_logp, dict_otherinf
+    
 
 
 
+    def sample_withZINB_and_GuidanceLoss(
+        self,
+        edge_index,
+        t_num_steps: int,
+        device,
+        batch_size_feedforward,
+        kwargs_dl_neighbourloader,
+        ten_CT: torch.Tensor,
+        ten_BatchEmb_in: torch.Tensor,
+        sizefactor_int: np.ndarray | None,
+        sizefactor_spl: np.ndarray | None,
+        obj_get_loss:object
+    ):
+        """
+        Unlike `sample` that returns only the ZINB means (after softmax), this function generates/returns
+        a sample from ZINB dist, and importantly, with a guidance loss on the generated gene expression vector optimised.
+        :param edge_index:
+        :param t_num_steps:
+        :param device:
+        :param batch_size_feedforward:
+        :param kwargs_dl_neighbourloader:
+        :param ten_CT:s
+        :param ten_BatchEmb_in:
+        :param np_size_factor:
+        :param sizefactor_int
+        :param sizefactor_spl
+        :param obj_get_loss: A python object that's required to have a function `get_guidanceloss_and_trackinginfo` that takes in a single tensor `x`, i.e. the generated 
+        in-silico gene expression vector, and returns (i) the loss and (ii) an arbitrary tracking object, from which a list of tracking objects will be returned 
+        by `sample_withZINB_and_GuidanceLoss`.
+        :return:
+        """
+
+        # initial checks ==========================
+        with torch.no_grad():
+            ten_u_int = (ten_CT + 0) if (self.flag_use_int_u) else None
+            ten_u_spl = (ten_CT + 0) if (self.flag_use_spl_u) else None
+
+            if pyg.utils.contains_self_loops(edge_index):
+                raise Exception(
+                    "The provided graph contains seelf loops. Please ensure it doesn't have them and try again."
+                )
+
+            if not torch.all(
+                torch.eq(
+                    torch.tensor(edge_index),
+                    pyg.utils.to_undirected(edge_index)
+                )
+            ):
+                raise Exception(
+                    "The provided graph may contain seelf loops? If so, please ensure it doesn't have them and try again."
+                )
+
+            if self.flag_use_int_u:
+                assert (ten_u_int is not None)
+                assert (isinstance(ten_u_int, torch.Tensor))
+            else:
+                assert (ten_u_int is None)
+
+            if self.flag_use_spl_u:
+                assert (ten_u_spl is not None)
+                assert (isinstance(ten_u_spl, torch.Tensor))
+            else:
+                assert (ten_u_spl is None)
+
+        
+        # generate the initial s_out ==========================
+        with torch.no_grad():
+            if not self.flag_use_spl_u:
+                s_out_init = probutils.ExtenededNormal(
+                    loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
+                    scale=self.dict_pname_to_scaleandunweighted['sout'][0],
+                    flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
+                ).sample().to(device)  # [num_cell, dim_s]
+            else:
+                spl_cov_u = self.module_spl_cov_u(ten_u_spl)  # MLP followed by .exp(), of shape [num_cells x dim_s]
+
+                if isinstance(spl_cov_u, float):  # the case where the covariance is set to, e.g. 0.0 --> ExtendedNormal
+                    s_out_init = probutils.ExtenededNormal(
+                        loc=self.module_spl_mu_u(ten_u_spl),
+                        scale=np.sqrt(spl_cov_u),
+                        flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
+                    ).sample().to(device)  # [num_cell, dim_s]
+                else:  # covariance is of the same shape as mu --> Normal
+                    assert (isinstance(spl_cov_u, torch.Tensor))
+                    s_out_init = probutils.Normal(
+                        loc=self.module_spl_mu_u(ten_u_spl),
+                        scale=spl_cov_u.sqrt()
+                    ).sample().to(device)  # [num_cell, dim_s]
+        
+
+        # generate the initial Z ==========================
+        with torch.no_grad():
+            if not self.flag_use_int_u:
+                z_init = probutils.ExtenededNormal(
+                    loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
+                    scale=self.dict_pname_to_scaleandunweighted['z'][0],
+                    flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
+                ).sample().to(device)  # [num_cell, dim_z]
+            else:
+                int_cov_u = self.module_int_cov_u(ten_u_int)
+
+                if isinstance(int_cov_u, float):  # the case where int_cov_u is set to, e.g., 0.0 --> ExtendedNormal
+                    z_init = probutils.ExtenededNormal(
+                        loc=self.module_int_mu_u(ten_u_int),
+                        scale=np.sqrt(int_cov_u),
+                        flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
+                    ).sample().to(device)  # [num_cell, dim_z]
+                else:  # int_cov_u is like the iVAE paper --> Normal
+                    z_init = probutils.Normal(
+                        loc=self.module_int_mu_u(ten_u_int),
+                        scale=int_cov_u.sqrt()
+                    ).sample().to(device)  # [num_cell, dim_z]
+        
+        # define  the optimisation variables
+        s_out = torch.tensor(s_out_init.detach().cpu().numpy(), device=device, requires_grad=True)
+        z = torch.tensor(z_init.detach().cpu().numpy(), device=device, requires_grad=True)
+        optimiser = torch.optim.Adam(
+            [z, s_out],
+            lr=0.0001
+        )  # TODO:make tunable
+
+        list_lossval, list_tracking_info = [], []
+        for idx_gudance_iteration in range(100):  # TODO:make tunable.
+
+            optimiser.zero_grad()
+
+            # generate the gene expression vector, in a differentiable way (i.e. no layered approach) ===
+            s_in = self.module_theta_aggr(
+                s_out,
+                edge_index
+            )
+
+            """
+            Nondiff --> replaced by above.
+            s_in = probutils.ExtenededNormal(
+                loc=self.module_theta_aggr.evaluate_layered(
+                    x=s_out,
+                    edge_index=edge_index,
+                    kwargs_dl=kwargs_dl_neighbourloader
+                ),
+                scale=self.dict_pname_to_scaleandunweighted['sin'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['sin'][1]
+            ).sample().to(device)  # [num_cell, dim_s]
+            """
+            
+
+            output_neuralODE = self.module_flow(
+                t_in=torch.linspace(0, 1, t_num_steps).to(device),
+                x_in=torch.cat(
+                    [z, s_in],
+                    1
+                ),
+                ten_BatchEmb_in=ten_BatchEmb_in
+            )
+
+            xbar_int = probutils.ExtenededNormal(
+                loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
+                scale=self.dict_pname_to_scaleandunweighted['xbar_int'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_int'][1]
+            ).sample().to(device)  # [num_cells, dim_z]
+
+            xbar_spl = probutils.ExtenededNormal(
+                loc=output_neuralODE[:, self.dict_varname_to_dim['z']::],
+                scale=self.dict_pname_to_scaleandunweighted['xbar_spl'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_spl'][1]
+            ).sample().to(device)  # [num_cells, dim_s]
 
 
+            # get the sotfmax mean values for Xint and Xspl ===
+            x_int_softmax = self.module_w_dec_int(
+                torch.cat(
+                    [ten_BatchEmb_in, xbar_int],
+                    1
+                )
+            )
+            x_spl_softmax = self.module_w_dec_spl(
+                torch.cat(
+                    [ten_BatchEmb_in, xbar_spl],
+                    1
+                )
+            )
 
 
+            """
+            Nondiff --> replaced by above.
+            x_int_softmax = utils.func_feed_x_to_module(
+                module_input=self.module_w_dec_int,
+                x=torch.cat(
+                    [ten_BatchEmb_in, xbar_int],
+                    1
+                ),
+                batch_size=batch_size_feedforward
+            )
+            x_spl_softmax = utils.func_feed_x_to_module(
+                module_input=self.module_w_dec_spl,
+                x=torch.cat(
+                    [ten_BatchEmb_in, xbar_spl],
+                    1
+                ),
+                batch_size=batch_size_feedforward
+            )
+            """
+
+            # generate from ZINB
+            if sizefactor_int is not None:
+                assert isinstance(sizefactor_int, np.ndarray)
+                assert len(sizefactor_int.shape) == 1
+                assert sizefactor_int.shape[0] == x_int_softmax.shape[0]
+
+            if sizefactor_spl is not None:
+                assert isinstance(sizefactor_spl, np.ndarray)
+                assert len(sizefactor_spl.shape) == 1
+                assert sizefactor_spl.shape[0] == x_int_softmax.shape[0]
+
+            if sizefactor_int is not None:
+                x_int = ZeroInflatedNegativeBinomial(
+                    **{**{'mu': x_int_softmax * torch.tensor(sizefactor_int).unsqueeze(-1).to(x_int_softmax.device),
+                        'theta': torch.exp(self.theta_negbin_int)},
+                    **self.kwargs_negbin_int}
+                ).sample()
+            else:
+                x_int = None
+
+            if sizefactor_spl is not None:
+                x_spl = ZeroInflatedNegativeBinomial(
+                    **{**{'mu': x_spl_softmax * torch.tensor(sizefactor_spl).unsqueeze(-1).to(x_int_softmax.device),
+                        'theta': torch.exp(self.theta_negbin_spl)},
+                    **self.kwargs_negbin_spl}
+                ).sample()
+            else:
+                x_spl = None
+
+            x = x_int + x_spl   # up until this point: x is generated
+
+            breakpoint()
+            print("Right before defining the loss.")
+            # TODO:HERE complete
+
+            
+            # define the loss on `x`
+            loss, tracking_info = obj_get_loss.get_guidanceloss_and_trackinginfo(x)
+            assert isinstance(loss, torch.Tensor)
+            
+
+            # backward and step
+            loss.backward()
+            optimiser.step()
+            
+
+            # get the tracking info
+            list_lossval.append(loss.detach().cpu().numpy())
+            list_tracking_info.append(tracking_info)
 
 
-
-
+        return list_lossval, list_tracking_info
 
 
 
