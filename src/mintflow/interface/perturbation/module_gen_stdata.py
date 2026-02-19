@@ -541,7 +541,7 @@ def generate_insilico_ST_data_with_gene_perturbation(
 
     # having genrated the size factors (int and mic), generate the guided gene expression vectors
 
-    generated_realisation = model.module_genmodel.sample_withZINB_and_GuidanceLoss(
+    generated_realisation, list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection = model.module_genmodel.sample_withZINB_and_GuidanceLoss(
         edge_index=edge_index.to(device),
         t_num_steps=dict_all4_configs['config_model']['neuralODE_t_num_steps'],
         device=device,
@@ -559,8 +559,6 @@ def generate_insilico_ST_data_with_gene_perturbation(
         obj_get_loss=obj_guider
     )
 
-    breakpoint()
-    print("DDD")
 
 
 
@@ -568,16 +566,10 @@ def generate_insilico_ST_data_with_gene_perturbation(
     for k_old, k_new in dict_generate_oldvarname_to_newvarname.items():
         generated_realisation[k_new] = generated_realisation.pop(k_old).detach().cpu().numpy()
 
-    list_generated_realisations.append(generated_realisation)
-    list_generated_mic_sizefactors.append(list_micenv_sizefactors)
+    
 
     model.train()
 
-    return dict(
-        list_generated_realisations_ie_expressions=list_generated_realisations,
-        list_generated_microenv_sizefactors=list_generated_mic_sizefactors,
-        np_CT=ten_CT.detach().cpu().numpy(),
-        np_MCC=ten_MCC.detach().cpu().numpy()
-    )
+    return generated_realisation, list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection
 
 

@@ -1184,8 +1184,101 @@ class InFlowGenerativeModel(nn.Module):
             list_trackinginfo_computeloss.append(trackinginfo_computeloss)
             list_trackinginfo_projection.append(trackinginfo_projection)
 
+        
+        # having found `z` and `s_out`, do a final and non-diff generations 
+        with torch.no_grad():
+            # generate the gene expression vector, in a differentiable way (i.e. no layered approach) ===
+            s_in = self.module_theta_aggr(
+                s_out,
+                edge_index
+            )            
 
-        return list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection
+            output_neuralODE = self.module_flow(
+                t_in=torch.linspace(0, 1, t_num_steps).to(device),
+                x_in=torch.cat(
+                    [z, s_in],
+                    1
+                ),
+                ten_BatchEmb_in=ten_BatchEmb_in
+            )
+
+            xbar_int = probutils.ExtenededNormal(
+                loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
+                scale=self.dict_pname_to_scaleandunweighted['xbar_int'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_int'][1]
+            ).sample().to(device)  # [num_cells, dim_z]
+
+            xbar_spl = probutils.ExtenededNormal(
+                loc=output_neuralODE[:, self.dict_varname_to_dim['z']::],
+                scale=self.dict_pname_to_scaleandunweighted['xbar_spl'][0],
+                flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_spl'][1]
+            ).sample().to(device)  # [num_cells, dim_s]
+
+
+            # get the sotfmax mean values for Xint and Xspl ===
+            x_int_softmax = self.module_w_dec_int(
+                torch.cat(
+                    [ten_BatchEmb_in, xbar_int],
+                    1
+                )
+            )
+            x_spl_softmax = self.module_w_dec_spl(
+                torch.cat(
+                    [ten_BatchEmb_in, xbar_spl],
+                    1
+                )
+            )
+
+            # generate from ZINB
+            if sizefactor_int is not None:
+                assert isinstance(sizefactor_int, np.ndarray)
+                assert len(sizefactor_int.shape) == 1
+                assert sizefactor_int.shape[0] == x_int_softmax.shape[0]
+
+            if sizefactor_spl is not None:
+                assert isinstance(sizefactor_spl, np.ndarray)
+                assert len(sizefactor_spl.shape) == 1
+                assert sizefactor_spl.shape[0] == x_int_softmax.shape[0]
+
+            if sizefactor_int is not None:
+                x_int = ZeroInflatedNegativeBinomial(
+                    **{**{'mu': x_int_softmax * torch.tensor(sizefactor_int).unsqueeze(-1).to(x_int_softmax.device),
+                        'theta': torch.exp(self.theta_negbin_int)},
+                    **self.kwargs_negbin_int}
+                ).sample()
+                
+            else:
+                x_int = None
+
+            if sizefactor_spl is not None:
+                x_spl = ZeroInflatedNegativeBinomial(
+                    **{**{'mu': x_spl_softmax * torch.tensor(sizefactor_spl).unsqueeze(-1).to(x_int_softmax.device),
+                        'theta': torch.exp(self.theta_negbin_spl)},
+                    **self.kwargs_negbin_spl}
+                ).sample()
+                
+            else:
+                x_spl = None
+
+            x = x_int + x_spl   # up until this point: x is generated
+
+        
+        dict_generated_realisation = dict(
+            ten_u_int=ten_u_int,
+            ten_u_spl=ten_u_spl,
+            s_out=s_out,
+            s_in=s_in,
+            z=z,
+            xbar_int=xbar_int,
+            xbar_spl=xbar_spl,
+            x_int_softmax=x_int_softmax,
+            x_spl_softmax=x_spl_softmax,
+            x_int=x_int,
+            x_spl=x_spl
+        )
+            
+
+        return dict_generated_realisation, list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection
 
 
 
