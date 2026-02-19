@@ -937,7 +937,8 @@ class InFlowGenerativeModel(nn.Module):
         ten_BatchEmb_in: torch.Tensor,
         sizefactor_int: np.ndarray | None,
         sizefactor_spl: np.ndarray | None,
-        obj_get_loss:utils_guidance.GenerationGuider
+        obj_get_loss:utils_guidance.GenerationGuider,
+        dict_config_guidance_optimisation:dict
     ):
         """
         Unlike `sample` that returns only the ZINB means (after softmax), this function generates/returns
@@ -958,11 +959,25 @@ class InFlowGenerativeModel(nn.Module):
         by `sample_withZINB_and_GuidanceLoss`.
         - a function `modify_Sout_Z` to clip or, e.g., project it back to the confidence interval of the Normal distributions around cell type embeddings.
         This function takes in (i) `z`, (ii) `s_out`, (iii) loc_z, (iv) sigma_z, (v) loc_sout, (vi) sigma_sout
+        
+        :param dict_config_guidance_optimisation: a dictionary containing the specs to guide the embddings Z and S_out,
+        with the following keys
+            - `type_optim`
+            - `lr_optim`
+            - `num_iters_guidance`
+        
         :return:
         """
 
         # initial checks ==========================
         assert isinstance(obj_get_loss, utils_guidance.GenerationGuider)
+
+        assert set(dict_config_guidance_optimisation.keys()) == {
+            'type_optim', 'lr_optim', 'num_iters_guidance'
+        }, print("The provided `dict_config_guidance_optimisation` has to have the following keys: \n{} but it ha: {}.".format(
+            "'type_optim', 'lr_optim', 'num_iters_guidance'",
+            set(dict_config_guidance_optimisation.keys())
+        ))
 
         with torch.no_grad():
             ten_u_int = (ten_CT + 0) if (self.flag_use_int_u) else None
@@ -1033,13 +1048,16 @@ class InFlowGenerativeModel(nn.Module):
         # define  the optimisation variables
         s_out = torch.tensor(s_out_init.detach().cpu().numpy(), device=device, requires_grad=True)
         z = torch.tensor(z_init.detach().cpu().numpy(), device=device, requires_grad=True)
-        optimiser = torch.optim.Adam(
+        optimiser = dict_config_guidance_optimisation['type_optim'](
             [z, s_out],
-            lr=0.0001
-        )  # TODO:make tunable
+            lr=dict_config_guidance_optimisation['lr_optim']
+        )
 
         list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection = [], [], []
-        for idx_gudance_iteration in tqdm(range(100), desc="Guiding the embeddings"):  # TODO:make tunable.
+        for idx_gudance_iteration in tqdm(
+            range(dict_config_guidance_optimisation['num_iters_guidance']),
+            desc="Guiding the embeddings"
+        ):
 
             optimiser.zero_grad()
 

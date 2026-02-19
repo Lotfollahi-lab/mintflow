@@ -225,6 +225,7 @@ def generate_insilico_ST_data_with_gene_perturbation(
     df_gene_perturbation:pd.DataFrame,
     conf_interval_percelltype_prior:float,
     flag_doublecheck_df:bool,
+    dict_config_guidance_optimisation:dict,
     adata:anndata.AnnData,
     obskey_celltype:str,
     obspkey_neighbourhood_graph:str,
@@ -255,7 +256,12 @@ def generate_insilico_ST_data_with_gene_perturbation(
     :param conf_interval_percelltype_prior: A floating point number between 0.0 and 1.0. The generated `z` and `s_out` embeddings will be forced to reside 
     in a confidence interval of their corresponding population, and `conf_interval_percelltype_prior` determines the total probability of the confidence interval.
     
-        
+    :param dict_config_guidance_optimisation: a dictionary containing the specs to guide the embddings Z and S_out,
+    with the following keys
+        - `type_optim`
+        - `lr_optim`
+        - `num_iters_guidance`
+    
     :param adata: The anndata object containing (i) cell type labels, (ii) neighbourhood graph, and (iii) the gene panel. Other fields like `adata.X` are ignored.
 
     :param obskey_celltype:
@@ -556,7 +562,8 @@ def generate_insilico_ST_data_with_gene_perturbation(
         ten_BatchEmb_in=ten_BatchEmb_in.to(device),
         sizefactor_int=dict_all4_configs['config_training']['val_scppnorm_total'] - np.array(list_micenv_sizefactors)*dict_all4_configs['config_training']['val_scppnorm_total'],
         sizefactor_spl=np.array(list_micenv_sizefactors)*dict_all4_configs['config_training']['val_scppnorm_total'],
-        obj_get_loss=obj_guider
+        obj_get_loss=obj_guider,
+        dict_config_guidance_optimisation=dict_config_guidance_optimisation
     )
 
 
