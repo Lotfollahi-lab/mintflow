@@ -8,12 +8,14 @@ from torch.distributions.normal import Normal
 from torchdyn.core import NeuralODE
 from torchcfm.utils import torch_wrapper
 import torch_geometric as pyg
+from tqdm.autonotebook import tqdm
 from scvi.distributions import ZeroInflatedNegativeBinomial
 from . import utils
 from . import probutils
 from .modules import mlp
 from . import zs_samplers
 from . import utils_flowmatching
+from . import utils_guidance
 
 
 
@@ -935,7 +937,7 @@ class InFlowGenerativeModel(nn.Module):
         ten_BatchEmb_in: torch.Tensor,
         sizefactor_int: np.ndarray | None,
         sizefactor_spl: np.ndarray | None,
-        obj_get_loss:object
+        obj_get_loss:utils_guidance.GenerationGuider
     ):
         """
         Unlike `sample` that returns only the ZINB means (after softmax), this function generates/returns
@@ -950,13 +952,18 @@ class InFlowGenerativeModel(nn.Module):
         :param np_size_factor:
         :param sizefactor_int
         :param sizefactor_spl
-        :param obj_get_loss: A python object that's required to have a function `get_guidanceloss_and_trackinginfo` that takes in a single tensor `x`, i.e. the generated 
+        :param obj_get_loss: An instance of `GenerationGuider`, a python object that's required to have 
+        - a function `get_guidanceloss_and_trackinginfo` that takes in a single tensor `x`, i.e. the generated 
         in-silico gene expression vector, and returns (i) the loss and (ii) an arbitrary tracking object, from which a list of tracking objects will be returned 
         by `sample_withZINB_and_GuidanceLoss`.
+        - a function `modify_Sout_Z` to clip or, e.g., project it back to the confidence interval of the Normal distributions around cell type embeddings.
+        This function takes in (i) `z`, (ii) `s_out`, (iii) loc_z, (iv) sigma_z, (v) loc_sout, (vi) sigma_sout
         :return:
         """
 
         # initial checks ==========================
+        assert isinstance(obj_get_loss, utils_guidance.GenerationGuider)
+
         with torch.no_grad():
             ten_u_int = (ten_CT + 0) if (self.flag_use_int_u) else None
             ten_u_spl = (ten_CT + 0) if (self.flag_use_spl_u) else None
@@ -992,50 +999,36 @@ class InFlowGenerativeModel(nn.Module):
         # generate the initial s_out ==========================
         with torch.no_grad():
             if not self.flag_use_spl_u:
-                s_out_init = probutils.ExtenededNormal(
-                    loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['s']]),
-                    scale=self.dict_pname_to_scaleandunweighted['sout'][0],
-                    flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
-                ).sample().to(device)  # [num_cell, dim_s]
+                raise NotImplementedError("Not implemeted for guidance in particular.")
             else:
-                spl_cov_u = self.module_spl_cov_u(ten_u_spl)  # MLP followed by .exp(), of shape [num_cells x dim_s]
+                spl_loc_u = self.module_spl_mu_u(ten_u_spl)
+                spl_sigma_u = self.module_spl_cov_u(ten_u_spl).sqrt()  # MLP followed by .exp(), of shape [num_cells x dim_s]
 
-                if isinstance(spl_cov_u, float):  # the case where the covariance is set to, e.g. 0.0 --> ExtendedNormal
-                    s_out_init = probutils.ExtenededNormal(
-                        loc=self.module_spl_mu_u(ten_u_spl),
-                        scale=np.sqrt(spl_cov_u),
-                        flag_unweighted=self.dict_pname_to_scaleandunweighted['sout'][1]
-                    ).sample().to(device)  # [num_cell, dim_s]
-                else:  # covariance is of the same shape as mu --> Normal
-                    assert (isinstance(spl_cov_u, torch.Tensor))
-                    s_out_init = probutils.Normal(
-                        loc=self.module_spl_mu_u(ten_u_spl),
-                        scale=spl_cov_u.sqrt()
-                    ).sample().to(device)  # [num_cell, dim_s]
+                assert isinstance(spl_loc_u, torch.Tensor)
+                assert isinstance(spl_sigma_u, torch.Tensor)
+                
+                s_out_init = probutils.Normal(
+                    loc=spl_loc_u,
+                    scale=spl_sigma_u
+                ).sample().to(device)  # [num_cell, dim_s]
         
 
         # generate the initial Z ==========================
         with torch.no_grad():
             if not self.flag_use_int_u:
-                z_init = probutils.ExtenededNormal(
-                    loc=torch.zeros([self.num_cells, self.dict_varname_to_dim['z']]),
-                    scale=self.dict_pname_to_scaleandunweighted['z'][0],
-                    flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
-                ).sample().to(device)  # [num_cell, dim_z]
+                raise NotImplementedError("Not implemeted for guidance in particular.")
             else:
-                int_cov_u = self.module_int_cov_u(ten_u_int)
+                
+                int_loc_u = self.module_int_mu_u(ten_u_int)
+                int_sigma_u = self.module_int_cov_u(ten_u_int).sqrt()
 
-                if isinstance(int_cov_u, float):  # the case where int_cov_u is set to, e.g., 0.0 --> ExtendedNormal
-                    z_init = probutils.ExtenededNormal(
-                        loc=self.module_int_mu_u(ten_u_int),
-                        scale=np.sqrt(int_cov_u),
-                        flag_unweighted=self.dict_pname_to_scaleandunweighted['z'][1]
-                    ).sample().to(device)  # [num_cell, dim_z]
-                else:  # int_cov_u is like the iVAE paper --> Normal
-                    z_init = probutils.Normal(
-                        loc=self.module_int_mu_u(ten_u_int),
-                        scale=int_cov_u.sqrt()
-                    ).sample().to(device)  # [num_cell, dim_z]
+                assert isinstance(int_loc_u, torch.Tensor)
+                assert isinstance(int_sigma_u, torch.Tensor)
+                
+                z_init = probutils.Normal(
+                    loc=int_loc_u,
+                    scale=int_sigma_u
+                ).sample().to(device)  # [num_cell, dim_z]
         
         # define  the optimisation variables
         s_out = torch.tensor(s_out_init.detach().cpu().numpy(), device=device, requires_grad=True)
@@ -1045,8 +1038,8 @@ class InFlowGenerativeModel(nn.Module):
             lr=0.0001
         )  # TODO:make tunable
 
-        list_lossval, list_tracking_info = [], []
-        for idx_gudance_iteration in range(100):  # TODO:make tunable.
+        list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection = [], [], []
+        for idx_gudance_iteration in tqdm(range(100), desc="Guiding the embeddings"):  # TODO:make tunable.
 
             optimiser.zero_grad()
 
@@ -1083,13 +1076,13 @@ class InFlowGenerativeModel(nn.Module):
                 loc=output_neuralODE[:, 0:self.dict_varname_to_dim['z']],
                 scale=self.dict_pname_to_scaleandunweighted['xbar_int'][0],
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_int'][1]
-            ).sample().to(device)  # [num_cells, dim_z]
+            ).rsample().to(device)  # [num_cells, dim_z]
 
             xbar_spl = probutils.ExtenededNormal(
                 loc=output_neuralODE[:, self.dict_varname_to_dim['z']::],
                 scale=self.dict_pname_to_scaleandunweighted['xbar_spl'][0],
                 flag_unweighted=self.dict_pname_to_scaleandunweighted['xbar_spl'][1]
-            ).sample().to(device)  # [num_cells, dim_s]
+            ).rsample().to(device)  # [num_cells, dim_s]
 
 
             # get the sotfmax mean values for Xint and Xspl ===
@@ -1139,46 +1132,60 @@ class InFlowGenerativeModel(nn.Module):
                 assert sizefactor_spl.shape[0] == x_int_softmax.shape[0]
 
             if sizefactor_int is not None:
+                x_int = x_int_softmax * torch.tensor(sizefactor_int).unsqueeze(-1).to(x_int_softmax.device)
+                """
+                Non-diff --> mu is used above.
                 x_int = ZeroInflatedNegativeBinomial(
                     **{**{'mu': x_int_softmax * torch.tensor(sizefactor_int).unsqueeze(-1).to(x_int_softmax.device),
                         'theta': torch.exp(self.theta_negbin_int)},
                     **self.kwargs_negbin_int}
-                ).sample()
+                ).rsample()
+                """
             else:
                 x_int = None
 
             if sizefactor_spl is not None:
+                x_spl = x_spl_softmax * torch.tensor(sizefactor_spl).unsqueeze(-1).to(x_int_softmax.device)
+                """
+                Non-diff --> mu is used above.
                 x_spl = ZeroInflatedNegativeBinomial(
                     **{**{'mu': x_spl_softmax * torch.tensor(sizefactor_spl).unsqueeze(-1).to(x_int_softmax.device),
                         'theta': torch.exp(self.theta_negbin_spl)},
                     **self.kwargs_negbin_spl}
-                ).sample()
+                ).rsample()
+                """
             else:
                 x_spl = None
 
             x = x_int + x_spl   # up until this point: x is generated
 
-            breakpoint()
-            print("Right before defining the loss.")
-            # TODO:HERE complete
-
             
             # define the loss on `x`
-            loss, tracking_info = obj_get_loss.get_guidanceloss_and_trackinginfo(x)
+            loss, trackinginfo_computeloss = obj_get_loss.get_guidanceloss_and_trackinginfo(x)
             assert isinstance(loss, torch.Tensor)
             
-
             # backward and step
             loss.backward()
             optimiser.step()
+
+            # do, e.g., projection of z and sout
+            trackinginfo_projection = obj_get_loss.modify_Sout_Z(
+                z=z,
+                s_out=s_out,
+                loc_z=int_loc_u,
+                sigma_z=int_sigma_u,
+                loc_sout=spl_loc_u,
+                sigma_sout=spl_sigma_u
+            )
             
 
             # get the tracking info
             list_lossval.append(loss.detach().cpu().numpy())
-            list_tracking_info.append(tracking_info)
+            list_trackinginfo_computeloss.append(trackinginfo_computeloss)
+            list_trackinginfo_projection.append(trackinginfo_projection)
 
 
-        return list_lossval, list_tracking_info
+        return list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection
 
 
 
