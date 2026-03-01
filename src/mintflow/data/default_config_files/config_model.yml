@@ -97,7 +97,7 @@ flag_enable_batchtoken_disentangler: 'True'
 
 
 
-coef_flowmatchingloss: 10.0  # TODO:TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
+coef_flowmatchingloss: 0.01  # TODO:TUNE, if one uses inflow only for disentanglment they can set this coeffient to 0.0 (i.e. disable FM), but for generative purposes one can set it to a > 0.0 value.
 flowmatching_mode_samplex0: 'ModeSampleX0.FROMINFLOW'
 flowmatching_mode_minibatchper: 'ModeMinibatchPerm.RANDOM'
 kwargs_otsampler: "{'method':'exact'}"
