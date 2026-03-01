@@ -34,7 +34,12 @@ def _gpu_kl_entropy(np_data, k_calcentropy):
     
     # 1. Use cuML to find the distance to the k-th neighbor
     # We set n_neighbors=k+1 because the first neighbor is the point itself (dist=0)
-    nn = NearestNeighbors(n_neighbors=k+1)
+    nn = NearestNeighbors(
+        n_neighbors=min(
+            k+1,
+            N
+        )
+    )
     nn.fit(data)
     distances, _ = nn.kneighbors(data)
     
