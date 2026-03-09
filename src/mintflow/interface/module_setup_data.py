@@ -129,6 +129,13 @@ def _func_doeshave_isolated_nodes_inneighgraph(adata_input:anndata.AnnData):
 
     return number_of_isolated_nodes > 0, number_of_isolated_nodes
 
+def _check_raw_counts(X):
+    assert sparse.issparse(X)
+    return np.allclose(
+        X.data,
+        np.floor(X.data)
+    )
+
 def setup_data(
     dict_all4_configs,
     flag_verbose=True,
@@ -165,9 +172,9 @@ def setup_data(
                 )
             )
 
-        if not sc._utils.check_nonnegative_integers(adata_temp.X):  # grabbed from https://github.com/scverse/scanpy/blob/0cfd0224f8b0a90317b0f1a61562f62eea2c2927/src/scanpy/preprocessing/_highly_variable_genes.py#L74
+        if not _check_raw_counts(adata_temp.X): #sc._utils.check_nonnegative_integers(adata_temp.X):  # grabbed from https://github.com/scverse/scanpy/blob/0cfd0224f8b0a90317b0f1a61562f62eea2c2927/src/scanpy/preprocessing/_highly_variable_genes.py#L74
             raise Exception(
-                "Inflow requires count data, but the anndata in {} seems to have non-count values in adata.X".format(
+                "MintFlow requires that `adata.X` contains raw counts, but the anndata in {} seems to have non-count values in `adata.X`".format(
                     fname_adata_temp
                 )
             )
