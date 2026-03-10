@@ -1758,6 +1758,7 @@ class InFlowVarDist(nn.Module):
 
 
         # add xbarint-->notBatchID loss ===
+        dict_xbarint2notbatchID_loss = None
         if self.coef_xbarint2notbatchID_loss > 0.0:
             rng_batchemb = [
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
@@ -1782,6 +1783,7 @@ class InFlowVarDist(nn.Module):
 
 
         # add xbarspl-->notBatchID loss ===
+        dict_xbarspl2notbatchID_loss = None
         if self.coef_xbarspl2notbatchID_loss > 0.0:
             rng_batchemb = [
                 batch.INFLOWMETAINF['dim_u_int'] + batch.INFLOWMETAINF['dim_u_spl'] + batch.INFLOWMETAINF['dim_CT'] + batch.INFLOWMETAINF['dim_NCC'],
@@ -1931,8 +1933,8 @@ class InFlowVarDist(nn.Module):
         return {
             'z':dict_z2notNCC_loss,
             'xbarint':dict_xbarint2notNCC_loss,
-            'xbarint2notbatchID':dict_xbarint2notbatchID_loss if flag_batchmixingloss_present_int else None,
-            'xbarspl2notbatchID':dict_xbarspl2notbatchID_loss if flag_batchmixingloss_present_spl else None
+            'xbarint2notbatchID':dict_xbarint2notbatchID_loss,
+            'xbarspl2notbatchID':dict_xbarspl2notbatchID_loss
         }
 
 
