@@ -1924,12 +1924,15 @@ class InFlowVarDist(nn.Module):
             loss_rank_XYpos_xbarint = loss_rank_Xpos + loss_rank_Ypos
             loss = loss + loss_rank_XYpos_xbarint
 
-        flag_batchmixingloss_present = (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0)
+        # flag_batchmixingloss_present = (self.coef_xbarint2notbatchID_loss > 0.0) or (self.coef_xbarspl2notbatchID_loss > 0.0)
+        flag_batchmixingloss_present_int = (self.coef_xbarint2notbatchID_loss > 0.0)
+        flag_batchmixingloss_present_spl = (self.coef_xbarspl2notbatchID_loss > 0.0)
+
         return {
             'z':dict_z2notNCC_loss,
             'xbarint':dict_xbarint2notNCC_loss,
-            'xbarint2notbatchID':dict_xbarint2notbatchID_loss if flag_batchmixingloss_present else None,
-            'xbarspl2notbatchID':dict_xbarspl2notbatchID_loss if flag_batchmixingloss_present else None
+            'xbarint2notbatchID':dict_xbarint2notbatchID_loss if flag_batchmixingloss_present_int else None,
+            'xbarspl2notbatchID':dict_xbarspl2notbatchID_loss if flag_batchmixingloss_present_spl else None
         }
 
 
