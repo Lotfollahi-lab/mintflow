@@ -110,8 +110,8 @@ class ConfIntervalProjectorGuider(GenerationGuider):
             s_out.copy_(new_sout)
 
             return dict(
-                z_flag_do_project=z_flag_do_project,
-                sout_flag_do_project=sout_flag_do_project
+                z_flag_do_project=z_flag_do_project.detach().cpu().numpy().flatten(),
+                sout_flag_do_project=sout_flag_do_project.detach().cpu().numpy().flatten()
             )  # to be used for visualization
             
 
