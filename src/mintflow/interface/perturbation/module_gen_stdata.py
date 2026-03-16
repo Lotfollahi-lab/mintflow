@@ -278,12 +278,17 @@ def generate_insilico_ST_data_with_gene_perturbation(
     :return:
     """
 
+
     # check adata_reference_expression
     if adata_reference_expression is None:
         adata_reference_expression = anndata.concat([
             sl.adata_before_scppnormalize_total
             for sl in data_mintflow['train_list_tissue_section'].list_slice
         ])
+        adata_reference_expression_toret = adata_reference_expression.copy()
+    else:
+        assert isinstance(adata_reference_expression, anndata.AnnData)
+        adata_reference_expression_toret = adata_reference_expression.copy()
     
     assert np.allclose(
         adata_reference_expression.X.data,
@@ -577,6 +582,10 @@ def generate_insilico_ST_data_with_gene_perturbation(
 
     model.train()
 
-    return generated_realisation, list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection
+    dict_debug_info = dict(
+        np_targetgexval=np_targetgexval
+    )
+
+    return generated_realisation, adata_reference_expression_toret, list_lossval, list_trackinginfo_computeloss, list_trackinginfo_projection, dict_debug_info
 
 
