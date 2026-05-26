@@ -67,7 +67,6 @@ docs = [
     "sphinxext-opengraph",
     "sphinx-copybutton",
     "sphinx-design",
-    "sphinx-hoverxref",
     # For notebooks
     "ipykernel",
     "ipython",
