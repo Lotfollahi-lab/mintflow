@@ -6,5 +6,5 @@ Get started with MintFlow by following our tutorials.
 :maxdepth: 2
 
 training_tutorials
-akanother_section
+
 ```
