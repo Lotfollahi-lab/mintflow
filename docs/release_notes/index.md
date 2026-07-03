@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file. The format
 is based on [keep a changelog], and this project adheres to
 [Semantic Versioning]. Full commit history is available in the [commit logs].
 
+
+### 0.3.0 (03.07.2026)
+
+-  Improved default data/model/training configurations.
+[@amirakbarnejad]
+
 ### 0.2.0 (17.07.2025)
 
 -  Fixed version of zarr in dependencies to avoid incompatibility issue with squidpy in new v3 releases of zarr.
